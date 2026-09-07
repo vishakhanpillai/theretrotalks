@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Exclude Resume and PDF documents
+*.pdf
+*resume*
+*Resume*
+public/*.pdf

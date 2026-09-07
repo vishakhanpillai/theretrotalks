@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Environment variables & secrets
+.env
+.env.*
+*.env
+backend/.env
+
+# Build outputs
+dist/
+build/
+*/dist/
+
+# Resume & PDF documents (Private / Excluded from git)
+*.pdf
+*resume*
+*Resume*
+VP_Resume_for_website.pdf
+frontend/public/*.pdf
+frontend/public/resume.pdf
+frontend/public/VP_Resume_for_website.pdf
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor & OS files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
