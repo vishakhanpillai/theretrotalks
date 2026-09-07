@@ -27,3 +27,15 @@ export interface Review {
   watchedDate: string;
   isFavorite?: boolean;
 }
+
+export interface UpcomingMovie {
+  id: number;
+  title: string;
+  releaseDate: string | null;
+  formattedDate: string;
+  poster: string | null;
+  backdrop?: string | null;
+  overview: string;
+  tmdbRating: number | null;
+  popularity?: number;
+}

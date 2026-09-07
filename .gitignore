@@ -35,3 +35,10 @@ yarn-error.log*
 .DS_Store
 *.swp
 *.swo
+
+# SQLite databases
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
