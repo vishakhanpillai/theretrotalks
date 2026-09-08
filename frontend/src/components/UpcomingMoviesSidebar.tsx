@@ -119,7 +119,7 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
                   </span>
                 </div>
 
-                <h4 className="text-sm font-bold text-white truncate group-hover:text-[#ff7a29] transition-colors mt-1 font-poppins">
+                <h4 className="text-sm font-medium text-white truncate group-hover:text-[#ff7a29] transition-colors mt-1 font-poppins">
                   {movie.title}
                 </h4>
 

@@ -54,12 +54,12 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   return (
     <article
       onClick={() => onOpenReview(review)}
-      className="group relative flex flex-col md:flex-row bg-[#0b0d13] hover:bg-[#0e1119] rounded-none overflow-hidden border border-white/[0.08] hover:border-[#ff5500]/50 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_50px_rgba(0,0,0,0.7)] cursor-pointer"
+      className="group relative flex flex-col md:flex-row bg-[#0b0d13] hover:bg-[#0e1119] rounded-2xl overflow-hidden border border-white/[0.08] hover:border-[#ff5500]/50 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_50px_rgba(0,0,0,0.7)] cursor-pointer"
     >
       {/* Subtle Backdrop Tint in Card Background */}
       {backdropUrl && (
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-700 pointer-events-none"
+          className="absolute inset-0 bg-cover bg-top opacity-[0.035] group-hover:opacity-[0.07] transition-opacity duration-700 pointer-events-none"
           style={{ backgroundImage: `url(${backdropUrl})` }}
         />
       )}
@@ -87,11 +87,11 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
 
         {/* Mobile Release Year & Favorite Indicator */}
         <div className="absolute top-3 left-3 md:hidden flex items-center gap-1.5">
-          <span className="bg-[#07080a]/90 backdrop-blur-md px-2.5 py-0.5 rounded-none text-[10px] font-mono tracking-wider text-zinc-300 border border-white/[0.08]">
+          <span className="bg-[#07080a]/90 backdrop-blur-md px-2.5 py-0.5 rounded-md text-[10px] font-mono tracking-wider text-zinc-300 border border-white/[0.08]">
             {review.year}
           </span>
           {review.isFavorite && (
-            <span className="p-1 rounded-none bg-[#ff5500]/20 border border-[#ff5500]/30 text-[#ff5500]">
+            <span className="p-1 rounded-md bg-[#ff5500]/20 border border-[#ff5500]/30 text-[#ff5500]">
               <Heart className="w-3 h-3 fill-[#ff5500]" />
             </span>
           )}
@@ -105,12 +105,12 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
           {/* Top Row: Year, Favorite, Watched Date & Star Rating */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-1 border-b border-white/[0.05]">
             <div className="flex items-center gap-2">
-              <span className="bg-white/[0.04] px-2.5 py-0.5 rounded-none text-xs font-mono text-zinc-300 border border-white/[0.08]">
+              <span className="bg-white/[0.04] px-2.5 py-0.5 rounded-md text-xs font-mono text-zinc-300 border border-white/[0.08]">
                 {review.year}
               </span>
 
               {review.isFavorite && (
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-none bg-[#ff5500]/15 text-[#ff7a29] border border-[#ff5500]/25 text-[11px] font-mono">
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#ff5500]/15 text-[#ff7a29] border border-[#ff5500]/25 text-[11px] font-mono">
                   <Heart className="w-3 h-3 fill-[#ff5500]" />
                   <span>Favorite</span>
                 </span>
@@ -122,14 +122,14 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
             </div>
 
             {/* Letterboxd Star Rating (Supports 0.5 to 5.0) */}
-            <div className="flex items-center bg-[#0e1117] px-3 py-1 rounded-none border border-white/[0.08] shadow-sm ml-auto sm:ml-0">
+            <div className="flex items-center bg-[#0e1117] px-3 py-1 rounded-xl border border-white/[0.08] shadow-sm ml-auto sm:ml-0">
               <StarRating rating={review.rating} readonly size="sm" />
             </div>
           </div>
 
           {/* Title & Director */}
           <div className="space-y-1">
-            <h3 className="font-poppins font-black text-xl sm:text-2xl lg:text-3xl text-white group-hover:text-[#ff7a29] transition-colors leading-tight">
+            <h3 className="font-poppins font-medium text-xl sm:text-2xl lg:text-3xl text-white group-hover:text-[#ff7a29] transition-colors leading-tight">
               {review.title}
             </h3>
             <p className="text-xs sm:text-sm text-zinc-400 font-mono">
@@ -159,10 +159,10 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                 {castList.slice(0, 4).map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center gap-2 bg-[#090b10] hover:bg-[#121622] px-2.5 py-1 rounded-none border border-white/[0.05] hover:border-white/[0.12] transition-colors"
+                    className="flex items-center gap-2 bg-[#090b10] hover:bg-[#121622] px-2.5 py-1 rounded-xl border border-white/[0.05] hover:border-white/[0.12] transition-colors"
                     title={`${member.name} as ${member.character}`}
                   >
-                    <div className="w-6 h-6 rounded-none overflow-hidden bg-zinc-800 flex-shrink-0 border border-white/[0.08]">
+                    <div className="w-6 h-6 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 border border-white/[0.08]">
                       {member.picture ? (
                         <img
                           src={member.picture}
@@ -191,10 +191,10 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                 {crewList.slice(0, 2).map((member, idx) => (
                   <div
                     key={`${member.id}-${idx}`}
-                    className="flex items-center gap-2 bg-[#090b10] hover:bg-[#121622] px-2.5 py-1 rounded-none border border-white/[0.05] hover:border-white/[0.12] transition-colors"
+                    className="flex items-center gap-2 bg-[#090b10] hover:bg-[#121622] px-2.5 py-1 rounded-xl border border-white/[0.05] hover:border-white/[0.12] transition-colors"
                     title={`${member.name} (${member.job})`}
                   >
-                    <div className="w-6 h-6 rounded-none overflow-hidden bg-zinc-800 flex-shrink-0 border border-white/[0.08]">
+                    <div className="w-6 h-6 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 border border-white/[0.08]">
                       {member.picture ? (
                         <img
                           src={member.picture}
@@ -228,7 +228,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         <div className="pt-3.5 border-t border-white/[0.06] flex items-center justify-between gap-4 mt-auto">
           <div className="flex items-center gap-2 text-xs font-mono text-zinc-500">
             <Calendar className="w-3.5 h-3.5 text-zinc-600" />
-            <span>Logged on {review.watchedDate}</span>
+            <span>{review.watchedDate}</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -238,7 +238,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                 e.stopPropagation();
                 onOpenReview(review);
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-none bg-white/[0.04] hover:bg-[#ff5500] text-zinc-200 hover:text-black border border-white/[0.08] hover:border-[#ff5500] text-xs font-semibold font-mono transition-all duration-300 cursor-pointer group/btn shadow-sm active:scale-95"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-[#ff5500] text-zinc-200 hover:text-black border border-white/[0.08] hover:border-[#ff5500] text-xs font-semibold font-mono transition-all duration-300 cursor-pointer group/btn shadow-sm active:scale-95"
             >
               <span>Read more</span>
               <ArrowRight className="w-3.5 h-3.5 text-[#ff5500] group-hover:text-black group-hover/btn:translate-x-1 transition-all" />
@@ -254,7 +254,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                     onDelete(review.id);
                   }
                 }}
-                className="p-2 rounded-none text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-all cursor-pointer"
+                className="p-2 rounded-xl text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-all cursor-pointer"
                 title="Remove review"
               >
                 <Trash2 className="w-3.5 h-3.5" />

@@ -244,6 +244,33 @@ function App() {
     }
   };
 
+  // Update review backdrop in SQLite (Admin Only)
+  const handleUpdateBackdrop = async (reviewId: string | number, newBackdropUrl: string) => {
+    if (!adminToken) return;
+
+    try {
+      const res = await fetch(`/api/reviews/${reviewId}/backdrop`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ backdropUrl: newBackdropUrl }),
+      });
+
+      if (res.ok) {
+        setReviews((prev) =>
+          prev.map((r) => (r.id === reviewId ? { ...r, backdrop: newBackdropUrl } : r))
+        );
+      }
+    } catch (err) {
+      console.error("Error updating backdrop in SQLite:", err);
+      setReviews((prev) =>
+        prev.map((r) => (r.id === reviewId ? { ...r, backdrop: newBackdropUrl } : r))
+      );
+    }
+  };
+
   // 1. Admin Page (only accessible at /admin or via secret shortcut)
   if (route.page === "admin") {
     return (
@@ -255,6 +282,7 @@ function App() {
         onSaveReview={handleSaveNewReview}
         onDeleteReview={handleDeleteReview}
         onUpdatePoster={handleUpdatePoster}
+        onUpdateBackdrop={handleUpdateBackdrop}
         onNavigateHome={navigateToHome}
       />
     );
@@ -267,7 +295,10 @@ function App() {
       <ReviewPage
         reviewId={route.reviewId}
         initialReview={matchedReview}
+        isAdmin={isAdmin}
         onNavigateHome={navigateToHome}
+        onUpdatePoster={handleUpdatePoster}
+        onUpdateBackdrop={handleUpdateBackdrop}
       />
     );
   }

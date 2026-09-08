@@ -17,12 +17,14 @@ import {
   AlertCircle,
   Database,
   ExternalLink,
+  Image as ImageIcon,
 } from "lucide-react";
 import type { Review, Movie } from "../types";
 import { getPosterUrl } from "../utils/images";
 import { MovieModal } from "../components/MovieModal";
 import { ReviewModal } from "../components/ReviewModal";
 import { PosterSelectorModal } from "../components/PosterSelectorModal";
+import { BackdropSelectorModal } from "../components/BackdropSelectorModal";
 
 interface AdminPageProps {
   reviews: Review[];
@@ -32,6 +34,7 @@ interface AdminPageProps {
   onSaveReview: (review: Review) => Promise<void>;
   onDeleteReview: (id: string | number) => Promise<void>;
   onUpdatePoster: (reviewId: string | number, newPosterUrl: string) => Promise<void>;
+  onUpdateBackdrop?: (reviewId: string | number, newBackdropUrl: string) => Promise<void>;
   onNavigateHome: () => void;
 }
 
@@ -43,6 +46,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   onSaveReview,
   onDeleteReview,
   onUpdatePoster,
+  onUpdateBackdrop,
   onNavigateHome,
 }) => {
   // Login form states
@@ -65,6 +69,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [selectedMovieForReview, setSelectedMovieForReview] = useState<Movie | null>(null);
   const [storyStudioReview, setStoryStudioReview] = useState<Review | null>(null);
   const [posterEditReview, setPosterEditReview] = useState<Review | null>(null);
+  const [backdropEditReview, setBackdropEditReview] = useState<Review | null>(null);
 
   // Close search dropdown on click outside
   useEffect(() => {
@@ -394,7 +399,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
                       <div className="min-w-0 flex-grow">
                         <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-bold text-white group-hover:text-[#ff7a29] transition-colors truncate">
+                          <h4 className="text-sm font-medium font-poppins text-white group-hover:text-[#ff7a29] transition-colors truncate">
                             {movie.title}
                           </h4>
                           {movie.year && (
@@ -471,7 +476,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
                       <div className="min-w-0 space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-base font-bold text-white font-poppins truncate">
+                          <h3 className="text-base font-medium text-white font-poppins truncate">
                             {rev.title}
                           </h3>
                           <span className="text-xs font-mono text-zinc-500">
@@ -521,7 +526,17 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                         title="Change Poster Artwork from TMDB"
                       >
                         <Film className="w-3.5 h-3.5 text-[#ff5500]" />
-                        <span>Change Poster</span>
+                        <span>Poster</span>
+                      </button>
+
+                      {/* Change Backdrop */}
+                      <button
+                        onClick={() => setBackdropEditReview(rev)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-[#ff5500]/15 border border-white/[0.08] hover:border-[#ff5500]/40 text-xs font-mono text-zinc-300 hover:text-[#ff7a29] transition-colors cursor-pointer"
+                        title="Change Backdrop Artwork from TMDB"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5 text-[#ff5500]" />
+                        <span>Backdrop</span>
                       </button>
 
                       {/* Delete */}
@@ -585,7 +600,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       {/* MODAL 3: TMDB Poster Selector Modal */}
       {posterEditReview && (
         <PosterSelectorModal
-          movieId={Number(posterEditReview.id)}
+          movieId={posterEditReview.tmdbId || Number(posterEditReview.id)}
           movieTitle={posterEditReview.title}
           currentPosterUrl={posterEditReview.poster}
           isOpen={Boolean(posterEditReview)}
@@ -594,6 +609,21 @@ export const AdminPage: React.FC<AdminPageProps> = ({
             setPosterEditReview(null);
           }}
           onClose={() => setPosterEditReview(null)}
+        />
+      )}
+
+      {/* MODAL 4: TMDB Backdrop Selector Modal */}
+      {backdropEditReview && onUpdateBackdrop && (
+        <BackdropSelectorModal
+          movieId={backdropEditReview.tmdbId || Number(backdropEditReview.id)}
+          movieTitle={backdropEditReview.title}
+          currentBackdropUrl={backdropEditReview.backdrop}
+          isOpen={Boolean(backdropEditReview)}
+          onSelectBackdrop={async (newBackdropUrl) => {
+            await onUpdateBackdrop(backdropEditReview.id, newBackdropUrl);
+            setBackdropEditReview(null);
+          }}
+          onClose={() => setBackdropEditReview(null)}
         />
       )}
 

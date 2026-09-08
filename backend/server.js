@@ -23,7 +23,7 @@ const formatImageUrl = (path, size = "w500") => {
     return `${TMDB_IMAGE_BASE_URL}/${size}${cleanPath}`;
 };
 
-async function fetchTMDB(url, retries = 3) {
+async function fetchTMDB(url, retries = 6) {
     for (let i = 0; i < retries; i++) {
         try {
             const response = await fetch(url, {
@@ -36,14 +36,92 @@ async function fetchTMDB(url, retries = 3) {
             return response;
         } catch (err) {
             if (i < retries - 1) {
-                console.warn(`TMDB connection attempt ${i + 1} failed (${err.message}). Retrying...`);
-                await new Promise(res => setTimeout(res, 250));
+                const waitMs = (i + 1) * 350;
+                console.warn(`TMDB connection attempt ${i + 1} failed (${err.message}). Retrying in ${waitMs}ms...`);
+                await new Promise(res => setTimeout(res, waitMs));
                 continue;
             }
             throw err;
         }
     }
 }
+
+// Crew priority mapping:
+// 1: Director
+// 2: Cinematographer / Director of Photography
+// 3: Original Music Composer / Music
+// 4: Producer
+// 5: Screenplay / Writer / Story
+// 6: Editor
+// 7: Executive Producer
+// 8: Production Design / Art Direction
+// 9: Sound / Costume Design
+const getCrewPriority = (job) => {
+    switch (job) {
+        case "Director":
+            return 1;
+        case "Director of Photography":
+        case "Cinematographer":
+            return 2;
+        case "Original Music Composer":
+        case "Music":
+            return 3;
+        case "Producer":
+            return 4;
+        case "Screenplay":
+        case "Writer":
+        case "Story":
+            return 5;
+        case "Editor":
+            return 6;
+        case "Executive Producer":
+            return 7;
+        case "Production Design":
+        case "Art Direction":
+            return 8;
+        case "Costume Design":
+        case "Sound Designer":
+        case "Sound":
+            return 9;
+        default:
+            return 99;
+    }
+};
+
+const extractPrioritizedCrew = (crewList, limit = 10) => {
+    if (!Array.isArray(crewList)) return [];
+    const candidates = crewList
+        .filter(c => getCrewPriority(c.job) < 99)
+        .sort((a, b) => getCrewPriority(a.job) - getCrewPriority(b.job));
+
+    const seen = new Set();
+    const result = [];
+    for (const c of candidates) {
+        const key = `${c.id}-${c.job}`;
+        if (!seen.has(key)) {
+            seen.add(key);
+            result.push({
+                id: c.id,
+                name: c.name,
+                job: c.job,
+                department: c.department,
+                picture: formatImageUrl(c.profile_path, "w185")
+            });
+            if (result.length >= limit) break;
+        }
+    }
+    return result;
+};
+
+const extractTopCast = (castList, limit = 10) => {
+    if (!Array.isArray(castList)) return [];
+    return castList.slice(0, limit).map(c => ({
+        id: c.id,
+        name: c.name,
+        character: c.character,
+        picture: formatImageUrl(c.profile_path, "w185")
+    }));
+};
 
 // Admin Authentication Middleware
 const requireAdmin = (req, res, next) => {
@@ -85,13 +163,31 @@ app.get("/api/reviews", (req, res) => {
     }
 });
 
-// Get single review by id
-app.get("/api/reviews/:id", (req, res) => {
+// Get single review by id (auto-enriches missing cast/crew if needed)
+app.get("/api/reviews/:id", async (req, res) => {
     try {
-        const review = dbService.getReviewById(req.params.id);
+        let review = dbService.getReviewById(req.params.id);
         if (!review) {
             return res.status(404).json({ error: "Review not found" });
         }
+
+        // On-the-fly backfill if cast or crew is missing and tmdbId is present
+        if ((!review.cast || review.cast.length === 0 || !review.crew || review.crew.length < 10) && review.tmdbId) {
+            try {
+                const response = await fetchTMDB(`${TMDB_BASE_URL}/movie/${review.tmdbId}?append_to_response=credits`);
+                if (response && response.ok) {
+                    const data = await response.json();
+                    const cast = extractTopCast(data.credits?.cast, 10);
+                    const crew = extractPrioritizedCrew(data.credits?.crew, 10);
+                    if (cast.length > 0 || crew.length > 0) {
+                        review = dbService.updateReviewCredits(review.id, cast, crew);
+                    }
+                }
+            } catch (enrichErr) {
+                console.warn(`Dynamic enrichment failed for review ${review.id}:`, enrichErr.message);
+            }
+        }
+
         res.json(review);
     } catch (err) {
         console.error("Error fetching review:", err);
@@ -165,31 +261,8 @@ app.post("/api/reviews", requireAdmin, async (req, res) => {
                 const response = await fetchTMDB(`${TMDB_BASE_URL}/movie/${tmdbId}?append_to_response=credits`);
                 if (response && response.ok) {
                     const data = await response.json();
-                    reviewData.cast = (data.credits?.cast || []).slice(0, 10).map(c => ({
-                        id: c.id,
-                        name: c.name,
-                        character: c.character,
-                        picture: formatImageUrl(c.profile_path, "w185")
-                    }));
-
-                    const KEY_CREW_JOBS = ["Director", "Director of Photography", "Original Music Composer", "Screenplay", "Writer", "Editor", "Producer"];
-                    const seenCrew = new Set();
-                    reviewData.crew = (data.credits?.crew || [])
-                        .filter(c => KEY_CREW_JOBS.includes(c.job))
-                        .filter(c => {
-                            const key = `${c.id}-${c.job}`;
-                            if (seenCrew.has(key)) return false;
-                            seenCrew.add(key);
-                            return true;
-                        })
-                        .slice(0, 8)
-                        .map(c => ({
-                            id: c.id,
-                            name: c.name,
-                            job: c.job,
-                            department: c.department,
-                            picture: formatImageUrl(c.profile_path, "w185")
-                        }));
+                    reviewData.cast = extractTopCast(data.credits?.cast, 10);
+                    reviewData.crew = extractPrioritizedCrew(data.credits?.crew, 10);
                 }
             } catch (e) {
                 console.warn("Could not fetch credits on review create:", e.message);
@@ -220,6 +293,25 @@ app.put("/api/reviews/:id/poster", requireAdmin, (req, res) => {
     } catch (err) {
         console.error("Error updating poster:", err);
         res.status(500).json({ error: "Failed to update poster in database" });
+    }
+});
+
+// Update review backdrop (ADMIN ONLY)
+app.put("/api/reviews/:id/backdrop", requireAdmin, (req, res) => {
+    try {
+        const { backdropUrl } = req.body;
+        if (!backdropUrl) {
+            return res.status(400).json({ error: "backdropUrl is required" });
+        }
+
+        const updated = dbService.updateReviewBackdrop(req.params.id, backdropUrl);
+        if (!updated) {
+            return res.status(404).json({ error: "Review not found" });
+        }
+        res.json(updated);
+    } catch (err) {
+        console.error("Error updating backdrop:", err);
+        res.status(500).json({ error: "Failed to update backdrop in database" });
     }
 });
 
@@ -371,41 +463,8 @@ app.get("/api/movies/:id", async (req, res) => {
             person => person.job === "Director" && person.department === "Directing"
         );
 
-        const cast = (data.credits?.cast || [])
-            .slice(0, 10)
-            .map(c => ({
-                id: c.id,
-                name: c.name,
-                character: c.character,
-                picture: formatImageUrl(c.profile_path, "w185")
-            }));
-
-        const KEY_CREW_JOBS = [
-            "Director",
-            "Director of Photography",
-            "Original Music Composer",
-            "Screenplay",
-            "Writer",
-            "Editor",
-            "Producer"
-        ];
-        const seenCrew = new Set();
-        const crew = (data.credits?.crew || [])
-            .filter(c => KEY_CREW_JOBS.includes(c.job))
-            .filter(c => {
-                const key = `${c.id}-${c.job}`;
-                if (seenCrew.has(key)) return false;
-                seenCrew.add(key);
-                return true;
-            })
-            .slice(0, 8)
-            .map(c => ({
-                id: c.id,
-                name: c.name,
-                job: c.job,
-                department: c.department,
-                picture: formatImageUrl(c.profile_path, "w185")
-            }));
+        const cast = extractTopCast(data.credits?.cast, 10);
+        const crew = extractPrioritizedCrew(data.credits?.crew, 10);
 
         const movie = {
             id: data.id,
@@ -475,6 +534,49 @@ app.get("/api/movies/:id/posters", async (req, res) => {
     }
 });
 
+app.get("/api/movies/:id/backdrops", async (req, res) => {
+    const movieId = req.params.id;
+
+    try {
+        const response = await fetchTMDB(
+            `${TMDB_BASE_URL}/movie/${movieId}/images`
+        );
+
+        if (!response.ok) {
+            return res.status(response.status).json({
+                error: "Failed to fetch movie backdrops from TMDB"
+            });
+        }
+
+        const data = await response.json();
+
+        const backdrops = (data.backdrops || [])
+            .map(b => ({
+                filePath: b.file_path,
+                url: formatImageUrl(b.file_path, "w1280"),
+                originalUrl: formatImageUrl(b.file_path, "original"),
+                width: b.width,
+                height: b.height,
+                aspectRatio: b.aspect_ratio,
+                language: b.iso_639_1,
+                voteCount: b.vote_count || 0,
+                voteAverage: b.vote_average || 0
+            }))
+            .sort((a, b) => b.voteCount - a.voteCount);
+
+        res.json({
+            movieId: Number(movieId),
+            totalBackdrops: backdrops.length,
+            backdrops
+        });
+    } catch (error) {
+        console.error("TMDB Backdrops Error:", error);
+        res.status(500).json({
+            error: "Failed to fetch backdrops"
+        });
+    }
+});
+
 // Serve frontend build in production if available
 const frontendDist = path.join(__dirname, "../frontend/dist");
 if (fs.existsSync(frontendDist)) {
@@ -492,36 +594,13 @@ async function enrichReviewsWithCredits() {
     try {
         const reviews = dbService.getAllReviews();
         for (const review of reviews) {
-            if ((!review.cast || review.cast.length === 0) && review.tmdbId) {
+            if (review.tmdbId && (!review.cast || review.cast.length === 0 || !review.crew || review.crew.length < 10)) {
                 try {
                     const response = await fetchTMDB(`${TMDB_BASE_URL}/movie/${review.tmdbId}?append_to_response=credits`);
                     if (response && response.ok) {
                         const data = await response.json();
-                        const cast = (data.credits?.cast || []).slice(0, 10).map(c => ({
-                            id: c.id,
-                            name: c.name,
-                            character: c.character,
-                            picture: formatImageUrl(c.profile_path, "w185")
-                        }));
-
-                        const KEY_CREW_JOBS = ["Director", "Director of Photography", "Original Music Composer", "Screenplay", "Writer", "Editor", "Producer"];
-                        const seenCrew = new Set();
-                        const crew = (data.credits?.crew || [])
-                            .filter(c => KEY_CREW_JOBS.includes(c.job))
-                            .filter(c => {
-                                const key = `${c.id}-${c.job}`;
-                                if (seenCrew.has(key)) return false;
-                                seenCrew.add(key);
-                                return true;
-                            })
-                            .slice(0, 8)
-                            .map(c => ({
-                                id: c.id,
-                                name: c.name,
-                                job: c.job,
-                                department: c.department,
-                                picture: formatImageUrl(c.profile_path, "w185")
-                            }));
+                        const cast = extractTopCast(data.credits?.cast, 10);
+                        const crew = extractPrioritizedCrew(data.credits?.crew, 10);
 
                         dbService.updateReviewCredits(review.id, cast, crew);
                         console.log(`Auto-enriched cast and crew for: "${review.title}"`);

@@ -254,6 +254,12 @@ const updateReviewPoster = (id, newPosterUrl) => {
   return getReviewById(id);
 };
 
+const updateReviewBackdrop = (id, newBackdropUrl) => {
+  const now = Date.now();
+  db.prepare("UPDATE reviews SET backdrop = ?, updated_at = ? WHERE id = ?").run(newBackdropUrl, now, String(id));
+  return getReviewById(id);
+};
+
 const deleteReview = (id) => {
   const info = db.prepare("DELETE FROM reviews WHERE id = ?").run(String(id));
   return info.changes > 0;
@@ -303,6 +309,7 @@ module.exports = {
   createReview,
   updateReviewCredits,
   updateReviewPoster,
+  updateReviewBackdrop,
   deleteReview,
   verifyPasswordAndCreateSession,
   validateSessionToken,

@@ -76,7 +76,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                 <span>•</span>
                 <span>Dir. {review.director}</span>
               </div>
-              <h2 className="text-2xl sm:text-4xl font-poppins font-black text-white tracking-tight">
+              <h2 className="text-2xl sm:text-4xl font-poppins font-medium text-white tracking-tight">
                 {review.title}
               </h2>
             </div>
@@ -97,7 +97,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-[#ff5500]" />
-                  <span>Logged on <strong>{review.watchedDate}</strong></span>
+                  <span><strong>{review.watchedDate}</strong></span>
                 </div>
 
                 {/* Admin: Change Poster Shortcut */}
@@ -290,7 +290,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                       )}
                     </div>
 
-                    <h3 className="text-sm font-poppins font-black text-white leading-tight">
+                    <h3 className="text-sm font-poppins font-medium text-white leading-tight">
                       {review.title}
                     </h3>
                     <p className="text-[10px] text-[#ff7a29] font-mono mt-0.5">
