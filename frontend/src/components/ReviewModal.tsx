@@ -3,6 +3,7 @@ import { X, Star, Sparkles, Check, Calendar, Quote, Film, User } from "lucide-re
 import type { Review } from "../types";
 import { getBackdropUrl, getPosterUrl } from "../utils/images";
 import { PosterSelectorModal } from "./PosterSelectorModal";
+import { StarRating } from "./StarRating";
 
 interface ReviewModalProps {
   review: Review | null;
@@ -81,24 +82,8 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             </div>
 
             {/* Rating */}
-            <div className="flex items-center gap-2 bg-[#07080a]/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/[0.1] shadow-xl">
-              <div className="flex items-center gap-1">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-4 h-4 ${
-                      i < Math.floor(review.rating)
-                        ? "fill-[#ff5500] text-[#ff5500]"
-                        : i === Math.floor(review.rating) && review.rating % 1 !== 0
-                        ? "fill-[#ff5500]/50 text-[#ff5500]"
-                        : "text-zinc-600"
-                    }`}
-                  />
-                ))}
-              </div>
-              <span className="text-sm font-bold text-white font-mono ml-1">
-                {review.rating.toFixed(1)}
-              </span>
+            <div className="flex items-center bg-[#07080a]/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/[0.1] shadow-xl">
+              <StarRating rating={review.rating} readonly size="md" />
             </div>
           </div>
         </div>

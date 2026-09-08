@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Calendar, Film, Star, Loader2, Sparkles, ChevronRight } from "lucide-react";
+import { Calendar, Film, Star, Loader2, ChevronRight } from "lucide-react";
 import type { UpcomingMovie } from "../types";
 
 interface UpcomingMoviesSidebarProps {
@@ -61,9 +61,8 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
           </h3>
         </div>
 
-        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#ff5500]/10 border border-[#ff5500]/25 text-[10px] font-mono text-[#ff7a29]">
-          <Sparkles className="w-2.5 h-2.5 text-[#ff5500]" />
-          <span>Monthly Sync</span>
+        <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-[10px] font-mono text-zinc-400">
+          Theatrical & OTT
         </span>
       </div>
 
@@ -147,7 +146,7 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
 
       {/* Footer Info */}
       <div className="pt-2 border-t border-white/[0.06] text-[11px] font-mono text-zinc-500 text-center">
-        <span>Auto-updated monthly via TMDB API</span>
+        <span>Curated schedule for {monthName || "this month"}</span>
       </div>
 
     </aside>

@@ -2,32 +2,39 @@ import { useState, useEffect } from "react";
 import type { Review } from "./types";
 import { RetroTalksPage } from "./pages/RetroTalksPage";
 import { AdminPage } from "./pages/AdminPage";
+import { ReviewPage } from "./pages/ReviewPage";
 import { INITIAL_REVIEWS } from "./data/sampleReviews";
 
 const STORAGE_KEY = "the_retro_talks_personal_reviews";
 const ADMIN_TOKEN_KEY = "the_retro_talks_admin_token";
 
-type Page = "home" | "admin";
+type Page = "home" | "admin" | "review";
 
-function getInitialPage(): Page {
-  if (typeof window !== "undefined") {
-    const path = window.location.pathname;
-    const hash = window.location.hash;
-    if (
-      path === "/admin" ||
-      path.startsWith("/admin") ||
-      hash === "#admin" ||
-      hash.includes("admin")
-    ) {
-      return "admin";
-    }
+interface RouteState {
+  page: Page;
+  reviewId: string | null;
+}
+
+function parseCurrentRoute(): RouteState {
+  if (typeof window === "undefined") return { page: "home", reviewId: null };
+  const path = window.location.pathname;
+  const hash = window.location.hash;
+
+  if (path === "/admin" || path.startsWith("/admin") || hash.includes("admin")) {
+    return { page: "admin", reviewId: null };
   }
-  return "home";
+
+  const reviewMatch = path.match(/^\/review\/([^/]+)/) || hash.match(/#\/?review\/([^/]+)/);
+  if (reviewMatch) {
+    return { page: "review", reviewId: decodeURIComponent(reviewMatch[1]) };
+  }
+
+  return { page: "home", reviewId: null };
 }
 
 function App() {
-  // Page Routing State: "home" vs "admin"
-  const [currentPage, setCurrentPage] = useState<Page>(getInitialPage);
+  // Page Routing State: "home" vs "admin" vs "review"
+  const [route, setRoute] = useState<RouteState>(parseCurrentRoute);
 
   // Admin Authentication State
   const [adminToken, setAdminToken] = useState<string | null>(() => {
@@ -100,18 +107,7 @@ function App() {
   // Sync browser back/forward history navigation
   useEffect(() => {
     const handlePopState = () => {
-      const path = window.location.pathname;
-      const hash = window.location.hash;
-      if (
-        path === "/admin" ||
-        path.startsWith("/admin") ||
-        hash === "#admin" ||
-        hash.includes("admin")
-      ) {
-        setCurrentPage("admin");
-      } else {
-        setCurrentPage("home");
-      }
+      setRoute(parseCurrentRoute());
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -123,14 +119,20 @@ function App() {
   }, []);
 
   const navigateToHome = () => {
-    setCurrentPage("home");
+    setRoute({ page: "home", reviewId: null });
     window.history.pushState({}, "", "/");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const navigateToAdmin = () => {
-    setCurrentPage("admin");
+    setRoute({ page: "admin", reviewId: null });
     window.history.pushState({}, "", "/admin");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const navigateToReview = (id: string | number) => {
+    setRoute({ page: "review", reviewId: String(id) });
+    window.history.pushState({}, "", `/review/${id}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -243,7 +245,7 @@ function App() {
   };
 
   // 1. Admin Page (only accessible at /admin or via secret shortcut)
-  if (currentPage === "admin") {
+  if (route.page === "admin") {
     return (
       <AdminPage
         reviews={reviews}
@@ -258,10 +260,23 @@ function App() {
     );
   }
 
-  // 2. Primary Home Page: The Retro Talks (strictly public, zero admin hints)
+  // 2. Standalone Dedicated Review Page (Letterboxd-style banner & critique)
+  if (route.page === "review" && route.reviewId) {
+    const matchedReview = reviews.find((r) => String(r.id) === String(route.reviewId));
+    return (
+      <ReviewPage
+        reviewId={route.reviewId}
+        initialReview={matchedReview}
+        onNavigateHome={navigateToHome}
+      />
+    );
+  }
+
+  // 3. Primary Home Page: The Retro Talks
   return (
     <RetroTalksPage
       reviews={reviews}
+      onOpenReview={navigateToReview}
     />
   );
 }

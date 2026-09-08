@@ -1,26 +1,25 @@
 import React, { useState, useEffect } from "react";
 import {
-  Film,
   Star,
   Heart,
   User,
-  Sparkles,
+  Film,
 } from "lucide-react";
 import type { Movie, Review, UpcomingMovie } from "../types";
 import { ReviewCard } from "../components/ReviewCard";
-import { ReviewModal } from "../components/ReviewModal";
 import { MovieModal } from "../components/MovieModal";
 import { AboutModal } from "../components/AboutModal";
 import { UpcomingMoviesSidebar } from "../components/UpcomingMoviesSidebar";
 
 interface RetroTalksPageProps {
   reviews: Review[];
+  onOpenReview: (id: string | number) => void;
 }
 
 export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
   reviews,
+  onOpenReview,
 }) => {
-  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [activeFilter, setActiveFilter] = useState<"all" | "favorites" | "top">("all");
@@ -37,116 +36,83 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
     return true;
   });
 
-  const totalWatched = reviews.length;
-  const avgRating =
-    totalWatched > 0
-      ? (reviews.reduce((acc, r) => acc + r.rating, 0) / totalWatched).toFixed(1)
-      : "0.0";
-  const favoritesCount = reviews.filter((r) => r.isFavorite).length;
-
   return (
     <div className="min-h-screen bg-[#07080a] text-[#ededed] flex flex-col font-poppins selection:bg-[#ff5500] selection:text-black">
       
-      {/* Sticky Full-Width Header */}
+      {/* Top Header */}
       <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#07080a]/90 backdrop-blur-xl transition-all">
-        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 h-20 flex items-center justify-between">
+        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 h-18 flex items-center justify-between">
           
-          {/* Logo: 'The' on top, 'Retro Talks' on bottom */}
-          <div className="flex flex-col select-none cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-            <span className="text-[10px] font-semibold tracking-[0.3em] uppercase text-[#ff5500] leading-none mb-1">
+          {/* Logo */}
+          <div
+            className="flex flex-col select-none cursor-pointer"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          >
+            <span className="text-[10px] font-semibold tracking-[0.25em] uppercase text-[#ff5500] leading-none mb-1">
               The
             </span>
-            <span className="text-xl sm:text-2xl font-extrabold tracking-tight text-white leading-none font-poppins">
+            <span className="text-xl sm:text-2xl font-black tracking-tight text-white leading-none font-poppins">
               Retro Talks
             </span>
           </div>
 
           {/* Right Navigation */}
           <div className="flex items-center gap-3">
-            
-            {/* Review Count Badge */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs text-zinc-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ff5500]" />
-              <span className="text-white font-medium">{reviews.length}</span>
-              <span className="hidden sm:inline text-zinc-500">Reviews Logged</span>
-            </div>
+            <span className="text-xs font-mono text-zinc-400 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+              {reviews.length} {reviews.length === 1 ? "Review" : "Reviews"}
+            </span>
 
-            {/* About Me Button (Opens Modal Card) */}
             <button
               onClick={() => setShowAboutModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-[#ff5500]/40 text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer shadow-sm active:scale-95"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.2] text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
             >
               <User className="w-3.5 h-3.5 text-[#ff5500]" />
-              <span>About Me</span>
+              <span>About</span>
             </button>
-
           </div>
 
         </div>
       </header>
 
       {/* Hero Header */}
-      <section className="pt-10 pb-6 px-4 sm:px-6 lg:px-10 max-w-4xl mx-auto w-full text-center">
-        <div className="space-y-4">
-          
-          <div className="flex flex-col items-center justify-center">
-            <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#ff5500] mb-1">
-              Personal Cinema Diary
-            </span>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white uppercase font-poppins">
-              THE RETRO TALKS
-            </h1>
-          </div>
-
-          <p className="text-xs sm:text-sm text-zinc-400 max-w-lg mx-auto font-normal">
-            Personal film diary, reflections, and movie critique archive by Vishakhan Pillai V P.
-          </p>
-
-          {/* Quick Stats Strip */}
-          <div className="pt-4 flex items-center justify-center gap-3 sm:gap-6 text-xs text-zinc-400">
-            <div className="flex items-center gap-1.5 bg-[#0e1117] px-3.5 py-1.5 rounded-full border border-white/[0.06]">
-              <Film className="w-3.5 h-3.5 text-[#ff5500]" />
-              <span className="font-semibold text-white">{totalWatched}</span>
-              <span className="text-zinc-500 font-mono">Films Logged</span>
-            </div>
-
-            <div className="flex items-center gap-1.5 bg-[#0e1117] px-3.5 py-1.5 rounded-full border border-white/[0.06]">
-              <Star className="w-3.5 h-3.5 fill-[#ff5500] text-[#ff5500]" />
-              <span className="font-semibold text-white">{avgRating}</span>
-              <span className="text-zinc-500 font-mono">Avg Score</span>
-            </div>
-
-            <div className="flex items-center gap-1.5 bg-[#0e1117] px-3.5 py-1.5 rounded-full border border-white/[0.06]">
-              <Heart className="w-3.5 h-3.5 fill-[#ff5500] text-[#ff5500]" />
-              <span className="font-semibold text-white">{favoritesCount}</span>
-              <span className="text-zinc-500 font-mono">Favorites</span>
-            </div>
-          </div>
-
+      <section className="pt-14 pb-10 px-4 sm:px-6 lg:px-10 max-w-4xl mx-auto w-full text-center space-y-4">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] font-mono tracking-widest uppercase text-zinc-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#ff5500]" />
+          <span>Cinema Reflections & Film Archive</span>
         </div>
+
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-white font-poppins">
+          The Retro Talks
+        </h1>
+
+        <p className="text-sm sm:text-base text-zinc-400 max-w-xl mx-auto font-normal leading-relaxed">
+          A personal film diary documenting cinema reflections, character studies, and honest critique by Vishakhan Pillai V P.
+        </p>
       </section>
 
-      {/* Main Full-Width Content: 2-Column Responsive Layout */}
+      {/* Main Content: 2-Column Layout */}
       <main className="flex-grow w-full px-4 sm:px-6 lg:px-10 xl:px-14 py-6">
-        
         <div className="flex flex-col lg:flex-row gap-8 xl:gap-10 items-start">
           
-          {/* Left Column: Reviews Gallery (Takes the full primary width) */}
+          {/* Left Column: Widened Reviews List */}
           <div className="flex-grow min-w-0 w-full space-y-6">
             
             {/* Filter Bar */}
-            <div className="flex items-center justify-between gap-4 pb-3 border-b border-white/[0.06]">
-              <h2 className="text-sm font-medium text-zinc-300">
-                Personal Reviews <span className="text-zinc-500">({filteredReviews.length})</span>
-              </h2>
+            <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+                  Reviews
+                </h2>
+                <span className="text-xs font-mono text-zinc-600">({filteredReviews.length})</span>
+              </div>
 
               {/* Filter Pills */}
-              <div className="flex items-center gap-1 bg-[#0e1117] p-1 rounded-lg border border-white/[0.06]">
+              <div className="flex items-center gap-1 bg-[#0b0d13] p-1 rounded-xl border border-white/[0.06]">
                 <button
                   onClick={() => setActiveFilter("all")}
-                  className={`px-3 py-1 text-xs rounded-md transition-all cursor-pointer ${
+                  className={`px-3.5 py-1 text-xs rounded-lg font-mono transition-all cursor-pointer ${
                     activeFilter === "all"
-                      ? "bg-[#ff5500] text-black font-semibold"
+                      ? "bg-[#ff5500] text-black font-semibold shadow-sm"
                       : "text-zinc-400 hover:text-white"
                   }`}
                 >
@@ -155,9 +121,9 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
 
                 <button
                   onClick={() => setActiveFilter("favorites")}
-                  className={`flex items-center gap-1 px-3 py-1 text-xs rounded-md transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1 text-xs rounded-lg font-mono transition-all cursor-pointer ${
                     activeFilter === "favorites"
-                      ? "bg-[#ff5500] text-black font-semibold"
+                      ? "bg-[#ff5500] text-black font-semibold shadow-sm"
                       : "text-zinc-400 hover:text-white"
                   }`}
                 >
@@ -167,9 +133,9 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
 
                 <button
                   onClick={() => setActiveFilter("top")}
-                  className={`flex items-center gap-1 px-3 py-1 text-xs rounded-md transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1 text-xs rounded-lg font-mono transition-all cursor-pointer ${
                     activeFilter === "top"
-                      ? "bg-[#ff5500] text-black font-semibold"
+                      ? "bg-[#ff5500] text-black font-semibold shadow-sm"
                       : "text-zinc-400 hover:text-white"
                   }`}
                 >
@@ -179,24 +145,24 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
               </div>
             </div>
 
-            {/* Expansive Wider Reviews Grid */}
+            {/* Widened Reviews Card List */}
             {filteredReviews.length > 0 ? (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div className="space-y-6 sm:space-y-8">
                 {filteredReviews.map((rev) => (
                   <ReviewCard
                     key={rev.id}
                     review={rev}
-                    onOpenReview={(r) => setSelectedReview(r)}
+                    onOpenReview={() => onOpenReview(rev.id)}
                     isAdmin={false}
                   />
                 ))}
               </div>
             ) : (
               <div className="text-center py-20 bg-[#090b0e] border border-white/[0.06] rounded-3xl p-8 max-w-md mx-auto">
-                <Sparkles className="w-8 h-8 text-[#ff5500] mx-auto mb-3" />
+                <Film className="w-6 h-6 text-zinc-600 mx-auto mb-3" />
                 <h3 className="text-base font-poppins font-bold text-white">No reviews in this category</h3>
                 <p className="text-xs text-zinc-400 mt-1">
-                  Check back soon for new movie reviews.
+                  Check back soon for new reflections.
                 </p>
               </div>
             )}
@@ -221,28 +187,23 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
           </div>
 
         </div>
-
       </main>
 
-      {/* Footer (Full Width, strictly visitor-facing) */}
-      <footer className="border-t border-white/[0.08] bg-[#050608] py-8 text-center text-xs text-zinc-500">
+      {/* Footer */}
+      <footer className="border-t border-white/[0.08] bg-[#050608] py-8 text-xs text-zinc-500 font-mono">
         <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#ff5500]" />
-            <span className="text-zinc-300 font-bold font-poppins">The Retro Talks</span>
-          </div>
+          <span>The Retro Talks · Curated by Vishakhan Pillai V P</span>
 
+          <button
+            onClick={() => setShowAboutModal(true)}
+            className="text-zinc-400 hover:text-white transition-colors cursor-pointer"
+          >
+            About Vishakhan
+          </button>
         </div>
       </footer>
 
-      {/* Review Modal (Public Reader Only) */}
-      <ReviewModal
-        review={selectedReview}
-        onClose={() => setSelectedReview(null)}
-        isAdmin={false}
-      />
-
-      {/* Upcoming Movie Preview Modal (Public Reader Only) */}
+      {/* Upcoming Movie Preview Modal */}
       {selectedMovie && (
         <MovieModal
           movie={selectedMovie}
