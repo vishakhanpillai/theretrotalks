@@ -70,13 +70,18 @@
 }
 
 /* Custom Oppenheimer Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #252830 transparent;
+}
+
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #08090b;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {

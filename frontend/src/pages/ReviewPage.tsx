@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { ArrowLeft, Heart, User, Film, Image as ImageIcon } from "lucide-react";
 import type { Review } from "../types";
 import { getBackdropUrl, getPosterUrl } from "../utils/images";
@@ -30,6 +30,36 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
   const [showPosterModal, setShowPosterModal] = useState<boolean>(false);
   const [showBackdropModal, setShowBackdropModal] = useState<boolean>(false);
   const [posterError, setPosterError] = useState<boolean>(false);
+  const [creditsTab, setCreditsTab] = useState<'cast' | 'crew'>('cast');
+  const [headerOpacity, setHeaderOpacity] = useState<number>(0);
+  const headerRef = useRef<HTMLDivElement>(null);
+
+  // Progressive scroll interpolation for an ultra-smooth, barely noticeable fade
+  useEffect(() => {
+    const handleScroll = () => {
+      if (headerRef.current) {
+        const rect = headerRef.current.getBoundingClientRect();
+        const stickPoint = 64; // Sticky at top-16 (64px)
+        const fadeStart = 134; // Begin gradual fade 70px before sticking
+        
+        let target = 0;
+        if (rect.top <= stickPoint) {
+          target = 1;
+        } else if (rect.top >= fadeStart) {
+          target = 0;
+        } else {
+          // Smooth progressive opacity directly linked to user's scroll speed
+          target = Math.round(((fadeStart - rect.top) / (fadeStart - stickPoint)) * 100) / 100;
+        }
+
+        setHeaderOpacity((prev) => (prev !== target ? target : prev));
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [loading]);
 
   // Scroll to top on load
   useEffect(() => {
@@ -188,15 +218,15 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
       </section>
 
       {/* Main Content Area: Spans the full page width like the Home Page, positioned nicely over the backdrop */}
-      <main className="relative z-10 w-full px-4 sm:px-6 lg:px-10 xl:px-14 -mt-44 sm:-mt-60 md:-mt-76 lg:-mt-92 pb-20 flex-grow">
+      <main className="relative z-10 w-full px-4 sm:px-6 lg:px-10 xl:px-14 -mt-24 sm:-mt-36 md:-mt-48 lg:-mt-60 pb-20 flex-grow">
         
-        {/* Full-width Responsive Two-Column Layout */}
-        <div className="flex flex-col lg:flex-row gap-8 xl:gap-12 items-start">
+        {/* Full-width Responsive 3-Column Layout */}
+        <div className="flex flex-col lg:flex-row gap-8 xl:gap-10 items-start">
           
           {/* ======================================================== */}
-          {/* LEFT SIDEBAR: Poster, Metadata, Cast List, Crew List     */}
+          {/* LEFT SIDEBAR: Poster & Metadata (Sticky)                 */}
           {/* ======================================================== */}
-          <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 space-y-6">
+          <div className="w-full lg:w-64 xl:w-72 flex-shrink-0 space-y-5 lg:sticky lg:top-20">
             
             {/* The Poster */}
             <div className="relative group">
@@ -220,7 +250,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
               {isAdmin && review.tmdbId && (
                 <button
                   onClick={() => setShowPosterModal(true)}
-                  className="mt-2.5 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#0b0d12] hover:bg-[#ff5500] hover:text-black border border-white/[0.08] hover:border-[#ff5500] text-xs font-mono text-zinc-300 transition-all cursor-pointer"
+                  className="mt-2.5 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#0b0d12] hover:bg-[#ff5500] hover:text-black border border-white/[0.08] hover:border-[#ff5500] text-xs font-mono text-zinc-300 transition-all cursor-pointer shadow-md"
                   title="Change poster artwork from TMDB"
                 >
                   <Film className="w-3.5 h-3.5" />
@@ -230,7 +260,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
             </div>
 
             {/* Quick Metadata Box */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-[#0b0d12] border border-white/[0.06] space-y-3 text-xs text-zinc-400 font-mono">
+            <div className="p-4 sm:p-5 rounded-2xl bg-[#0b0d12] border border-white/[0.06] space-y-3 text-xs text-zinc-400 font-mono shadow-xl">
               <div className="flex items-center justify-between pb-2.5 border-b border-white/[0.06]">
                 <span className="text-zinc-500">Watched</span>
                 <span className="text-zinc-200 font-medium">{review.watchedDate}</span>
@@ -266,148 +296,212 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
               )}
             </div>
 
-            {/* Main 10 Cast List (Left Side) */}
-            {castList.length > 0 && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-[#0b0d12] border border-white/[0.06] space-y-3 font-poppins">
-                <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-                  <h3 className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold">
-                    Cast
-                  </h3>
-                  <span className="text-[10px] font-mono text-zinc-600">Main Cast</span>
-                </div>
-
-                <div className="space-y-2">
-                  {castList.slice(0, 10).map((member) => (
-                    <div
-                      key={member.id}
-                      className="flex items-center gap-3 p-2 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-transparent hover:border-white/[0.06] transition-colors"
-                    >
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-[#181c24] flex-shrink-0 border border-white/[0.1] shadow-sm">
-                        {member.picture ? (
-                          <img
-                            src={member.picture}
-                            alt={member.name}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-zinc-600 bg-[#151922]">
-                            <User className="w-4 h-4" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-grow">
-                        <p className="text-xs font-semibold text-white truncate leading-tight">
-                          {member.name}
-                        </p>
-                        <p className="text-[11px] text-zinc-400 font-mono truncate leading-tight mt-0.5">
-                          {member.character || "Actor"}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Main 10 Prioritized Crew List (Left Side) */}
-            {crewList.length > 0 && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-[#0b0d12] border border-white/[0.06] space-y-3 font-poppins">
-                <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-                  <h3 className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold">
-                    Crew
-                  </h3>
-                  <span className="text-[10px] font-mono text-[#ff7a29]">Key Creative</span>
-                </div>
-
-                <div className="space-y-2">
-                  {crewList.slice(0, 10).map((member, idx) => (
-                    <div
-                      key={`${member.id}-${idx}`}
-                      className="flex items-center gap-3 p-2 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-transparent hover:border-white/[0.06] transition-colors"
-                    >
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-[#181c24] flex-shrink-0 border border-white/[0.1] shadow-sm">
-                        {member.picture ? (
-                          <img
-                            src={member.picture}
-                            alt={member.name}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-zinc-600 bg-[#151922]">
-                            <User className="w-4 h-4" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-grow">
-                        <p className="text-xs font-semibold text-white truncate leading-tight">
-                          {member.name}
-                        </p>
-                        <p className="text-[11px] text-[#ff7a29] font-mono truncate leading-tight mt-0.5">
-                          {member.job}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
           </div>
 
           {/* ======================================================== */}
-          {/* RIGHT MAIN SECTION: Title, Rating, Written Critique       */}
+          {/* CENTER MAIN SECTION: Sticky Review Header & Critique     */}
           {/* ======================================================== */}
-          <div className="flex-grow min-w-0 w-full space-y-7 pt-1 sm:pt-2 lg:pt-3">
+          <div className="flex-grow min-w-0 w-full space-y-5 pt-1 sm:pt-2 lg:pt-3">
             
-            {/* Title & Metadata */}
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <div className="flex items-baseline gap-3 flex-wrap">
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium font-poppins text-white tracking-tight leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-                    {review.title}
-                  </h1>
-                  {review.year && (
-                    <span className="text-xl sm:text-2xl md:text-3xl font-mono text-zinc-300 font-normal drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
-                      {review.year}
+            {/* Sticky Review Header: Movie Title, Year, Director, Rating, Byline & Date */}
+            <div
+              ref={headerRef}
+              className="sticky top-16 z-20 -mx-4 px-4 sm:-mx-6 sm:px-6"
+            >
+              {/* Top fill bridging to navbar */}
+              <div
+                className="absolute -top-16 inset-x-0 h-16 bg-[#07080a] pointer-events-none"
+                style={{ opacity: headerOpacity }}
+              />
+
+              {/* Solid background mask matching page color */}
+              <div
+                className="absolute inset-0 bg-[#07080a] pointer-events-none"
+                style={{ opacity: headerOpacity }}
+              />
+
+              {/* Feather-soft multi-stop bottom fade gradient (barely noticeable, optical dissolve) */}
+              <div
+                className="absolute -bottom-10 sm:-bottom-12 inset-x-0 h-10 sm:h-12 bg-gradient-to-b from-[#07080a] via-[#07080a]/75 via-[#07080a]/25 to-transparent pointer-events-none"
+                style={{ opacity: headerOpacity }}
+              />
+
+              {/* Header Content with constant padding and smooth transitions */}
+              <div className="relative z-10 py-3 space-y-3">
+                {/* Movie Title & Year */}
+                <div className="space-y-1">
+                  <div className="flex items-baseline gap-3 flex-wrap">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium font-poppins text-white tracking-tight leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                      {review.title}
+                    </h1>
+                    {review.year && (
+                      <span className="text-xl sm:text-2xl md:text-3xl font-mono text-zinc-300 font-normal drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+                        {review.year}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Directed by */}
+                  <p className="text-sm sm:text-base md:text-lg text-zinc-200 font-normal drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+                    Directed by <strong className="text-white font-medium drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">{review.director}</strong>
+                  </p>
+                </div>
+
+                {/* Star Rating & Favorite (Same position as older one) */}
+                <div className="flex items-center gap-3 pt-1">
+                  <StarRating
+                    rating={review.rating}
+                    readonly
+                    size="md"
+                    valueClassName="text-base sm:text-lg min-w-[3.5rem]"
+                  />
+
+                  {review.isFavorite && (
+                    <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#ff5500]/15 text-[#ff7a29] border border-[#ff5500]/30 text-xs font-mono ml-2 shadow-sm">
+                      <Heart className="w-3.5 h-3.5 fill-[#ff5500]" />
+                      <span>Favorite</span>
                     </span>
                   )}
                 </div>
 
-                <p className="text-sm sm:text-base md:text-lg text-zinc-200 font-normal drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
-                  Directed by <strong className="text-white font-medium drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">{review.director}</strong>
-                </p>
-              </div>
-
-              {/* Star Rating & Favorite */}
-              <div className="flex items-center gap-3 pt-1">
-                <StarRating rating={review.rating} readonly size="md" />
-
-                {review.isFavorite && (
-                  <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#ff5500]/15 text-[#ff7a29] border border-[#ff5500]/30 text-xs font-mono ml-2 shadow-sm">
-                    <Heart className="w-3.5 h-3.5 fill-[#ff5500]" />
-                    <span>Favorite</span>
-                  </span>
-                )}
+                {/* Review by Vishakhan Pillai V P · Date */}
+                <div className="flex items-center justify-between text-xs sm:text-sm text-zinc-300 font-mono drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] pt-3 border-t border-white/[0.08]">
+                  <span>Review by Vishakhan Pillai V P</span>
+                  <span>{review.watchedDate}</span>
+                </div>
               </div>
             </div>
 
             {/* The Review Critique Essay */}
-            <div className="space-y-4 pt-4 border-t border-white/[0.08]">
-              <div className="flex items-center justify-between text-xs sm:text-sm text-zinc-300 font-mono drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
-                <span>Review by Vishakhan Pillai V P</span>
-                <span>{review.watchedDate}</span>
-              </div>
-
-              <div className="text-base sm:text-lg text-zinc-200 font-normal leading-[1.9] whitespace-pre-line text-justify font-poppins selection:bg-[#ff5500] selection:text-black pt-2 max-w-5xl">
+            <div className="pt-2">
+              <div className="text-base sm:text-lg text-zinc-200 font-normal leading-[1.9] whitespace-pre-line text-justify font-poppins selection:bg-[#ff5500] selection:text-black w-full">
                 {review.review}
               </div>
             </div>
 
           </div>
+
+          {/* ======================================================== */}
+          {/* RIGHT SIDEBAR: Cast & Crew Single Box with Filter Tabs   */}
+          {/* ======================================================== */}
+          {(castList.length > 0 || crewList.length > 0) && (
+            <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 lg:sticky lg:top-20 mt-24 sm:mt-36 md:mt-48 lg:mt-60">
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#0b0d12] border border-white/[0.06] space-y-4 font-poppins shadow-xl">
+                
+                {/* Editorial Hairline Tabs: Cast / Crew */}
+                <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+                  <div className="flex items-center gap-7">
+                    <button
+                      type="button"
+                      onClick={() => setCreditsTab("cast")}
+                      className={`relative pb-1 text-xs uppercase tracking-[0.2em] font-mono transition-colors cursor-pointer ${
+                        creditsTab === "cast"
+                          ? "text-white font-semibold"
+                          : "text-zinc-500 hover:text-zinc-300 font-normal"
+                      }`}
+                    >
+                      Cast
+                      {creditsTab === "cast" && (
+                        <span className="absolute -bottom-3 inset-x-0 h-[2px] bg-[#ff5500] rounded-full shadow-[0_0_8px_rgba(255,85,0,0.6)]" />
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCreditsTab("crew")}
+                      className={`relative pb-1 text-xs uppercase tracking-[0.2em] font-mono transition-colors cursor-pointer ${
+                        creditsTab === "crew"
+                          ? "text-white font-semibold"
+                          : "text-zinc-500 hover:text-zinc-300 font-normal"
+                      }`}
+                    >
+                      Crew
+                      {creditsTab === "crew" && (
+                        <span className="absolute -bottom-3 inset-x-0 h-[2px] bg-[#ff5500] rounded-full shadow-[0_0_8px_rgba(255,85,0,0.6)]" />
+                      )}
+                    </button>
+                  </div>
+
+                  <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-zinc-500">
+                    Credits
+                  </span>
+                </div>
+
+                {/* Cast List (when creditsTab === 'cast') */}
+                {creditsTab === "cast" && castList.length > 0 && (
+                  <div className="space-y-2">
+                    {castList.slice(0, 10).map((member) => (
+                      <div
+                        key={member.id}
+                        className="flex items-center gap-3 p-2 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-transparent hover:border-white/[0.06] transition-colors"
+                      >
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-[#181c24] flex-shrink-0 border border-white/[0.1] shadow-sm">
+                          {member.picture ? (
+                            <img
+                              src={member.picture}
+                              alt={member.name}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-zinc-600 bg-[#151922]">
+                              <User className="w-4 h-4" />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-grow">
+                          <p className="text-xs font-semibold text-white truncate leading-tight">
+                            {member.name}
+                          </p>
+                          <p className="text-[11px] text-zinc-400 font-mono truncate leading-tight mt-0.5">
+                            {member.character || "Actor"}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Crew List (when creditsTab === 'crew') */}
+                {creditsTab === "crew" && crewList.length > 0 && (
+                  <div className="space-y-2">
+                    {crewList.slice(0, 10).map((member, idx) => (
+                      <div
+                        key={`${member.id}-${idx}`}
+                        className="flex items-center gap-3 p-2 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-transparent hover:border-white/[0.06] transition-colors"
+                      >
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-[#181c24] flex-shrink-0 border border-white/[0.1] shadow-sm">
+                          {member.picture ? (
+                            <img
+                              src={member.picture}
+                              alt={member.name}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-zinc-600 bg-[#151922]">
+                              <User className="w-4 h-4" />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-grow">
+                          <p className="text-xs font-semibold text-white truncate leading-tight">
+                            {member.name}
+                          </p>
+                          <p className="text-[11px] text-zinc-400 font-mono truncate leading-tight mt-0.5">
+                            {member.job}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+              </div>
+            </div>
+          )}
 
         </div>
 

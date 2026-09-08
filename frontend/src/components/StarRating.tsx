@@ -7,6 +7,7 @@ export interface StarRatingProps {
   readonly?: boolean;
   size?: "xs" | "sm" | "md" | "lg";
   showValue?: boolean;
+  valueClassName?: string;
 }
 
 export const StarRating: React.FC<StarRatingProps> = ({
@@ -15,6 +16,7 @@ export const StarRating: React.FC<StarRatingProps> = ({
   readonly = false,
   size = "md",
   showValue = true,
+  valueClassName,
 }) => {
   const [hoverRating, setHoverRating] = useState<number | null>(null);
 
@@ -23,6 +25,20 @@ export const StarRating: React.FC<StarRatingProps> = ({
     sm: "w-3.5 h-3.5",
     md: "w-4 h-4 sm:w-5 sm:h-5",
     lg: "w-6 h-6",
+  };
+
+  const valueSizes = {
+    xs: "text-[11px] min-w-[2rem]",
+    sm: "text-xs min-w-[2.25rem]",
+    md: "text-sm sm:text-base min-w-[3rem]",
+    lg: "text-base sm:text-lg min-w-[3.5rem]",
+  };
+
+  const maxValSizes = {
+    xs: "text-[9px]",
+    sm: "text-[10px]",
+    md: "text-xs sm:text-sm",
+    lg: "text-sm sm:text-base",
   };
 
   const current = hoverRating !== null ? hoverRating : rating;
@@ -114,10 +130,20 @@ export const StarRating: React.FC<StarRatingProps> = ({
       </div>
 
       {showValue && (
-        <span className="text-xs font-mono font-bold text-white ml-1.5 min-w-[2.5rem]">
-          {current > 0 ? `${current.toFixed(1)}` : "—"}
+        <span
+          className={`font-mono font-semibold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] ml-2 inline-flex items-baseline ${
+            valueClassName || valueSizes[size]
+          }`}
+        >
+          <span>{current > 0 ? `${current.toFixed(1)}` : "—"}</span>
           {size !== "xs" && size !== "sm" && current > 0 && (
-            <span className="text-zinc-600 font-normal text-[11px]"> / 5.0</span>
+            <span
+              className={`text-zinc-300 font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] ml-1 ${
+                maxValSizes[size]
+              }`}
+            >
+              / 5.0
+            </span>
           )}
         </span>
       )}
