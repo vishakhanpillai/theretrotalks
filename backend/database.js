@@ -41,6 +41,18 @@ db.exec(`
   );
 `);
 
+// Safely ensure cast and crew columns exist in reviews table
+try {
+  db.exec("ALTER TABLE reviews ADD COLUMN cast TEXT;");
+} catch (e) {
+  // column already exists
+}
+try {
+  db.exec("ALTER TABLE reviews ADD COLUMN crew TEXT;");
+} catch (e) {
+  // column already exists
+}
+
 // Strictly retrieve admin password from environment variable
 const getAdminPassword = () => {
   const password = process.env.ADMIN_PASSWORD;
@@ -164,6 +176,8 @@ const getAllReviews = () => {
     review: row.review,
     watchedDate: row.watched_date,
     isFavorite: Boolean(row.is_favorite),
+    cast: row.cast ? JSON.parse(row.cast) : [],
+    crew: row.crew ? JSON.parse(row.crew) : [],
     createdAt: row.created_at
   }));
 };
@@ -183,7 +197,9 @@ const getReviewById = (id) => {
     rating: row.rating,
     review: row.review,
     watchedDate: row.watched_date,
-    isFavorite: Boolean(row.is_favorite)
+    isFavorite: Boolean(row.is_favorite),
+    cast: row.cast ? JSON.parse(row.cast) : [],
+    crew: row.crew ? JSON.parse(row.crew) : []
   };
 };
 
@@ -191,10 +207,12 @@ const createReview = (reviewData) => {
   const id = reviewData.id || `rev-${Date.now()}`;
   const now = Date.now();
   const genresStr = JSON.stringify(reviewData.genres || []);
+  const castStr = JSON.stringify(reviewData.cast || []);
+  const crewStr = JSON.stringify(reviewData.crew || []);
 
   const stmt = db.prepare(`
-    INSERT INTO reviews (id, tmdb_id, title, year, poster, backdrop, director, genres, rating, review, watched_date, is_favorite, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO reviews (id, tmdb_id, title, year, poster, backdrop, director, genres, rating, review, watched_date, is_favorite, cast, crew, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   stmt.run(
@@ -210,10 +228,23 @@ const createReview = (reviewData) => {
     reviewData.review,
     reviewData.watchedDate || new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
     reviewData.isFavorite ? 1 : 0,
+    castStr,
+    crewStr,
     now,
     now
   );
 
+  return getReviewById(id);
+};
+
+const updateReviewCredits = (id, cast, crew) => {
+  const now = Date.now();
+  db.prepare("UPDATE reviews SET cast = ?, crew = ?, updated_at = ? WHERE id = ?").run(
+    JSON.stringify(cast || []),
+    JSON.stringify(crew || []),
+    now,
+    String(id)
+  );
   return getReviewById(id);
 };
 
@@ -270,6 +301,7 @@ module.exports = {
   getAllReviews,
   getReviewById,
   createReview,
+  updateReviewCredits,
   updateReviewPoster,
   deleteReview,
   verifyPasswordAndCreateSession,

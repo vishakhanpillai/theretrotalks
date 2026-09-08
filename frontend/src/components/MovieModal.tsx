@@ -9,9 +9,15 @@ interface MovieModalProps {
   movie: Movie | null;
   onClose: () => void;
   onSaveReview?: (newReview: Review) => void;
+  isAdmin?: boolean;
 }
 
-export const MovieModal: React.FC<MovieModalProps> = ({ movie, onClose, onSaveReview }) => {
+export const MovieModal: React.FC<MovieModalProps> = ({
+  movie,
+  onClose,
+  onSaveReview,
+  isAdmin = false,
+}) => {
   const [details, setDetails] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(false);
   const [posterError, setPosterError] = useState(false);
@@ -173,15 +179,17 @@ export const MovieModal: React.FC<MovieModalProps> = ({ movie, onClose, onSaveRe
                 )}
               </div>
 
-              {/* Change Poster Button */}
-              <button
-                type="button"
-                onClick={() => setShowPosterModal(true)}
-                className="mt-2.5 w-full py-2 px-2.5 rounded-xl bg-white/[0.04] hover:bg-[#ff5500]/15 text-zinc-300 hover:text-[#ff7a29] border border-white/[0.08] hover:border-[#ff5500]/30 text-xs font-mono flex items-center justify-center gap-1.5 transition-all cursor-pointer group shadow-sm"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-[#ff5500] group-hover:rotate-12 transition-transform" />
-                <span>Change Poster</span>
-              </button>
+              {/* Change Poster Button (Admin Only) */}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setShowPosterModal(true)}
+                  className="mt-2.5 w-full py-2 px-2.5 rounded-xl bg-white/[0.04] hover:bg-[#ff5500]/15 text-zinc-300 hover:text-[#ff7a29] border border-white/[0.08] hover:border-[#ff5500]/30 text-xs font-mono flex items-center justify-center gap-1.5 transition-all cursor-pointer group shadow-sm"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#ff5500] group-hover:rotate-12 transition-transform" />
+                  <span>Change Poster</span>
+                </button>
+              )}
             </div>
 
             {/* Details & Personal Review Form */}
@@ -221,98 +229,109 @@ export const MovieModal: React.FC<MovieModalProps> = ({ movie, onClose, onSaveRe
                 </p>
               </div>
 
-              {/* Personal Review Composer Form */}
-              <form onSubmit={handleSaveToDiary} className="p-5 rounded-2xl bg-[#0e1117] border border-white/[0.08] space-y-4 shadow-xl">
-                <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-                  <div className="flex items-center gap-2">
-                    <Bookmark className="w-4 h-4 text-[#ff5500]" />
-                    <span className="font-poppins font-bold text-xs uppercase tracking-wider text-white">
-                      My Review & Rating
-                    </span>
+              {/* Personal Review Composer Form (Admin Only) */}
+              {isAdmin && onSaveReview ? (
+                <form onSubmit={handleSaveToDiary} className="p-5 rounded-2xl bg-[#0e1117] border border-white/[0.08] space-y-4 shadow-xl">
+                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+                    <div className="flex items-center gap-2">
+                      <Bookmark className="w-4 h-4 text-[#ff5500]" />
+                      <span className="font-poppins font-bold text-xs uppercase tracking-wider text-white">
+                        My Review & Rating
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsFavorite(!isFavorite)}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-mono transition-all ${
+                        isFavorite
+                          ? "bg-[#ff5500]/20 border-[#ff5500]/40 text-[#ff5500]"
+                          : "bg-white/[0.02] border-white/[0.08] text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <Heart className={`w-3.5 h-3.5 ${isFavorite ? "fill-[#ff5500]" : ""}`} />
+                      <span>Favorite</span>
+                    </button>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setIsFavorite(!isFavorite)}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-mono transition-all ${
-                      isFavorite
-                        ? "bg-[#ff5500]/20 border-[#ff5500]/40 text-[#ff5500]"
-                        : "bg-white/[0.02] border-white/[0.08] text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    <Heart className={`w-3.5 h-3.5 ${isFavorite ? "fill-[#ff5500]" : ""}`} />
-                    <span>Favorite</span>
-                  </button>
-                </div>
+                  {/* Rating and Date Row */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 block mb-1">
+                        Your Rating
+                      </label>
+                      <StarRating rating={myRating} onChange={(r) => setMyRating(r)} size="md" />
+                    </div>
 
-                {/* Rating and Date Row */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 block mb-1">
-                      Your Rating
-                    </label>
-                    <StarRating rating={myRating} onChange={(r) => setMyRating(r)} size="md" />
+                    <div>
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 block mb-1">
+                        Watched Date
+                      </label>
+                      <input
+                        type="date"
+                        value={watchedDate}
+                        onChange={(e) => setWatchedDate(e.target.value)}
+                        className="bg-[#141820] border border-white/[0.08] text-xs font-mono text-zinc-200 px-3 py-1.5 rounded-lg focus:outline-none focus:border-[#ff5500]"
+                      />
+                    </div>
                   </div>
 
+                  {/* Review Textarea */}
                   <div>
-                    <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 block mb-1">
-                      Watched Date
-                    </label>
-                    <input
-                      type="date"
-                      value={watchedDate}
-                      onChange={(e) => setWatchedDate(e.target.value)}
-                      className="bg-[#141820] border border-white/[0.08] text-xs font-mono text-zinc-200 px-3 py-1.5 rounded-lg focus:outline-none focus:border-[#ff5500]"
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                        Personal Review Notes
+                      </label>
+                      <span className="text-[10px] font-mono text-zinc-500">
+                        {myReview.length} chars
+                      </span>
+                    </div>
+                    <textarea
+                      rows={3}
+                      placeholder="Write your personal thoughts, favorite moments, cinematography notes, or overall verdict..."
+                      value={myReview}
+                      onChange={(e) => setMyReview(e.target.value)}
+                      required
+                      className="w-full p-3 bg-[#141820] border border-white/[0.08] rounded-xl text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-[#ff5500] font-poppins resize-none"
                     />
                   </div>
-                </div>
 
-                {/* Review Textarea */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">
-                      Personal Review Notes
-                    </label>
-                    <span className="text-[10px] font-mono text-zinc-500">
-                      {myReview.length} chars
+                  {/* Submit Action */}
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10px] text-zinc-500 font-mono">
+                      Will appear in your personal diary
                     </span>
+
+                    <button
+                      type="submit"
+                      disabled={!myReview.trim() || savedSuccess}
+                      className="px-5 py-2.5 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] disabled:opacity-40 text-black font-poppins font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_20px_rgba(255,85,0,0.4)] transition-all cursor-pointer"
+                    >
+                      {savedSuccess ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>Saved to Diary!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Bookmark className="w-4 h-4" />
+                          <span>Save to My Diary</span>
+                        </>
+                      )}
+                    </button>
                   </div>
-                  <textarea
-                    rows={3}
-                    placeholder="Write your personal thoughts, favorite moments, cinematography notes, or overall verdict..."
-                    value={myReview}
-                    onChange={(e) => setMyReview(e.target.value)}
-                    required
-                    className="w-full p-3 bg-[#141820] border border-white/[0.08] rounded-xl text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-[#ff5500] font-poppins resize-none"
-                  />
+                </form>
+              ) : (
+                <div className="p-4 rounded-2xl bg-[#0e1117] border border-white/[0.06] text-xs text-zinc-400 space-y-2">
+                  <div className="flex items-center gap-2 text-zinc-300 font-medium font-poppins">
+                    <Film className="w-4 h-4 text-[#ff5500]" />
+                    <span>Upcoming Release Preview</span>
+                  </div>
+                  <p className="leading-relaxed">
+                    This movie is part of this month's upcoming cinema releases tracked on The Retro Talks. Once watched, a full review and verdict will be logged in the diary.
+                  </p>
                 </div>
-
-                {/* Submit Action */}
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-[10px] text-zinc-500 font-mono">
-                    Will appear in your personal diary
-                  </span>
-
-                  <button
-                    type="submit"
-                    disabled={!myReview.trim() || savedSuccess}
-                    className="px-5 py-2.5 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] disabled:opacity-40 text-black font-poppins font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_20px_rgba(255,85,0,0.4)] transition-all cursor-pointer"
-                  >
-                    {savedSuccess ? (
-                      <>
-                        <Check className="w-4 h-4" />
-                        <span>Saved to Diary!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Bookmark className="w-4 h-4" />
-                        <span>Save to My Diary</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-
-              </form>
+              )}
 
             </div>
 

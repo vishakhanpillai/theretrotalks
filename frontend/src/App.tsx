@@ -1,33 +1,32 @@
 import { useState, useEffect } from "react";
 import type { Review } from "./types";
 import { RetroTalksPage } from "./pages/RetroTalksPage";
-import { AboutPage } from "./pages/AboutPage";
+import { AdminPage } from "./pages/AdminPage";
 import { INITIAL_REVIEWS } from "./data/sampleReviews";
 
 const STORAGE_KEY = "the_retro_talks_personal_reviews";
 const ADMIN_TOKEN_KEY = "the_retro_talks_admin_token";
 
-type Page = "home" | "about";
+type Page = "home" | "admin";
 
 function getInitialPage(): Page {
   if (typeof window !== "undefined") {
     const path = window.location.pathname;
     const hash = window.location.hash;
     if (
-      path === "/about" ||
-      path.startsWith("/about") ||
-      path === "/portfolio" ||
-      hash === "#about" ||
-      hash.includes("about")
+      path === "/admin" ||
+      path.startsWith("/admin") ||
+      hash === "#admin" ||
+      hash.includes("admin")
     ) {
-      return "about";
+      return "admin";
     }
   }
   return "home";
 }
 
 function App() {
-  // Page Routing State: "home" (The Retro Talks) vs "about" (About Me / Portfolio)
+  // Page Routing State: "home" vs "admin"
   const [currentPage, setCurrentPage] = useState<Page>(getInitialPage);
 
   // Admin Authentication State
@@ -104,13 +103,12 @@ function App() {
       const path = window.location.pathname;
       const hash = window.location.hash;
       if (
-        path === "/about" ||
-        path.startsWith("/about") ||
-        path === "/portfolio" ||
-        hash === "#about" ||
-        hash.includes("about")
+        path === "/admin" ||
+        path.startsWith("/admin") ||
+        hash === "#admin" ||
+        hash.includes("admin")
       ) {
-        setCurrentPage("about");
+        setCurrentPage("admin");
       } else {
         setCurrentPage("home");
       }
@@ -124,17 +122,29 @@ function App() {
     };
   }, []);
 
-  const navigateToAbout = () => {
-    setCurrentPage("about");
-    window.history.pushState({}, "", "/about");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   const navigateToHome = () => {
     setCurrentPage("home");
     window.history.pushState({}, "", "/");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const navigateToAdmin = () => {
+    setCurrentPage("admin");
+    window.history.pushState({}, "", "/admin");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Secret keyboard shortcut: Ctrl+Shift+A or Cmd+Shift+A jumps to /admin
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "A" || e.key === "a")) {
+        e.preventDefault();
+        navigateToAdmin();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleLoginSuccess = (token: string) => {
     setAdminToken(token);
@@ -176,7 +186,6 @@ function App() {
         const saved = await res.json();
         setReviews((prev) => [saved, ...prev]);
       } else {
-        // Fallback optimistic update
         setReviews((prev) => [newReview, ...prev]);
       }
     } catch (err) {
@@ -233,26 +242,26 @@ function App() {
     }
   };
 
-  if (currentPage === "about") {
+  // 1. Admin Page (only accessible at /admin or via secret shortcut)
+  if (currentPage === "admin") {
     return (
-      <AboutPage
+      <AdminPage
+        reviews={reviews}
+        isAdmin={isAdmin}
+        onLoginSuccess={handleLoginSuccess}
+        onLogout={handleLogout}
+        onSaveReview={handleSaveNewReview}
+        onDeleteReview={handleDeleteReview}
+        onUpdatePoster={handleUpdatePoster}
         onNavigateHome={navigateToHome}
-        reviewCount={reviews.length}
       />
     );
   }
 
-  // Primary Home Page: The Retro Talks
+  // 2. Primary Home Page: The Retro Talks (strictly public, zero admin hints)
   return (
     <RetroTalksPage
       reviews={reviews}
-      isAdmin={isAdmin}
-      onLoginSuccess={handleLoginSuccess}
-      onLogout={handleLogout}
-      onNavigateToAbout={navigateToAbout}
-      onSaveReview={handleSaveNewReview}
-      onDeleteReview={handleDeleteReview}
-      onUpdatePoster={handleUpdatePoster}
     />
   );
 }

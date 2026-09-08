@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 
 const dbService = require("./database");
@@ -150,11 +151,49 @@ app.post("/api/admin/logout", (req, res) => {
 // ==========================================
 
 // Create new review (ADMIN ONLY)
-app.post("/api/reviews", requireAdmin, (req, res) => {
+app.post("/api/reviews", requireAdmin, async (req, res) => {
     try {
         const reviewData = req.body;
         if (!reviewData.title || !reviewData.review) {
             return res.status(400).json({ error: "Title and review text are required" });
+        }
+
+        // Auto-fetch cast & crew from TMDB if not provided
+        const tmdbId = reviewData.tmdbId || reviewData.tmdb_id;
+        if ((!reviewData.cast || reviewData.cast.length === 0) && tmdbId) {
+            try {
+                const response = await fetchTMDB(`${TMDB_BASE_URL}/movie/${tmdbId}?append_to_response=credits`);
+                if (response && response.ok) {
+                    const data = await response.json();
+                    reviewData.cast = (data.credits?.cast || []).slice(0, 10).map(c => ({
+                        id: c.id,
+                        name: c.name,
+                        character: c.character,
+                        picture: formatImageUrl(c.profile_path, "w185")
+                    }));
+
+                    const KEY_CREW_JOBS = ["Director", "Director of Photography", "Original Music Composer", "Screenplay", "Writer", "Editor", "Producer"];
+                    const seenCrew = new Set();
+                    reviewData.crew = (data.credits?.crew || [])
+                        .filter(c => KEY_CREW_JOBS.includes(c.job))
+                        .filter(c => {
+                            const key = `${c.id}-${c.job}`;
+                            if (seenCrew.has(key)) return false;
+                            seenCrew.add(key);
+                            return true;
+                        })
+                        .slice(0, 8)
+                        .map(c => ({
+                            id: c.id,
+                            name: c.name,
+                            job: c.job,
+                            department: c.department,
+                            picture: formatImageUrl(c.profile_path, "w185")
+                        }));
+                }
+            } catch (e) {
+                console.warn("Could not fetch credits on review create:", e.message);
+            }
         }
 
         const newReview = dbService.createReview(reviewData);
@@ -332,6 +371,42 @@ app.get("/api/movies/:id", async (req, res) => {
             person => person.job === "Director" && person.department === "Directing"
         );
 
+        const cast = (data.credits?.cast || [])
+            .slice(0, 10)
+            .map(c => ({
+                id: c.id,
+                name: c.name,
+                character: c.character,
+                picture: formatImageUrl(c.profile_path, "w185")
+            }));
+
+        const KEY_CREW_JOBS = [
+            "Director",
+            "Director of Photography",
+            "Original Music Composer",
+            "Screenplay",
+            "Writer",
+            "Editor",
+            "Producer"
+        ];
+        const seenCrew = new Set();
+        const crew = (data.credits?.crew || [])
+            .filter(c => KEY_CREW_JOBS.includes(c.job))
+            .filter(c => {
+                const key = `${c.id}-${c.job}`;
+                if (seenCrew.has(key)) return false;
+                seenCrew.add(key);
+                return true;
+            })
+            .slice(0, 8)
+            .map(c => ({
+                id: c.id,
+                name: c.name,
+                job: c.job,
+                department: c.department,
+                picture: formatImageUrl(c.profile_path, "w185")
+            }));
+
         const movie = {
             id: data.id,
             title: data.title,
@@ -343,7 +418,9 @@ app.get("/api/movies/:id", async (req, res) => {
             runtime: data.runtime,
             genres: Array.isArray(data.genres) ? data.genres.map(genre => genre.name) : [],
             director: director ? director.name : null,
-            tagline: data.tagline || null
+            tagline: data.tagline || null,
+            cast,
+            crew
         };
 
         res.json(movie);
@@ -398,6 +475,69 @@ app.get("/api/movies/:id/posters", async (req, res) => {
     }
 });
 
+// Serve frontend build in production if available
+const frontendDist = path.join(__dirname, "../frontend/dist");
+if (fs.existsSync(frontendDist)) {
+    app.use(express.static(frontendDist));
+    app.use((req, res, next) => {
+        if (req.method === "GET" && !req.path.startsWith("/api")) {
+            return res.sendFile(path.join(frontendDist, "index.html"));
+        }
+        next();
+    });
+}
+
+// Automatically enrich reviews missing cast & crew from TMDB
+async function enrichReviewsWithCredits() {
+    try {
+        const reviews = dbService.getAllReviews();
+        for (const review of reviews) {
+            if ((!review.cast || review.cast.length === 0) && review.tmdbId) {
+                try {
+                    const response = await fetchTMDB(`${TMDB_BASE_URL}/movie/${review.tmdbId}?append_to_response=credits`);
+                    if (response && response.ok) {
+                        const data = await response.json();
+                        const cast = (data.credits?.cast || []).slice(0, 10).map(c => ({
+                            id: c.id,
+                            name: c.name,
+                            character: c.character,
+                            picture: formatImageUrl(c.profile_path, "w185")
+                        }));
+
+                        const KEY_CREW_JOBS = ["Director", "Director of Photography", "Original Music Composer", "Screenplay", "Writer", "Editor", "Producer"];
+                        const seenCrew = new Set();
+                        const crew = (data.credits?.crew || [])
+                            .filter(c => KEY_CREW_JOBS.includes(c.job))
+                            .filter(c => {
+                                const key = `${c.id}-${c.job}`;
+                                if (seenCrew.has(key)) return false;
+                                seenCrew.add(key);
+                                return true;
+                            })
+                            .slice(0, 8)
+                            .map(c => ({
+                                id: c.id,
+                                name: c.name,
+                                job: c.job,
+                                department: c.department,
+                                picture: formatImageUrl(c.profile_path, "w185")
+                            }));
+
+                        dbService.updateReviewCredits(review.id, cast, crew);
+                        console.log(`Auto-enriched cast and crew for: "${review.title}"`);
+                    }
+                } catch (err) {
+                    console.warn(`Credits enrichment skipped for "${review.title}":`, err.message);
+                }
+            }
+        }
+    } catch (e) {
+        console.warn("Credits enrichment error:", e.message);
+    }
+}
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT} (SQLite Active)`);
+    // Run credit enrichment in the background on startup
+    enrichReviewsWithCredits().catch(err => console.warn("Credit backfill error:", err));
 });

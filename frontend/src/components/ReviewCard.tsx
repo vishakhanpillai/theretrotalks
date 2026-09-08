@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { Star, Sparkles, Heart, Trash2 } from "lucide-react";
-import type { Review } from "../types";
+import React, { useState, useEffect } from "react";
+import { Star, Sparkles, Heart, Trash2, User, Users, Clapperboard } from "lucide-react";
+import type { Review, CastMember, CrewMember } from "../types";
 import { getPosterUrl } from "../utils/images";
 
 interface ReviewCardProps {
@@ -17,18 +17,48 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   isAdmin = false,
 }) => {
   const [imageError, setImageError] = useState(false);
-  const posterUrl = getPosterUrl(review.poster, "w500");
+  const [activeCreditsTab, setActiveCreditsTab] = useState<"cast" | "crew">("cast");
+  const [credits, setCredits] = useState<{ cast: CastMember[]; crew: CrewMember[] }>({
+    cast: review.cast || [],
+    crew: review.crew || [],
+  });
 
+  // If review doesn't have cast/crew stored in cache, fetch them dynamically
+  useEffect(() => {
+    if (review.cast && review.cast.length > 0) {
+      setCredits({ cast: review.cast, crew: review.crew || [] });
+      return;
+    }
+    if (review.tmdbId) {
+      fetch(`/api/movies/${review.tmdbId}`)
+        .then((res) => {
+          if (!res.ok) throw new Error("Credits fetch failed");
+          return res.json();
+        })
+        .then((data) => {
+          if (data.cast || data.crew) {
+            setCredits({ cast: data.cast || [], crew: data.crew || [] });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [review.cast, review.crew, review.tmdbId]);
+
+  const posterUrl = getPosterUrl(review.poster, "w500");
   const fullStars = Math.floor(review.rating);
   const hasHalf = review.rating % 1 !== 0;
+
+  const castList = credits.cast || [];
+  const crewList = credits.crew || [];
+  const hasCredits = castList.length > 0 || crewList.length > 0;
 
   return (
     <div
       onClick={() => onOpenReview(review)}
       className="group relative flex flex-col sm:flex-row bg-[#0b0d12] rounded-3xl overflow-hidden border border-white/[0.08] hover:border-[#ff5500]/60 transition-all duration-400 hover:-translate-y-1 hover:shadow-[0_20px_45px_-12px_rgba(255,85,0,0.25)] cursor-pointer"
     >
-      {/* Poster Container (Wider horizontal side) */}
-      <div className="relative w-full sm:w-48 md:w-52 lg:w-56 flex-shrink-0 aspect-[2/3] sm:aspect-auto sm:min-h-[260px] bg-[#12151c] overflow-hidden">
+      {/* Poster Container */}
+      <div className="relative w-full sm:w-48 md:w-52 lg:w-56 flex-shrink-0 aspect-[2/3] sm:aspect-auto sm:min-h-[280px] bg-[#12151c] overflow-hidden">
         {posterUrl && !imageError ? (
           <img
             src={posterUrl}
@@ -73,7 +103,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
 
       {/* Review Information Body */}
       <div className="p-5 sm:p-6 md:p-7 flex flex-col flex-grow justify-between bg-[#0b0d12]">
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           
           {/* Top Row: Year, Favorite, Rating */}
           <div className="flex items-center justify-between gap-3">
@@ -122,9 +152,124 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
           </div>
 
           {/* Review Excerpt Quote */}
-          <p className="text-xs sm:text-sm text-zinc-300 italic line-clamp-3 sm:line-clamp-4 leading-relaxed border-l-2 border-[#ff5500]/40 pl-3.5 py-0.5">
+          <p className="text-xs sm:text-sm text-zinc-300 italic line-clamp-3 leading-relaxed border-l-2 border-[#ff5500]/40 pl-3.5 py-0.5">
             "{review.review}"
           </p>
+
+          {/* Cast & Crew with Pictures */}
+          {hasCredits && (
+            <div
+              className="pt-3 border-t border-white/[0.06] space-y-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Tab Selector */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 bg-[#0e1117] p-0.5 rounded-lg border border-white/[0.06]">
+                  {castList.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveCreditsTab("cast")}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-mono transition-all cursor-pointer ${
+                        activeCreditsTab === "cast"
+                          ? "bg-[#ff5500] text-black font-semibold shadow-sm"
+                          : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <Users className="w-3 h-3" />
+                      <span>Cast ({castList.length})</span>
+                    </button>
+                  )}
+
+                  {crewList.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveCreditsTab("crew")}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-mono transition-all cursor-pointer ${
+                        activeCreditsTab === "crew"
+                          ? "bg-[#ff5500] text-black font-semibold shadow-sm"
+                          : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <Clapperboard className="w-3 h-3" />
+                      <span>Crew ({crewList.length})</span>
+                    </button>
+                  )}
+                </div>
+
+                <span className="text-[10px] text-zinc-500 font-mono hidden sm:inline">
+                  {activeCreditsTab === "cast" ? "Top Billed Cast" : "Key Creative Crew"}
+                </span>
+              </div>
+
+              {/* Horizontal Scrollable Credits Row with Avatars */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5 scrollbar-thin scrollbar-thumb-white/10">
+                {activeCreditsTab === "cast" ? (
+                  castList.slice(0, 6).map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center gap-2 bg-[#0e1117] hover:bg-[#141822] px-2.5 py-1.5 rounded-xl border border-white/[0.06] hover:border-white/[0.15] flex-shrink-0 transition-colors group/person max-w-[175px]"
+                      title={`${member.name} as ${member.character}`}
+                    >
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-[#181c24] flex-shrink-0 border border-white/[0.1] shadow-sm">
+                        {member.picture ? (
+                          <img
+                            src={member.picture}
+                            alt={member.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-zinc-500 bg-[#151922]">
+                            <User className="w-3.5 h-3.5" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-grow">
+                        <p className="text-[11px] font-medium text-white truncate leading-tight group-hover/person:text-[#ff7a29] transition-colors">
+                          {member.name}
+                        </p>
+                        <p className="text-[10px] text-zinc-400 font-mono truncate leading-tight mt-0.5">
+                          {member.character || "Actor"}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  crewList.slice(0, 6).map((member, idx) => (
+                    <div
+                      key={`${member.id}-${idx}`}
+                      className="flex items-center gap-2 bg-[#0e1117] hover:bg-[#141822] px-2.5 py-1.5 rounded-xl border border-white/[0.06] hover:border-white/[0.15] flex-shrink-0 transition-colors group/person max-w-[185px]"
+                      title={`${member.name} — ${member.job}`}
+                    >
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-[#181c24] flex-shrink-0 border border-white/[0.1] shadow-sm">
+                        {member.picture ? (
+                          <img
+                            src={member.picture}
+                            alt={member.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-zinc-500 bg-[#151922]">
+                            <User className="w-3.5 h-3.5" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-grow">
+                        <p className="text-[11px] font-medium text-white truncate leading-tight group-hover/person:text-[#ff7a29] transition-colors">
+                          {member.name}
+                        </p>
+                        <p className="text-[10px] text-[#ff7a29] font-mono truncate leading-tight mt-0.5">
+                          {member.job}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
         </div>
 
         {/* Card Footer: Watched Date & Actions */}

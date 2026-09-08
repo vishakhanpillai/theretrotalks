@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Star, Sparkles, Check, Calendar, Quote, Film } from "lucide-react";
+import { X, Star, Sparkles, Check, Calendar, Quote, Film, User } from "lucide-react";
 import type { Review } from "../types";
 import { getBackdropUrl, getPosterUrl } from "../utils/images";
 import { PosterSelectorModal } from "./PosterSelectorModal";
@@ -153,6 +153,83 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                       {genre}
                     </span>
                   ))}
+                </div>
+              )}
+
+              {/* Cast & Crew Details */}
+              {((review.cast && review.cast.length > 0) || (review.crew && review.crew.length > 0)) && (
+                <div className="space-y-4 pt-2 border-t border-white/[0.06]">
+                  {/* Top Cast */}
+                  {review.cast && review.cast.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+                        Top Cast ({review.cast.length})
+                      </h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                        {review.cast.slice(0, 6).map((member) => (
+                          <div
+                            key={member.id}
+                            className="flex items-center gap-2.5 bg-[#0e1117] p-2 rounded-xl border border-white/[0.06]"
+                          >
+                            <div className="w-9 h-9 rounded-full overflow-hidden bg-[#181c24] flex-shrink-0 border border-white/[0.1]">
+                              {member.picture ? (
+                                <img
+                                  src={member.picture}
+                                  alt={member.name}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-zinc-600 bg-[#151922]">
+                                  <User className="w-4 h-4" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-white truncate">{member.name}</p>
+                              <p className="text-[10px] text-zinc-400 font-mono truncate">{member.character || "Actor"}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Key Creative Crew */}
+                  {review.crew && review.crew.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+                        Key Creative Crew ({review.crew.length})
+                      </h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                        {review.crew.slice(0, 6).map((member, idx) => (
+                          <div
+                            key={`${member.id}-${idx}`}
+                            className="flex items-center gap-2.5 bg-[#0e1117] p-2 rounded-xl border border-white/[0.06]"
+                          >
+                            <div className="w-9 h-9 rounded-full overflow-hidden bg-[#181c24] flex-shrink-0 border border-white/[0.1]">
+                              {member.picture ? (
+                                <img
+                                  src={member.picture}
+                                  alt={member.name}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-zinc-600 bg-[#151922]">
+                                  <User className="w-4 h-4" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-white truncate">{member.name}</p>
+                              <p className="text-[10px] text-[#ff7a29] font-mono truncate">{member.job}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

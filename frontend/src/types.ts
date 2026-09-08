@@ -1,3 +1,18 @@
+export interface CastMember {
+  id: number;
+  name: string;
+  character: string;
+  picture: string | null;
+}
+
+export interface CrewMember {
+  id: number;
+  name: string;
+  job: string;
+  department?: string;
+  picture: string | null;
+}
+
 export interface Movie {
   id: number;
   title: string;
@@ -11,6 +26,8 @@ export interface Movie {
   runtime?: number | null;
   genres?: string[];
   tagline?: string | null;
+  cast?: CastMember[];
+  crew?: CrewMember[];
 }
 
 export interface Review {
@@ -26,6 +43,8 @@ export interface Review {
   review: string;
   watchedDate: string;
   isFavorite?: boolean;
+  cast?: CastMember[];
+  crew?: CrewMember[];
 }
 
 export interface UpcomingMovie {
