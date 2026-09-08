@@ -260,6 +260,38 @@ const updateReviewBackdrop = (id, newBackdropUrl) => {
   return getReviewById(id);
 };
 
+const updateReview = (id, updates) => {
+  const current = getReviewById(id);
+  if (!current) return null;
+
+  const now = Date.now();
+  const rating = updates.rating !== undefined ? Number(updates.rating) : current.rating;
+  const review = updates.review !== undefined ? updates.review : current.review;
+  const watchedDate = updates.watchedDate !== undefined ? updates.watchedDate : current.watchedDate;
+  const isFavorite = updates.isFavorite !== undefined ? (updates.isFavorite ? 1 : 0) : (current.isFavorite ? 1 : 0);
+  const title = updates.title !== undefined ? updates.title : current.title;
+  const year = updates.year !== undefined ? updates.year : current.year;
+  const director = updates.director !== undefined ? updates.director : current.director;
+
+  db.prepare(`
+    UPDATE reviews 
+    SET title = ?, year = ?, director = ?, rating = ?, review = ?, watched_date = ?, is_favorite = ?, updated_at = ?
+    WHERE id = ?
+  `).run(
+    title,
+    year,
+    director,
+    rating,
+    review,
+    watchedDate,
+    isFavorite,
+    now,
+    String(id)
+  );
+
+  return getReviewById(id);
+};
+
 const deleteReview = (id) => {
   const info = db.prepare("DELETE FROM reviews WHERE id = ?").run(String(id));
   return info.changes > 0;
@@ -307,6 +339,7 @@ module.exports = {
   getAllReviews,
   getReviewById,
   createReview,
+  updateReview,
   updateReviewCredits,
   updateReviewPoster,
   updateReviewBackdrop,

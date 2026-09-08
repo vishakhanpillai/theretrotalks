@@ -38,7 +38,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
               <h3 className="text-xl font-bold font-poppins text-white tracking-tight">
                 Vishakhan Pillai V P
               </h3>
-              <p className="text-xs text-zinc-400 font-mono mt-0.5">
+              <p className="text-xs text-zinc-400 font-inter mt-0.5">
                 The Retro Talks · Cinema & Perspectives
               </p>
             </div>
@@ -89,7 +89,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-300 hover:text-white border border-white/[0.08] transition-colors cursor-pointer font-mono"
+            className="px-4 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-300 hover:text-white border border-white/[0.08] transition-colors cursor-pointer font-inter"
           >
             Close
           </button>

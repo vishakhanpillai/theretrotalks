@@ -52,7 +52,7 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
       {/* Sidebar Header */}
       <div className="flex items-start justify-between gap-3 border-b border-white/[0.06] pb-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono text-[#ff7a29] uppercase tracking-wider mb-1">
+          <div className="flex items-center gap-2 text-xs font-inter text-[#ff7a29] uppercase tracking-wider mb-1">
             <Calendar className="w-3.5 h-3.5 text-[#ff5500]" />
             <span>Releasing {monthName || "This Month"} {year}</span>
           </div>
@@ -61,7 +61,7 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
           </h3>
         </div>
 
-        <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-[10px] font-mono text-zinc-400">
+        <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-[10px] font-inter text-zinc-400">
           Theatrical & OTT
         </span>
       </div>
@@ -70,7 +70,7 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
       {loading && (
         <div className="py-12 flex flex-col items-center justify-center text-center space-y-2">
           <Loader2 className="w-6 h-6 animate-spin text-[#ff5500]" />
-          <span className="text-xs font-mono text-zinc-500">
+          <span className="text-xs font-inter text-zinc-500">
             Syncing {monthName || "monthly"} releases...
           </span>
         </div>
@@ -78,7 +78,7 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
 
       {/* Error state */}
       {!loading && error && (
-        <div className="py-8 text-center text-xs font-mono text-zinc-500">
+        <div className="py-8 text-center text-xs font-inter text-zinc-500">
           {error}
         </div>
       )}
@@ -111,10 +111,10 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
               {/* Info */}
               <div className="flex-grow min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono text-zinc-500">
+                  <span className="text-[10px] font-inter text-zinc-500">
                     #{index + 1}
                   </span>
-                  <span className="text-[10px] font-mono px-2 py-0.2 rounded-md bg-[#ff5500]/15 text-[#ff7a29] border border-[#ff5500]/20">
+                  <span className="text-[10px] font-inter px-2 py-0.2 rounded-md bg-[#ff5500]/15 text-[#ff7a29] border border-[#ff5500]/20">
                     {movie.formattedDate}
                   </span>
                 </div>
@@ -123,7 +123,7 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
                   {movie.title}
                 </h4>
 
-                <div className="flex items-center gap-2 text-xs text-zinc-400 font-mono mt-0.5">
+                <div className="flex items-center gap-2 text-xs text-zinc-400 font-inter mt-0.5">
                   {movie.tmdbRating ? (
                     <span className="flex items-center gap-1 text-[#ff5500]">
                       <Star className="w-3 h-3 fill-current" />
@@ -145,7 +145,7 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
       )}
 
       {/* Footer Info */}
-      <div className="pt-2 border-t border-white/[0.06] text-[11px] font-mono text-zinc-500 text-center">
+      <div className="pt-2 border-t border-white/[0.06] text-[11px] font-inter text-zinc-500 text-center">
         <span>Curated schedule for {monthName || "this month"}</span>
       </div>
 

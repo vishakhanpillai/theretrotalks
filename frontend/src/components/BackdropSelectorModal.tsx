@@ -69,7 +69,7 @@ export const BackdropSelectorModal: React.FC<BackdropSelectorModalProps> = ({
         {/* Header */}
         <div className="p-6 bg-[#0e1117] border-b border-white/[0.08] flex items-center justify-between">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#ff7a29]">
+            <div className="flex items-center gap-2 text-xs font-inter uppercase tracking-wider text-[#ff7a29]">
               <Sparkles className="w-3.5 h-3.5 text-[#ff5500]" />
               <span>Official TMDB Film Stills & Backdrops</span>
             </div>
@@ -92,14 +92,14 @@ export const BackdropSelectorModal: React.FC<BackdropSelectorModalProps> = ({
           {loading && (
             <div className="py-24 flex flex-col items-center justify-center text-center space-y-3">
               <Loader2 className="w-8 h-8 animate-spin text-[#ff5500]" />
-              <p className="text-xs font-mono text-zinc-400">
+              <p className="text-xs font-inter text-zinc-400">
                 Fetching alternate widescreen backdrops from TMDB archive...
               </p>
             </div>
           )}
 
           {error && (
-            <div className="py-16 text-center text-xs font-mono text-red-400">
+            <div className="py-16 text-center text-xs font-inter text-red-400">
               {error}
             </div>
           )}
@@ -113,7 +113,7 @@ export const BackdropSelectorModal: React.FC<BackdropSelectorModalProps> = ({
 
           {!loading && backdrops.length > 0 && (
             <div>
-              <div className="flex items-center justify-between mb-4 text-xs font-mono text-zinc-500">
+              <div className="flex items-center justify-between mb-4 text-xs font-inter text-zinc-500">
                 <span>{backdrops.length} official backdrops available</span>
                 <span>Click any image to set as your review banner</span>
               </div>
@@ -153,13 +153,13 @@ export const BackdropSelectorModal: React.FC<BackdropSelectorModalProps> = ({
                       )}
 
                       {/* Dimensions or language */}
-                      <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md text-[9px] font-mono text-zinc-300 border border-white/10 uppercase">
+                      <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md text-[9px] font-inter text-zinc-300 border border-white/10 uppercase">
                         {b.width}x{b.height} {b.language ? `· ${b.language}` : ""}
                       </div>
 
                       {/* Hover Select overlay */}
                       <div className="absolute inset-0 bg-[#ff5500]/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                        <span className="px-3 py-1 rounded-full bg-black/90 text-[#ff7a29] text-[10px] font-mono uppercase font-bold border border-[#ff5500]/40">
+                        <span className="px-3 py-1 rounded-full bg-black/90 text-[#ff7a29] text-[10px] font-inter uppercase font-bold border border-[#ff5500]/40">
                           {isCurrent ? "Active Backdrop" : "Select Backdrop"}
                         </span>
                       </div>
@@ -173,7 +173,7 @@ export const BackdropSelectorModal: React.FC<BackdropSelectorModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 bg-[#0e1117] border-t border-white/[0.08] flex items-center justify-between text-xs font-mono text-zinc-500">
+        <div className="px-6 py-3.5 bg-[#0e1117] border-t border-white/[0.08] flex items-center justify-between text-xs font-inter text-zinc-500">
           <span>TMDB High-Resolution Imagery</span>
           <button
             onClick={onClose}

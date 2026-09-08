@@ -277,6 +277,20 @@ app.post("/api/reviews", requireAdmin, async (req, res) => {
     }
 });
 
+// Update review content, rating, metadata (ADMIN ONLY)
+app.put("/api/reviews/:id", requireAdmin, (req, res) => {
+    try {
+        const updated = dbService.updateReview(req.params.id, req.body);
+        if (!updated) {
+            return res.status(404).json({ error: "Review not found" });
+        }
+        res.json(updated);
+    } catch (err) {
+        console.error("Error updating review:", err);
+        res.status(500).json({ error: "Failed to update review in database" });
+    }
+});
+
 // Update review poster (ADMIN ONLY)
 app.put("/api/reviews/:id/poster", requireAdmin, (req, res) => {
     try {

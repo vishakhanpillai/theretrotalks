@@ -271,6 +271,38 @@ function App() {
     }
   };
 
+  // Update review details in SQLite (Admin Only)
+  const handleUpdateReview = async (reviewId: string | number, updatedData: Partial<Review>) => {
+    if (!adminToken) return;
+
+    try {
+      const res = await fetch(`/api/reviews/${reviewId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      if (res.ok) {
+        const saved = await res.json();
+        setReviews((prev) =>
+          prev.map((r) => (r.id === reviewId ? { ...r, ...saved } : r))
+        );
+      } else {
+        setReviews((prev) =>
+          prev.map((r) => (r.id === reviewId ? { ...r, ...updatedData } : r))
+        );
+      }
+    } catch (err) {
+      console.error("Error updating review in SQLite:", err);
+      setReviews((prev) =>
+        prev.map((r) => (r.id === reviewId ? { ...r, ...updatedData } : r))
+      );
+    }
+  };
+
   // 1. Admin Page (only accessible at /admin or via secret shortcut)
   if (route.page === "admin") {
     return (
@@ -280,15 +312,17 @@ function App() {
         onLoginSuccess={handleLoginSuccess}
         onLogout={handleLogout}
         onSaveReview={handleSaveNewReview}
+        onUpdateReview={handleUpdateReview}
         onDeleteReview={handleDeleteReview}
         onUpdatePoster={handleUpdatePoster}
         onUpdateBackdrop={handleUpdateBackdrop}
         onNavigateHome={navigateToHome}
+        onNavigateToReview={navigateToReview}
       />
     );
   }
 
-  // 2. Standalone Dedicated Review Page (Letterboxd-style banner & critique)
+  // 2. Standalone Dedicated Cinema Review Page
   if (route.page === "review" && route.reviewId) {
     const matchedReview = reviews.find((r) => String(r.id) === String(route.reviewId));
     return (

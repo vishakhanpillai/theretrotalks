@@ -6,6 +6,7 @@ import { AboutModal } from "../components/AboutModal";
 import { StarRating } from "../components/StarRating";
 import { PosterSelectorModal } from "../components/PosterSelectorModal";
 import { BackdropSelectorModal } from "../components/BackdropSelectorModal";
+import { FormattedReviewText } from "../components/FormattedReviewText";
 
 interface ReviewPageProps {
   reviewId: string;
@@ -32,11 +33,19 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
   const [posterError, setPosterError] = useState<boolean>(false);
   const [creditsTab, setCreditsTab] = useState<'cast' | 'crew'>('cast');
   const [headerOpacity, setHeaderOpacity] = useState<number>(0);
+  const [navSolidProgress, setNavSolidProgress] = useState<number>(0);
   const headerRef = useRef<HTMLDivElement>(null);
 
-  // Progressive scroll interpolation for an ultra-smooth, barely noticeable fade
+  // Progressive scroll interpolation for top nav transparency and sticky review header
   useEffect(() => {
     const handleScroll = () => {
+      // 1. Top Navbar transition: fully transparent at top, solid #07080a as user scrolls down
+      const currentScrollY = window.scrollY;
+      const solidThreshold = 90;
+      const progress = Math.min(1, Math.max(0, currentScrollY / solidThreshold));
+      setNavSolidProgress(Math.round(progress * 100) / 100);
+
+      // 2. Sticky review header fade
       if (headerRef.current) {
         const rect = headerRef.current.getBoundingClientRect();
         const stickPoint = 64; // Sticky at top-16 (64px)
@@ -99,7 +108,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
       <div className="min-h-screen bg-[#07080a] text-[#ededed] flex flex-col items-center justify-center font-poppins">
         <div className="flex flex-col items-center gap-3">
           <Film className="w-8 h-8 text-[#ff5500] animate-pulse" />
-          <span className="text-xs font-mono text-zinc-500">Loading film review...</span>
+          <span className="text-xs font-inter text-zinc-500">Loading film review...</span>
         </div>
       </div>
     );
@@ -134,80 +143,78 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
   return (
     <div className="min-h-screen bg-[#07080a] text-[#ededed] flex flex-col font-poppins selection:bg-[#ff5500] selection:text-black">
       
-      {/* Top Header Navigation */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/[0.08] bg-[#07080a]/80 backdrop-blur-xl transition-all">
+      {/* Top Header Navigation: fully transparent at top, solid site color (#07080a) as user scrolls down */}
+      <header
+        className="fixed top-0 left-0 right-0 z-50 transition-colors duration-150"
+        style={{
+          backgroundColor: `rgba(7, 8, 10, ${navSolidProgress})`,
+          borderBottomColor: `rgba(255, 255, 255, ${0.08 * navSolidProgress})`,
+          borderBottomWidth: "1px",
+          borderBottomStyle: "solid",
+          boxShadow:
+            navSolidProgress > 0.4
+              ? `0 4px 20px rgba(0, 0, 0, ${0.6 * navSolidProgress})`
+              : "none",
+        }}
+      >
         <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 h-16 flex items-center justify-between">
           
-          {/* Back & Breadcrumb */}
-          <div className="flex items-center gap-3">
+          {/* Back Button (Only necessary button) */}
+          <div className="flex items-center">
             <button
               onClick={onNavigateHome}
-              className="flex items-center gap-2 text-xs font-mono text-zinc-400 hover:text-white transition-colors cursor-pointer group"
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-inter transition-all group cursor-pointer ${
+                navSolidProgress < 0.4
+                  ? "bg-black/45 hover:bg-black/70 border border-white/20 hover:border-white/40 backdrop-blur-md text-white shadow-lg"
+                  : "bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.2] text-zinc-300 hover:text-white"
+              }`}
+              title="Return to all reviews"
             >
               <ArrowLeft className="w-4 h-4 text-[#ff5500] group-hover:-translate-x-0.5 transition-transform" />
               <span>Reviews</span>
             </button>
-
-            <span className="text-zinc-700 font-mono">/</span>
-
-            <span className="text-xs font-medium text-white truncate max-w-[200px] sm:max-w-md">
-              {review.title}
-            </span>
           </div>
 
-          {/* Right Action: About Me & Admin Indicator */}
+          {/* Right Action: Admin Indicator */}
           <div className="flex items-center gap-3">
             {isAdmin && (
-              <span className="px-2.5 py-1 rounded-md bg-[#ff5500]/15 text-[#ff7a29] border border-[#ff5500]/30 text-[10px] font-mono uppercase tracking-wider">
+              <span className="px-2.5 py-1 rounded-md bg-[#ff5500]/20 text-[#ff7a29] border border-[#ff5500]/35 text-[10px] font-inter uppercase tracking-wider backdrop-blur-md shadow-sm">
                 Admin Mode
               </span>
             )}
-            <button
-              onClick={() => setShowAboutModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-[#ff5500]/40 text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
-            >
-              <User className="w-3.5 h-3.5 text-[#ff5500]" />
-              <span>About</span>
-            </button>
           </div>
 
         </div>
       </header>
 
-      {/* Letterboxd-Style Full-Bleed Film Backdrop Banner (Edge-to-edge full width with translucent fade effect) */}
-      <section className="relative w-full h-[46vh] sm:h-[54vh] md:h-[62vh] lg:h-[68vh] min-h-[420px] max-h-[720px] overflow-hidden bg-[#07080a] mt-16">
+      {/* Full-Bleed Film Backdrop Banner (Fills screen edge-to-edge, spacious & uncropped) */}
+      <section className="relative w-full h-[55vh] sm:h-[62vh] md:h-[70vh] lg:h-[74vh] min-h-[420px] sm:min-h-[480px] lg:min-h-[560px] max-h-[760px] overflow-hidden bg-[#07080a] mt-0">
         {backdropUrl ? (
           <img
             src={backdropUrl}
             alt={`${review.title} still`}
-            className="w-full h-full object-cover object-[center_20%] md:object-center filter contrast-[1.03] brightness-[0.98]"
+            className="w-full h-full object-cover object-center filter contrast-[1.02] brightness-[0.98]"
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center bg-[#0d1017] text-zinc-600">
             <Film className="w-12 h-12 mb-2 opacity-50" />
-            <span className="text-xs font-mono text-zinc-500">No backdrop available</span>
+            <span className="text-xs font-inter text-zinc-500">No backdrop available</span>
           </div>
         )}
 
-        {/* Translucent cinematic ambient overlay */}
-        <div className="absolute inset-0 bg-black/15 pointer-events-none" />
+        {/* Soft Lateral Edge Vignettes: Gentle feathering so edges dissolve naturally without obscuring subjects */}
+        <div className="absolute inset-y-0 left-0 w-16 sm:w-28 bg-gradient-to-r from-[#07080a]/40 to-transparent pointer-events-none" />
+        <div className="absolute inset-y-0 right-0 w-16 sm:w-28 bg-gradient-to-l from-[#07080a]/40 to-transparent pointer-events-none" />
 
-        {/* Soft Top Nav Blend */}
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#07080a]/90 via-[#07080a]/35 to-transparent pointer-events-none" />
-
-        {/* Soft Lateral Edge Vignettes */}
-        <div className="absolute inset-y-0 left-0 w-24 sm:w-48 bg-gradient-to-r from-[#07080a]/70 to-transparent pointer-events-none" />
-        <div className="absolute inset-y-0 right-0 w-24 sm:w-48 bg-gradient-to-l from-[#07080a]/70 to-transparent pointer-events-none" />
-
-        {/* Translucent Bottom Fade Mask: Clean subtle transition that dissolves gracefully into dark background while keeping actors and subjects visible */}
-        <div className="absolute inset-x-0 bottom-0 h-56 sm:h-72 md:h-88 bg-gradient-to-t from-[#07080a] via-[#07080a]/70 to-transparent pointer-events-none" />
+        {/* Cinematic Bottom Fade Mask: Clean dissolve into content area */}
+        <div className="absolute inset-x-0 bottom-0 h-40 sm:h-52 md:h-64 bg-gradient-to-t from-[#07080a] via-[#07080a]/65 to-transparent pointer-events-none" />
 
         {/* Admin Change Backdrop Button */}
         {isAdmin && review.tmdbId && (
-          <div className="absolute top-6 right-4 sm:right-6 lg:right-10 xl:right-14 z-20">
+          <div className="absolute top-20 right-4 sm:right-6 lg:right-10 xl:right-14 z-20">
             <button
               onClick={() => setShowBackdropModal(true)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/80 hover:bg-[#ff5500] text-white hover:text-black border border-white/20 hover:border-[#ff5500] text-xs font-mono backdrop-blur-md transition-all shadow-xl cursor-pointer"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/80 hover:bg-[#ff5500] text-white hover:text-black border border-white/20 hover:border-[#ff5500] text-xs font-inter backdrop-blur-md transition-all shadow-xl cursor-pointer"
               title="Change review backdrop artwork from TMDB"
             >
               <ImageIcon className="w-3.5 h-3.5" />
@@ -217,8 +224,8 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
         )}
       </section>
 
-      {/* Main Content Area: Spans the full page width like the Home Page, positioned nicely over the backdrop */}
-      <main className="relative z-10 w-full px-4 sm:px-6 lg:px-10 xl:px-14 -mt-24 sm:-mt-36 md:-mt-48 lg:-mt-60 pb-20 flex-grow">
+      {/* Main Content Area: Shifted upwards so the entire poster is visible immediately on load */}
+      <main className="relative z-10 w-full px-4 sm:px-6 lg:px-10 xl:px-14 -mt-28 sm:-mt-36 md:-mt-48 lg:-mt-52 xl:-mt-60 pb-20 flex-grow">
         
         {/* Full-width Responsive 3-Column Layout */}
         <div className="flex flex-col lg:flex-row gap-8 xl:gap-10 items-start">
@@ -250,7 +257,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
               {isAdmin && review.tmdbId && (
                 <button
                   onClick={() => setShowPosterModal(true)}
-                  className="mt-2.5 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#0b0d12] hover:bg-[#ff5500] hover:text-black border border-white/[0.08] hover:border-[#ff5500] text-xs font-mono text-zinc-300 transition-all cursor-pointer shadow-md"
+                  className="mt-2.5 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#0b0d12] hover:bg-[#ff5500] hover:text-black border border-white/[0.08] hover:border-[#ff5500] text-xs font-inter text-zinc-300 transition-all cursor-pointer shadow-md"
                   title="Change poster artwork from TMDB"
                 >
                   <Film className="w-3.5 h-3.5" />
@@ -260,7 +267,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
             </div>
 
             {/* Quick Metadata Box */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-[#0b0d12] border border-white/[0.06] space-y-3 text-xs text-zinc-400 font-mono shadow-xl">
+            <div className="p-4 sm:p-5 rounded-2xl bg-[#0b0d12] border border-white/[0.06] space-y-3 text-xs text-zinc-400 font-inter shadow-xl">
               <div className="flex items-center justify-between pb-2.5 border-b border-white/[0.06]">
                 <span className="text-zinc-500">Watched</span>
                 <span className="text-zinc-200 font-medium">{review.watchedDate}</span>
@@ -335,7 +342,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
                       {review.title}
                     </h1>
                     {review.year && (
-                      <span className="text-xl sm:text-2xl md:text-3xl font-mono text-zinc-300 font-normal drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+                      <span className="text-xl sm:text-2xl md:text-3xl font-inter text-zinc-300 font-normal drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
                         {review.year}
                       </span>
                     )}
@@ -357,7 +364,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
                   />
 
                   {review.isFavorite && (
-                    <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#ff5500]/15 text-[#ff7a29] border border-[#ff5500]/30 text-xs font-mono ml-2 shadow-sm">
+                    <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#ff5500]/15 text-[#ff7a29] border border-[#ff5500]/30 text-xs font-inter ml-2 shadow-sm">
                       <Heart className="w-3.5 h-3.5 fill-[#ff5500]" />
                       <span>Favorite</span>
                     </span>
@@ -365,18 +372,19 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
                 </div>
 
                 {/* Review by Vishakhan Pillai V P · Date */}
-                <div className="flex items-center justify-between text-xs sm:text-sm text-zinc-300 font-mono drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] pt-3 border-t border-white/[0.08]">
+                <div className="flex items-center justify-between text-xs sm:text-sm text-zinc-300 font-inter drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] pt-3 border-t border-white/[0.08]">
                   <span>Review by Vishakhan Pillai V P</span>
                   <span>{review.watchedDate}</span>
                 </div>
               </div>
             </div>
 
-            {/* The Review Critique Essay */}
+            {/* The Review Critique Essay (Rich markdown typography) */}
             <div className="pt-2">
-              <div className="text-base sm:text-lg text-zinc-200 font-normal leading-[1.9] whitespace-pre-line text-justify font-poppins selection:bg-[#ff5500] selection:text-black w-full">
-                {review.review}
-              </div>
+              <FormattedReviewText
+                content={review.review}
+                className="font-poppins text-justify selection:bg-[#ff5500] selection:text-black w-full"
+              />
             </div>
 
           </div>
@@ -385,46 +393,40 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
           {/* RIGHT SIDEBAR: Cast & Crew Single Box with Filter Tabs   */}
           {/* ======================================================== */}
           {(castList.length > 0 || crewList.length > 0) && (
-            <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 lg:sticky lg:top-20 mt-24 sm:mt-36 md:mt-48 lg:mt-60">
+            <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 lg:sticky lg:top-20 mt-28 sm:mt-36 md:mt-48 lg:mt-52 xl:mt-60">
               <div className="p-4 sm:p-5 rounded-2xl bg-[#0b0d12] border border-white/[0.06] space-y-4 font-poppins shadow-xl">
                 
                 {/* Editorial Hairline Tabs: Cast / Crew */}
-                <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-                  <div className="flex items-center gap-7">
-                    <button
-                      type="button"
-                      onClick={() => setCreditsTab("cast")}
-                      className={`relative pb-1 text-xs uppercase tracking-[0.2em] font-mono transition-colors cursor-pointer ${
-                        creditsTab === "cast"
-                          ? "text-white font-semibold"
-                          : "text-zinc-500 hover:text-zinc-300 font-normal"
-                      }`}
-                    >
-                      Cast
-                      {creditsTab === "cast" && (
-                        <span className="absolute -bottom-3 inset-x-0 h-[2px] bg-[#ff5500] rounded-full shadow-[0_0_8px_rgba(255,85,0,0.6)]" />
-                      )}
-                    </button>
+                <div className="flex items-center gap-7 pb-3 border-b border-white/[0.08]">
+                  <button
+                    type="button"
+                    onClick={() => setCreditsTab("cast")}
+                    className={`relative pb-1 text-xs uppercase tracking-[0.2em] font-inter transition-colors cursor-pointer ${
+                      creditsTab === "cast"
+                        ? "text-white font-semibold"
+                        : "text-zinc-500 hover:text-zinc-300 font-normal"
+                    }`}
+                  >
+                    Cast
+                    {creditsTab === "cast" && (
+                      <span className="absolute -bottom-3 inset-x-0 h-[2px] bg-[#ff5500] rounded-full shadow-[0_0_8px_rgba(255,85,0,0.6)]" />
+                    )}
+                  </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setCreditsTab("crew")}
-                      className={`relative pb-1 text-xs uppercase tracking-[0.2em] font-mono transition-colors cursor-pointer ${
-                        creditsTab === "crew"
-                          ? "text-white font-semibold"
-                          : "text-zinc-500 hover:text-zinc-300 font-normal"
-                      }`}
-                    >
-                      Crew
-                      {creditsTab === "crew" && (
-                        <span className="absolute -bottom-3 inset-x-0 h-[2px] bg-[#ff5500] rounded-full shadow-[0_0_8px_rgba(255,85,0,0.6)]" />
-                      )}
-                    </button>
-                  </div>
-
-                  <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-zinc-500">
-                    Credits
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCreditsTab("crew")}
+                    className={`relative pb-1 text-xs uppercase tracking-[0.2em] font-inter transition-colors cursor-pointer ${
+                      creditsTab === "crew"
+                        ? "text-white font-semibold"
+                        : "text-zinc-500 hover:text-zinc-300 font-normal"
+                    }`}
+                  >
+                    Crew
+                    {creditsTab === "crew" && (
+                      <span className="absolute -bottom-3 inset-x-0 h-[2px] bg-[#ff5500] rounded-full shadow-[0_0_8px_rgba(255,85,0,0.6)]" />
+                    )}
+                  </button>
                 </div>
 
                 {/* Cast List (when creditsTab === 'cast') */}
@@ -454,7 +456,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
                           <p className="text-xs font-semibold text-white truncate leading-tight">
                             {member.name}
                           </p>
-                          <p className="text-[11px] text-zinc-400 font-mono truncate leading-tight mt-0.5">
+                          <p className="text-[11px] text-zinc-400 font-inter truncate leading-tight mt-0.5">
                             {member.character || "Actor"}
                           </p>
                         </div>
@@ -490,7 +492,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
                           <p className="text-xs font-semibold text-white truncate leading-tight">
                             {member.name}
                           </p>
-                          <p className="text-[11px] text-zinc-400 font-mono truncate leading-tight mt-0.5">
+                          <p className="text-[11px] text-zinc-400 font-inter truncate leading-tight mt-0.5">
                             {member.job}
                           </p>
                         </div>
@@ -508,20 +510,25 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.08] bg-[#050608] py-10 text-center text-xs text-zinc-500 font-mono mt-20">
+      <footer className="border-t border-white/[0.08] bg-[#050608] py-8 text-xs text-zinc-500 font-inter mt-20">
         <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-zinc-300 font-bold font-poppins">The Retro Talks</span>
-            <span className="text-zinc-600">— Curated Cinema Journal</span>
-          </div>
+          <span className="text-zinc-400">The Retro Talks</span>
 
-          <button
-            onClick={onNavigateHome}
-            className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 text-[#ff5500]" />
-            <span>Return to All Reviews</span>
-          </button>
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => setShowAboutModal(true)}
+              className="text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            >
+              About
+            </button>
+            <button
+              onClick={onNavigateHome}
+              className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-[#ff5500]" />
+              <span>Return to All Reviews</span>
+            </button>
+          </div>
         </div>
       </footer>
 

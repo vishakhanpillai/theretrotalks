@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@theme {
+  --font-poppins: 'Poppins', sans-serif;
+  --font-inter: 'Inter', sans-serif;
+  --font-mono: 'Inter', sans-serif;
+}
+
 @layer base {
   :root {
     --font-poppins: 'Poppins', sans-serif;
@@ -9,7 +15,7 @@
     --font-playfair: 'Playfair Display', serif;
     --font-space: 'Space Grotesk', sans-serif;
     --font-syne: 'Syne', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    --font-mono: 'Inter', sans-serif;
 
     /* Oppenheimer Palette */
     --oppen-noir: #07080a;
@@ -45,6 +51,10 @@
   font-family: var(--font-poppins);
 }
 
+.font-inter {
+  font-family: var(--font-inter);
+}
+
 .font-cinzel {
   font-family: var(--font-cinzel);
 }
@@ -65,8 +75,12 @@
   font-family: var(--font-syne);
 }
 
+.font-mono {
+  font-family: var(--font-inter);
+}
+
 .font-mono-code {
-  font-family: var(--font-mono);
+  font-family: var(--font-inter);
 }
 
 /* Custom Oppenheimer Scrollbar */

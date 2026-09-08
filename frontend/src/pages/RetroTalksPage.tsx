@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   Star,
   Heart,
-  User,
   Film,
 } from "lucide-react";
 import type { Movie, Review, UpcomingMovie } from "../types";
@@ -24,9 +23,22 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [activeFilter, setActiveFilter] = useState<"all" | "favorites" | "top">("all");
 
-  // Scroll to top on mount
+  const [navSolidProgress, setNavSolidProgress] = useState<number>(0);
+
+  // Scroll to top on mount and track scroll position for header solid transition
   useEffect(() => {
     window.scrollTo(0, 0);
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const solidThreshold = 80;
+      const progress = Math.min(1, Math.max(0, currentScrollY / solidThreshold));
+      setNavSolidProgress(Math.round(progress * 100) / 100);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Filtered reviews
@@ -39,36 +51,33 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
   return (
     <div className="min-h-screen bg-[#07080a] text-[#ededed] flex flex-col font-poppins selection:bg-[#ff5500] selection:text-black">
       
-      {/* Top Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#07080a]/90 backdrop-blur-xl transition-all">
-        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 h-18 flex items-center justify-between">
+      {/* Top Header: same dynamic transparent-to-solid vibe as ReviewPage */}
+      <header
+        className="sticky top-0 z-40 w-full transition-colors duration-150"
+        style={{
+          backgroundColor: `rgba(7, 8, 10, ${navSolidProgress})`,
+          borderBottomColor: `rgba(255, 255, 255, ${0.08 * navSolidProgress})`,
+          borderBottomWidth: "1px",
+          borderBottomStyle: "solid",
+          boxShadow:
+            navSolidProgress > 0.4
+              ? `0 4px 20px rgba(0, 0, 0, ${0.6 * navSolidProgress})`
+              : "none",
+        }}
+      >
+        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 h-16 flex items-center justify-between">
           
           {/* Logo */}
           <div
-            className="flex flex-col select-none cursor-pointer"
+            className="flex flex-col select-none cursor-pointer group"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
-            <span className="text-[10px] font-semibold tracking-[0.25em] uppercase text-[#ff5500] leading-none mb-1">
+            <span className="text-[10px] font-semibold tracking-[0.25em] uppercase text-[#ff5500] leading-none mb-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
               The
             </span>
-            <span className="text-xl sm:text-2xl font-black tracking-tight text-white leading-none font-poppins">
+            <span className="text-xl sm:text-2xl font-black tracking-tight text-white leading-none font-poppins drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-zinc-200 transition-colors">
               Retro Talks
             </span>
-          </div>
-
-          {/* Right Navigation */}
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-mono text-zinc-400 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08]">
-              {reviews.length} {reviews.length === 1 ? "Review" : "Reviews"}
-            </span>
-
-            <button
-              onClick={() => setShowAboutModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.2] text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
-            >
-              <User className="w-3.5 h-3.5 text-[#ff5500]" />
-              <span>About</span>
-            </button>
           </div>
 
         </div>
@@ -76,7 +85,7 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
 
       {/* Hero Header */}
       <section className="pt-14 pb-10 px-4 sm:px-6 lg:px-10 max-w-4xl mx-auto w-full text-center space-y-4">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] font-mono tracking-widest uppercase text-zinc-400">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] font-inter tracking-widest uppercase text-zinc-400">
           <span className="w-1.5 h-1.5 rounded-full bg-[#ff5500]" />
           <span>Cinema Reflections & Film Archive</span>
         </div>
@@ -100,17 +109,17 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
             {/* Filter Bar */}
             <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
-                <h2 className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+                <h2 className="text-xs font-inter uppercase tracking-wider text-zinc-400">
                   Reviews
                 </h2>
-                <span className="text-xs font-mono text-zinc-600">({filteredReviews.length})</span>
+                <span className="text-xs font-inter text-zinc-600">({filteredReviews.length})</span>
               </div>
 
               {/* Filter Pills */}
               <div className="flex items-center gap-1 bg-[#0b0d13] p-1 rounded-xl border border-white/[0.06]">
                 <button
                   onClick={() => setActiveFilter("all")}
-                  className={`px-3.5 py-1 text-xs rounded-lg font-mono transition-all cursor-pointer ${
+                  className={`px-3.5 py-1 text-xs rounded-lg font-inter transition-all cursor-pointer ${
                     activeFilter === "all"
                       ? "bg-[#ff5500] text-black font-semibold shadow-sm"
                       : "text-zinc-400 hover:text-white"
@@ -121,7 +130,7 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
 
                 <button
                   onClick={() => setActiveFilter("favorites")}
-                  className={`flex items-center gap-1.5 px-3.5 py-1 text-xs rounded-lg font-mono transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1 text-xs rounded-lg font-inter transition-all cursor-pointer ${
                     activeFilter === "favorites"
                       ? "bg-[#ff5500] text-black font-semibold shadow-sm"
                       : "text-zinc-400 hover:text-white"
@@ -133,7 +142,7 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
 
                 <button
                   onClick={() => setActiveFilter("top")}
-                  className={`flex items-center gap-1.5 px-3.5 py-1 text-xs rounded-lg font-mono transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1 text-xs rounded-lg font-inter transition-all cursor-pointer ${
                     activeFilter === "top"
                       ? "bg-[#ff5500] text-black font-semibold shadow-sm"
                       : "text-zinc-400 hover:text-white"
@@ -190,15 +199,15 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.08] bg-[#050608] py-8 text-xs text-zinc-500 font-mono">
+      <footer className="border-t border-white/[0.08] bg-[#050608] py-8 text-xs text-zinc-500 font-inter">
         <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span>The Retro Talks · Curated by Vishakhan Pillai V P</span>
+          <span className="text-zinc-400">The Retro Talks</span>
 
           <button
             onClick={() => setShowAboutModal(true)}
             className="text-zinc-400 hover:text-white transition-colors cursor-pointer"
           >
-            About Vishakhan
+            About
           </button>
         </div>
       </footer>

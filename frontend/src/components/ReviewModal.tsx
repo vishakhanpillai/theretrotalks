@@ -71,7 +71,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           {/* Title and stats overlay */}
           <div className="absolute bottom-6 left-6 right-6 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 text-xs font-mono text-[#ff7a29] uppercase tracking-wider mb-1">
+              <div className="flex items-center gap-2 text-xs font-inter text-[#ff7a29] uppercase tracking-wider mb-1">
                 <span>{review.year}</span>
                 <span>•</span>
                 <span>Dir. {review.director}</span>
@@ -94,7 +94,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             
             {/* Left Column: Review Content & Meta */}
             <div className={isAdmin ? "lg:col-span-7 space-y-6" : "space-y-6"}>
-              <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
+              <div className="flex items-center justify-between text-xs font-inter text-zinc-400">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-[#ff5500]" />
                   <span><strong>{review.watchedDate}</strong></span>
@@ -114,7 +114,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
               {/* Full Review Content */}
               <div className="bg-[#0e1117] p-6 rounded-2xl border border-white/[0.07] relative space-y-4">
-                <div className="flex items-center justify-between text-xs font-mono uppercase tracking-wider text-[#ff7a29]">
+                <div className="flex items-center justify-between text-xs font-inter uppercase tracking-wider text-[#ff7a29]">
                   <span className="flex items-center gap-1.5">
                     <Quote className="w-3.5 h-3.5 text-[#ff5500]" />
                     <span>Vishakhan's Review</span>
@@ -133,7 +133,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                   {review.genres.map((genre) => (
                     <span
                       key={genre}
-                      className="px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] text-zinc-400 border border-white/[0.08]"
+                      className="px-3 py-1 rounded-full text-xs font-inter bg-white/[0.03] text-zinc-400 border border-white/[0.08]"
                     >
                       {genre}
                     </span>
@@ -147,7 +147,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                   {/* Top Cast */}
                   {review.cast && review.cast.length > 0 && (
                     <div className="space-y-2">
-                      <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+                      <h4 className="text-xs font-inter uppercase tracking-wider text-zinc-400">
                         Top Cast ({review.cast.length})
                       </h4>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
@@ -172,7 +172,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                             </div>
                             <div className="min-w-0">
                               <p className="text-xs font-medium text-white truncate">{member.name}</p>
-                              <p className="text-[10px] text-zinc-400 font-mono truncate">{member.character || "Actor"}</p>
+                              <p className="text-[10px] text-zinc-400 font-inter truncate">{member.character || "Actor"}</p>
                             </div>
                           </div>
                         ))}
@@ -183,7 +183,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                   {/* Key Creative Crew */}
                   {review.crew && review.crew.length > 0 && (
                     <div className="space-y-2">
-                      <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+                      <h4 className="text-xs font-inter uppercase tracking-wider text-zinc-400">
                         Key Creative Crew ({review.crew.length})
                       </h4>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
@@ -208,7 +208,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                             </div>
                             <div className="min-w-0">
                               <p className="text-xs font-medium text-white truncate">{member.name}</p>
-                              <p className="text-[10px] text-[#ff7a29] font-mono truncate">{member.job}</p>
+                              <p className="text-[10px] text-[#ff7a29] font-inter truncate">{member.job}</p>
                             </div>
                           </div>
                         ))}
@@ -233,7 +233,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                       <button
                         key={t}
                         onClick={() => setActiveStoryTemplate(t)}
-                        className={`px-2 py-0.5 text-[10px] uppercase font-mono rounded transition-all cursor-pointer ${
+                        className={`px-2 py-0.5 text-[10px] uppercase font-inter rounded transition-all cursor-pointer ${
                           activeStoryTemplate === t
                             ? "bg-[#ff5500] text-black font-bold"
                             : "text-zinc-400 hover:text-white"
@@ -274,7 +274,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                       </span>
                     </div>
 
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-white/[0.08] text-zinc-300">
+                    <span className="text-[9px] font-inter px-2 py-0.5 rounded bg-white/[0.08] text-zinc-300">
                       {review.year}
                     </span>
                   </div>
@@ -293,7 +293,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                     <h3 className="text-sm font-poppins font-medium text-white leading-tight">
                       {review.title}
                     </h3>
-                    <p className="text-[10px] text-[#ff7a29] font-mono mt-0.5">
+                    <p className="text-[10px] text-[#ff7a29] font-inter mt-0.5">
                       Dir. {review.director}
                     </p>
 
@@ -317,7 +317,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="relative z-10 pt-2 border-t border-white/[0.1] flex items-center justify-between text-[8px] font-mono text-zinc-400">
+                  <div className="relative z-10 pt-2 border-t border-white/[0.1] flex items-center justify-between text-[8px] font-inter text-zinc-400">
                     <span>@theretrotalks</span>
                     <span className="text-[#ff5500]">Personal Review</span>
                   </div>
@@ -345,7 +345,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowPosterModal(true)}
-                    className="w-full py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-[#ff5500]/15 text-zinc-300 hover:text-[#ff7a29] border border-white/[0.08] hover:border-[#ff5500]/30 font-mono text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    className="w-full py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-[#ff5500]/15 text-zinc-300 hover:text-[#ff7a29] border border-white/[0.08] hover:border-[#ff5500]/30 font-inter text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                   >
                     <Film className="w-3.5 h-3.5 text-[#ff5500]" />
                     <span>Change Poster Artwork</span>
@@ -359,13 +359,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
         {/* Modal Footer */}
         <div className="px-8 py-4 bg-[#07080a] border-t border-white/[0.07] flex items-center justify-between">
-          <span className="text-xs font-mono text-zinc-500">
+          <span className="text-xs font-inter text-zinc-500">
             The Retro Talks Cinema Archive
           </span>
 
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-mono uppercase tracking-wider text-zinc-300 hover:text-white border border-white/[0.08] transition-all cursor-pointer"
+            className="px-5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-inter uppercase tracking-wider text-zinc-300 hover:text-white border border-white/[0.08] transition-all cursor-pointer"
           >
             Close
           </button>

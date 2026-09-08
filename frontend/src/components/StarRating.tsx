@@ -131,7 +131,7 @@ export const StarRating: React.FC<StarRatingProps> = ({
 
       {showValue && (
         <span
-          className={`font-mono font-semibold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] ml-2 inline-flex items-baseline ${
+          className={`font-inter font-semibold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] ml-2 inline-flex items-baseline ${
             valueClassName || valueSizes[size]
           }`}
         >

@@ -4,6 +4,7 @@ import type { Movie, Review } from "../types";
 import { getBackdropUrl, getPosterUrl } from "../utils/images";
 import { StarRating } from "./StarRating";
 import { PosterSelectorModal } from "./PosterSelectorModal";
+import { ReviewEditor } from "./ReviewEditor";
 
 interface MovieModalProps {
   movie: Movie | null;
@@ -142,7 +143,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
 
           {/* Title and tagline */}
           <div className="absolute bottom-6 left-6 right-6">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#ff5500]/20 border border-[#ff5500]/40 text-[#ff7a29] text-[10px] font-mono uppercase tracking-widest mb-1.5">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#ff5500]/20 border border-[#ff5500]/40 text-[#ff7a29] text-[10px] font-inter uppercase tracking-widest mb-1.5">
               <Flame className="w-3 h-3 fill-[#ff5500]" />
               <span>Log to Personal Diary</span>
             </div>
@@ -150,7 +151,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
               {current.title}
             </h2>
             {current.tagline && (
-              <p className="text-xs sm:text-sm text-zinc-300 italic mt-0.5 font-serif">
+              <p className="text-xs sm:text-sm text-zinc-300 italic mt-0.5 font-inter">
                 "{current.tagline}"
               </p>
             )}
@@ -184,7 +185,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowPosterModal(true)}
-                  className="mt-2.5 w-full py-2 px-2.5 rounded-xl bg-white/[0.04] hover:bg-[#ff5500]/15 text-zinc-300 hover:text-[#ff7a29] border border-white/[0.08] hover:border-[#ff5500]/30 text-xs font-mono flex items-center justify-center gap-1.5 transition-all cursor-pointer group shadow-sm"
+                  className="mt-2.5 w-full py-2 px-2.5 rounded-xl bg-white/[0.04] hover:bg-[#ff5500]/15 text-zinc-300 hover:text-[#ff7a29] border border-white/[0.08] hover:border-[#ff5500]/30 text-xs font-inter flex items-center justify-center gap-1.5 transition-all cursor-pointer group shadow-sm"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#ff5500] group-hover:rotate-12 transition-transform" />
                   <span>Change Poster</span>
@@ -198,21 +199,21 @@ export const MovieModal: React.FC<MovieModalProps> = ({
               {/* Meta pills */}
               <div className="flex flex-wrap items-center gap-2">
                 {current.year && (
-                  <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.03] text-zinc-300 border border-white/[0.08] text-xs font-mono">
+                  <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.03] text-zinc-300 border border-white/[0.08] text-xs font-inter">
                     <Calendar className="w-3.5 h-3.5 text-zinc-400" />
                     <span>{current.year}</span>
                   </div>
                 )}
 
                 {current.runtime ? (
-                  <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.03] text-zinc-300 border border-white/[0.08] text-xs font-mono">
+                  <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.03] text-zinc-300 border border-white/[0.08] text-xs font-inter">
                     <Clock className="w-3.5 h-3.5 text-zinc-400" />
                     <span>{current.runtime} min</span>
                   </div>
                 ) : null}
 
                 {current.director && (
-                  <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.03] text-zinc-300 border border-white/[0.08] text-xs font-mono">
+                  <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.03] text-zinc-300 border border-white/[0.08] text-xs font-inter">
                     <User className="w-3.5 h-3.5 text-[#ff7a29]" />
                     <span>Dir. <strong className="text-white font-medium">{current.director}</strong></span>
                   </div>
@@ -221,7 +222,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
 
               {/* Synopsis */}
               <div>
-                <h4 className="text-[10px] uppercase tracking-widest font-mono text-zinc-500 mb-1">
+                <h4 className="text-[10px] uppercase tracking-widest font-inter text-zinc-500 mb-1">
                   Synopsis
                 </h4>
                 <p className="text-xs text-zinc-400 leading-relaxed line-clamp-3">
@@ -243,7 +244,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsFavorite(!isFavorite)}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-mono transition-all ${
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-inter transition-all ${
                         isFavorite
                           ? "bg-[#ff5500]/20 border-[#ff5500]/40 text-[#ff5500]"
                           : "bg-white/[0.02] border-white/[0.08] text-zinc-400 hover:text-white"
@@ -257,48 +258,37 @@ export const MovieModal: React.FC<MovieModalProps> = ({
                   {/* Rating and Date Row */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                      <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 block mb-1">
+                      <label className="text-[10px] font-inter uppercase tracking-wider text-zinc-500 block mb-1">
                         Your Rating
                       </label>
                       <StarRating rating={myRating} onChange={(r) => setMyRating(r)} size="md" />
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 block mb-1">
+                      <label className="text-[10px] font-inter uppercase tracking-wider text-zinc-500 block mb-1">
                         Watched Date
                       </label>
                       <input
                         type="date"
                         value={watchedDate}
                         onChange={(e) => setWatchedDate(e.target.value)}
-                        className="bg-[#141820] border border-white/[0.08] text-xs font-mono text-zinc-200 px-3 py-1.5 rounded-lg focus:outline-none focus:border-[#ff5500]"
+                        className="bg-[#141820] border border-white/[0.08] text-xs font-inter text-zinc-200 px-3 py-1.5 rounded-lg focus:outline-none focus:border-[#ff5500]"
                       />
                     </div>
                   </div>
 
-                  {/* Review Textarea */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">
-                        Personal Review Notes
-                      </label>
-                      <span className="text-[10px] font-mono text-zinc-500">
-                        {myReview.length} chars
-                      </span>
-                    </div>
-                    <textarea
-                      rows={3}
-                      placeholder="Write your personal thoughts, favorite moments, cinematography notes, or overall verdict..."
-                      value={myReview}
-                      onChange={(e) => setMyReview(e.target.value)}
-                      required
-                      className="w-full p-3 bg-[#141820] border border-white/[0.08] rounded-xl text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-[#ff5500] font-poppins resize-none"
-                    />
-                  </div>
+                  {/* Rich Review Editor */}
+                  <ReviewEditor
+                    value={myReview}
+                    onChange={setMyReview}
+                    label="Personal Review Essay"
+                    placeholder="Write your cinema critique, reflections on pacing, performances, cinematography, or personal resonance..."
+                    minRows={6}
+                  />
 
                   {/* Submit Action */}
                   <div className="flex items-center justify-between pt-1">
-                    <span className="text-[10px] text-zinc-500 font-mono">
+                    <span className="text-[10px] text-zinc-500 font-inter">
                       Will appear in your personal diary
                     </span>
 
@@ -340,14 +330,14 @@ export const MovieModal: React.FC<MovieModalProps> = ({
 
         {/* Modal Footer */}
         <div className="px-8 py-4 bg-[#07080a] border-t border-white/[0.07] flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-mono text-zinc-500">
+          <div className="flex items-center gap-2 text-xs font-inter text-zinc-500">
             <span className={`w-1.5 h-1.5 rounded-full ${loading ? "bg-amber-400 animate-pulse" : "bg-[#ff5500]"}`} />
             <span>{loading ? "Syncing details..." : `TMDB #${current.id}`}</span>
           </div>
 
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-mono uppercase tracking-wider text-zinc-300 hover:text-white border border-white/[0.08] transition-all"
+            className="px-5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-inter uppercase tracking-wider text-zinc-300 hover:text-white border border-white/[0.08] transition-all"
           >
             Close
           </button>
