@@ -406,14 +406,15 @@ export const MovieModal: React.FC<MovieModalProps> = ({
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-inter uppercase tracking-wider text-zinc-500 block mb-1">
-                        Watched Date
+                      <label className="text-[10px] font-inter uppercase tracking-wider text-zinc-500 block mb-1 flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-[#ff5500]" />
+                        <span>Watched Date</span>
                       </label>
                       <input
                         type="date"
                         value={watchedDate}
                         onChange={(e) => setWatchedDate(e.target.value)}
-                        className="bg-[#141820] border border-white/[0.08] text-xs font-inter text-zinc-200 px-3 py-1.5 rounded-lg focus:outline-none focus:border-[#ff5500]"
+                        className="bg-[#141820] border border-white/[0.08] text-xs font-inter text-zinc-200 px-3 py-1.5 rounded-lg focus:outline-none focus:border-[#ff5500] cursor-pointer [color-scheme:dark]"
                       />
                     </div>
                   </div>
@@ -424,7 +425,8 @@ export const MovieModal: React.FC<MovieModalProps> = ({
                     onChange={setMyReview}
                     label="Personal Review Essay"
                     placeholder="Write your cinema critique, reflections on pacing, performances, cinematography, or personal resonance..."
-                    minRows={6}
+                    minRows={12}
+                    textareaClassName="min-h-[260px] sm:min-h-[340px]"
                   />
 
                   {/* Submit Action */}

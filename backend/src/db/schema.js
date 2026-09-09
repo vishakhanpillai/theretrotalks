@@ -56,6 +56,12 @@ const initSchema = (db) => {
     // Column already exists
   }
 
+  try {
+    db.exec("ALTER TABLE reviews ADD COLUMN display_order INTEGER DEFAULT 0;");
+  } catch (e) {
+    // Column already exists
+  }
+
   // Populate empty slugs
   try {
     const unslugged = db.prepare("SELECT id, title FROM reviews WHERE slug IS NULL OR slug = ''").all();
@@ -67,6 +73,20 @@ const initSchema = (db) => {
     }
   } catch (e) {
     console.warn("Slug migration error:", e.message);
+  }
+
+  // Initialize display_order if all rows are 0 or unassigned
+  try {
+    const rows = db.prepare("SELECT id, created_at, display_order FROM reviews ORDER BY created_at DESC").all();
+    const hasDistinctOrder = rows.some((r, idx) => r.display_order !== 0 && r.display_order !== idx);
+    if (!hasDistinctOrder && rows.length > 1) {
+      const updateOrder = db.prepare("UPDATE reviews SET display_order = ? WHERE id = ?");
+      rows.forEach((r, idx) => {
+        updateOrder.run(idx, r.id);
+      });
+    }
+  } catch (e) {
+    console.warn("Display order migration error:", e.message);
   }
 };
 

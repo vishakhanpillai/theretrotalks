@@ -2,10 +2,11 @@ const { db } = require("../connection");
 const { slugify } = require("../../utils/slugify");
 
 const getAllReviews = () => {
-  const rows = db.prepare("SELECT * FROM reviews ORDER BY created_at DESC").all();
+  const rows = db.prepare("SELECT * FROM reviews ORDER BY display_order ASC, created_at DESC").all();
   return rows.map((row) => ({
     id: row.id,
     slug: row.slug || slugify(row.title),
+    displayOrder: row.display_order ?? 0,
     tmdbId: row.tmdb_id,
     title: row.title,
     year: row.year,
@@ -39,6 +40,7 @@ const getReviewById = (idOrSlug) => {
   return {
     id: row.id,
     slug: row.slug || slugify(row.title),
+    displayOrder: row.display_order ?? 0,
     tmdbId: row.tmdb_id,
     title: row.title,
     year: row.year,
@@ -65,9 +67,16 @@ const createReview = (reviewData) => {
   const castStr = JSON.stringify(reviewData.cast || []);
   const crewStr = JSON.stringify(reviewData.crew || []);
 
+  // Shift existing display orders by 1 so newly logged review starts at top (display_order = 0)
+  try {
+    db.prepare("UPDATE reviews SET display_order = display_order + 1").run();
+  } catch (e) {
+    // Ignore if column doesn't exist yet
+  }
+
   const stmt = db.prepare(`
-    INSERT INTO reviews (id, tmdb_id, title, year, poster, backdrop, director, genres, rating, review, watched_date, is_favorite, cast, crew, overview, slug, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO reviews (id, tmdb_id, title, year, poster, backdrop, director, genres, rating, review, watched_date, is_favorite, cast, crew, overview, slug, display_order, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   stmt.run(
@@ -87,6 +96,7 @@ const createReview = (reviewData) => {
     crewStr,
     reviewData.overview || null,
     slug,
+    0,
     now,
     now
   );
@@ -162,6 +172,23 @@ const deleteReview = (id) => {
   return info.changes > 0;
 };
 
+const reorderReviews = (orderedIds) => {
+  if (!Array.isArray(orderedIds)) return getAllReviews();
+  const stmt = db.prepare("UPDATE reviews SET display_order = ?, updated_at = ? WHERE id = ?");
+  const now = Date.now();
+  db.exec("BEGIN TRANSACTION;");
+  try {
+    orderedIds.forEach((id, index) => {
+      stmt.run(index, now, String(id));
+    });
+    db.exec("COMMIT;");
+  } catch (err) {
+    db.exec("ROLLBACK;");
+    throw err;
+  }
+  return getAllReviews();
+};
+
 module.exports = {
   getAllReviews,
   getReviewById,
@@ -172,4 +199,5 @@ module.exports = {
   updateReviewBackdrop,
   updateReviewOverview,
   deleteReview,
+  reorderReviews,
 };

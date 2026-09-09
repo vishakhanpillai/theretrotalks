@@ -11,6 +11,8 @@ import {
   Link as LinkIcon,
   HelpCircle,
   Sparkles,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import { FormattedReviewText } from "./FormattedReviewText";
 
@@ -21,18 +23,23 @@ export interface ReviewEditorProps {
   minRows?: number;
   label?: string;
   autoFocus?: boolean;
+  className?: string;
+  textareaClassName?: string;
 }
 
 export const ReviewEditor: React.FC<ReviewEditorProps> = ({
   value,
   onChange,
   placeholder = "Write your cinema critique, reflections on cinematography, pacing, performances, or personal connection...",
-  minRows = 12,
+  minRows = 14,
   label = "Critique & Review Essay",
   autoFocus = false,
+  className = "",
+  textareaClassName = "",
 }) => {
   const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
   const [showCheatsheet, setShowCheatsheet] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Helper: Apply formatting to textarea selection
@@ -160,7 +167,13 @@ export const ReviewEditor: React.FC<ReviewEditorProps> = ({
   const readingTimeMin = Math.max(1, Math.ceil(wordCount / 200));
 
   return (
-    <div className="space-y-2 flex flex-col flex-grow">
+    <div
+      className={
+        isFullscreen
+          ? "fixed inset-0 z-[100] bg-[#07090d] p-4 sm:p-8 flex flex-col space-y-3"
+          : `space-y-2 flex flex-col flex-grow ${className}`
+      }
+    >
       {/* Top Header with Label, Tabs & Format Guide Button */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <label className="text-xs font-inter font-semibold text-zinc-300 flex items-center gap-1.5">
@@ -204,6 +217,16 @@ export const ReviewEditor: React.FC<ReviewEditorProps> = ({
             title="Formatting Guide & Keyboard Shortcuts"
           >
             <HelpCircle className="w-4 h-4" />
+          </button>
+
+          {/* Fullscreen Toggle */}
+          <button
+            type="button"
+            onClick={() => setIsFullscreen((prev) => !prev)}
+            className="p-1 rounded-lg text-zinc-400 hover:text-[#ff7a29] hover:bg-white/[0.04] transition-colors cursor-pointer"
+            title={isFullscreen ? "Exit Fullscreen (Esc)" : "Fullscreen Studio Mode"}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
         </div>
       </div>
@@ -355,10 +378,10 @@ export const ReviewEditor: React.FC<ReviewEditorProps> = ({
             placeholder={placeholder}
             autoFocus={autoFocus}
             required
-            className="w-full flex-grow bg-transparent p-4 sm:p-5 text-sm sm:text-base font-inter text-white placeholder-zinc-500 outline-none leading-relaxed resize-y min-h-[280px] sm:min-h-[380px]"
+            className={`w-full flex-grow bg-transparent p-4 sm:p-6 text-sm sm:text-base font-inter text-white placeholder-zinc-500 outline-none leading-relaxed resize-y min-h-[380px] sm:min-h-[480px] ${textareaClassName}`}
           />
         ) : (
-          <div className="p-5 sm:p-8 bg-[#07090d] flex-grow min-h-[280px] sm:min-h-[380px] overflow-y-auto">
+          <div className="p-5 sm:p-8 bg-[#07090d] flex-grow min-h-[380px] sm:min-h-[480px] overflow-y-auto">
             {value.trim() ? (
               <FormattedReviewText content={value} />
             ) : (

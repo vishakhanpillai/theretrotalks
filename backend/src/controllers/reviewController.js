@@ -125,6 +125,25 @@ const deleteReview = (req, res) => {
   }
 };
 
+const reorderReviews = (req, res) => {
+  try {
+    const { orderedIds } = req.body;
+    if (!Array.isArray(orderedIds)) {
+      return res.status(400).json({ error: "orderedIds array is required" });
+    }
+    const updatedReviews = reviewRepository.reorderReviews(orderedIds);
+    res.json({
+      success: true,
+      message: "Reviews reordered successfully",
+      count: updatedReviews.length,
+      reviews: updatedReviews,
+    });
+  } catch (err) {
+    console.error("Error reordering reviews:", err);
+    res.status(500).json({ error: "Failed to reorder reviews in database" });
+  }
+};
+
 module.exports = {
   getAllReviews,
   getReviewById,
@@ -133,4 +152,5 @@ module.exports = {
   updatePoster,
   updateBackdrop,
   deleteReview,
+  reorderReviews,
 };

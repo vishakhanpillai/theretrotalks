@@ -9,6 +9,7 @@ router.get("/:id", reviewController.getReviewById);
 
 // Admin-only endpoints
 router.post("/", requireAdmin, reviewController.createReview);
+router.put("/reorder", requireAdmin, reviewController.reorderReviews);
 router.put("/:id", requireAdmin, reviewController.updateReview);
 router.put("/:id/poster", requireAdmin, reviewController.updatePoster);
 router.put("/:id/backdrop", requireAdmin, reviewController.updateBackdrop);

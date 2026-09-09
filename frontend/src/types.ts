@@ -55,6 +55,7 @@ export interface Review {
   crew?: CrewMember[];
   overview?: string | null;
   slug?: string;
+  displayOrder?: number;
 }
 
 export interface UpcomingMovie {

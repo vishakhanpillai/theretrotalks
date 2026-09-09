@@ -314,6 +314,32 @@ function App() {
     }
   };
 
+  // Reorder reviews in SQLite (Admin Only)
+  const handleReorderReviews = async (orderedIds: (string | number)[]) => {
+    if (!adminToken) return;
+
+    try {
+      const res = await fetch("/api/reviews/reorder", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ orderedIds: orderedIds.map(String) }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.reviews)) {
+          setReviews(data.reviews);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data.reviews));
+        }
+      }
+    } catch (err) {
+      console.error("Error reordering reviews:", err);
+    }
+  };
+
   // 1. Admin Page (only accessible at /admin or via secret shortcut)
   if (route.page === "admin") {
     return (
@@ -325,6 +351,7 @@ function App() {
         onSaveReview={handleSaveNewReview}
         onUpdateReview={handleUpdateReview}
         onDeleteReview={handleDeleteReview}
+        onReorderReviews={handleReorderReviews}
         onUpdatePoster={handleUpdatePoster}
         onUpdateBackdrop={handleUpdateBackdrop}
         onNavigateHome={navigateToHome}

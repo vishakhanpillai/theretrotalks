@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Heart, Loader2, Film, Check } from "lucide-react";
+import { X, Heart, Loader2, Film, Check, Calendar } from "lucide-react";
 import type { Review } from "../types";
 import { getPosterUrl } from "../utils/images";
 import { StarRating } from "./StarRating";
@@ -12,6 +12,40 @@ interface EditReviewModalProps {
   onSave: (updatedData: Partial<Review>) => Promise<void>;
 }
 
+// Convert various date formats into YYYY-MM-DD for native date picker
+const toDateInputValue = (dateStr?: string | null): string => {
+  if (!dateStr) return new Date().toISOString().slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  const parsed = new Date(dateStr);
+  if (!isNaN(parsed.getTime())) {
+    return parsed.toISOString().slice(0, 10);
+  }
+  return new Date().toISOString().slice(0, 10);
+};
+
+// Format YYYY-MM-DD to "Mon DD, YYYY" for consistent display
+const formatDateForStorage = (isoDateStr: string): string => {
+  if (!isoDateStr) return "";
+  const parts = isoDateStr.split("-").map(Number);
+  if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+    const date = new Date(parts[0], parts[1] - 1, parts[2]);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+  const parsed = new Date(isoDateStr);
+  if (!isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+  return isoDateStr;
+};
+
 export const EditReviewModal: React.FC<EditReviewModalProps> = ({
   review,
   isOpen,
@@ -20,7 +54,7 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
 }) => {
   const [rating, setRating] = useState<number>(5.0);
   const [reviewText, setReviewText] = useState<string>("");
-  const [watchedDate, setWatchedDate] = useState<string>("");
+  const [datePickerValue, setDatePickerValue] = useState<string>("");
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [title, setTitle] = useState<string>("");
   const [director, setDirector] = useState<string>("");
@@ -34,7 +68,7 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
     if (review && isOpen) {
       setRating(review.rating || 5.0);
       setReviewText(review.review || "");
-      setWatchedDate(review.watchedDate || "");
+      setDatePickerValue(toDateInputValue(review.watchedDate));
       setIsFavorite(Boolean(review.isFavorite));
       setTitle(review.title || "");
       setDirector(review.director || "");
@@ -65,7 +99,7 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
         year: year.trim(),
         rating,
         review: reviewText.trim(),
-        watchedDate: watchedDate.trim(),
+        watchedDate: formatDateForStorage(datePickerValue),
         isFavorite,
       });
 
@@ -86,11 +120,11 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
       {/* Backdrop click to close */}
       <div className="fixed inset-0" onClick={onClose} />
 
-      {/* Large Studio Window Container */}
-      <div className="relative w-[96vw] max-w-5xl xl:max-w-6xl h-[92vh] max-h-[960px] bg-[#090b10] border border-white/[0.12] rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_60px_rgba(255,85,0,0.12)] overflow-hidden z-10 flex flex-col">
+      {/* Large Studio Window Container - Expansive Full Height */}
+      <div className="relative w-[98vw] max-w-7xl h-[96vh] max-h-[1200px] bg-[#090b10] border border-white/[0.12] rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_60px_rgba(255,85,0,0.12)] overflow-hidden z-10 flex flex-col">
         
         {/* Header Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-[#0c0f16]/95 backdrop-blur-md flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-3.5 border-b border-white/[0.08] bg-[#0c0f16]/95 backdrop-blur-md flex-shrink-0">
           <div className="flex items-center gap-4 min-w-0">
             <div className="w-10 h-14 rounded-xl overflow-hidden bg-[#181c24] flex-shrink-0 border border-white/[0.1] shadow-md">
               {posterUrl ? (
@@ -129,7 +163,7 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
         </div>
 
         {/* Studio Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 flex-grow flex flex-col">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 flex-grow flex flex-col overflow-hidden gap-3.5">
           {errorMessage && (
             <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs font-inter text-red-400 flex-shrink-0">
               {errorMessage}
@@ -137,7 +171,7 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
           )}
 
           {/* Top Metadata Control Bar */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-[#0e1118] border border-white/[0.06] flex flex-wrap items-center justify-between gap-4 flex-shrink-0">
+          <div className="p-3 sm:p-4 rounded-2xl bg-[#0e1118] border border-white/[0.06] flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
             {/* Rating */}
             <div>
               <label className="text-[10px] font-inter uppercase tracking-wider text-zinc-400 block mb-1 font-medium">
@@ -146,7 +180,7 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
               <StarRating
                 rating={rating}
                 onChange={setRating}
-                size="lg"
+                size="md"
                 showValue={true}
               />
             </div>
@@ -159,37 +193,37 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
               <button
                 type="button"
                 onClick={() => setIsFavorite(!isFavorite)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-inter font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-inter font-semibold transition-all cursor-pointer ${
                   isFavorite
                     ? "bg-[#ff5500]/15 border-[#ff5500]/40 text-[#ff7a29] shadow-[0_0_15px_rgba(255,85,0,0.2)]"
                     : "bg-white/[0.03] border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.06]"
                 }`}
               >
                 <Heart
-                  className={`w-4 h-4 transition-colors ${
+                  className={`w-3.5 h-3.5 transition-colors ${
                     isFavorite ? "fill-[#ff5500] text-[#ff5500]" : ""
                   }`}
                 />
-                <span>{isFavorite ? "Curated Favorite" : "Mark as Favorite"}</span>
+                <span>{isFavorite ? "Favorite" : "Mark Favorite"}</span>
               </button>
             </div>
 
-            {/* Watched Date */}
+            {/* Watched Date Picker */}
             <div className="w-full sm:w-44">
-              <label className="text-[10px] font-inter uppercase tracking-wider text-zinc-400 block mb-1 font-medium">
-                Watched Date
+              <label className="text-[10px] font-inter uppercase tracking-wider text-zinc-400 block mb-1 font-medium flex items-center gap-1">
+                <Calendar className="w-3 h-3 text-[#ff5500]" />
+                <span>Watched Date</span>
               </label>
               <input
-                type="text"
-                value={watchedDate}
-                onChange={(e) => setWatchedDate(e.target.value)}
-                placeholder="e.g. Aug 28, 2026"
-                className="w-full bg-[#141822] border border-white/[0.08] focus:border-[#ff5500] rounded-xl px-3.5 py-2 text-xs font-inter text-white placeholder-zinc-500 outline-none"
+                type="date"
+                value={datePickerValue}
+                onChange={(e) => setDatePickerValue(e.target.value)}
+                className="w-full bg-[#141822] border border-white/[0.08] focus:border-[#ff5500] rounded-xl px-3 py-1.5 text-xs font-inter text-white outline-none cursor-pointer [color-scheme:dark]"
               />
             </div>
 
             {/* Director */}
-            <div className="w-full sm:w-44">
+            <div className="w-full sm:w-48">
               <label className="text-[10px] font-inter uppercase tracking-wider text-zinc-400 block mb-1 font-medium">
                 Director
               </label>
@@ -198,7 +232,7 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
                 value={director}
                 onChange={(e) => setDirector(e.target.value)}
                 placeholder="Director name"
-                className="w-full bg-[#141822] border border-white/[0.08] focus:border-[#ff5500] rounded-xl px-3.5 py-2 text-xs font-inter text-white placeholder-zinc-500 outline-none"
+                className="w-full bg-[#141822] border border-white/[0.08] focus:border-[#ff5500] rounded-xl px-3 py-1.5 text-xs font-inter text-white placeholder-zinc-500 outline-none"
               />
             </div>
 
@@ -212,19 +246,21 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
                 placeholder="e.g. 2024"
-                className="w-full bg-[#141822] border border-white/[0.08] focus:border-[#ff5500] rounded-xl px-3.5 py-2 text-xs font-inter text-white placeholder-zinc-500 outline-none"
+                className="w-full bg-[#141822] border border-white/[0.08] focus:border-[#ff5500] rounded-xl px-3 py-1.5 text-xs font-inter text-white placeholder-zinc-500 outline-none"
               />
             </div>
           </div>
 
-          {/* Expansive Review Editor Canvas */}
-          <div className="flex-grow flex flex-col min-h-[360px]">
+          {/* Expansive Review Editor Canvas - Fills Remaining Space */}
+          <div className="flex-grow flex flex-col min-h-0 h-full">
             <ReviewEditor
               value={reviewText}
               onChange={setReviewText}
               label="Film Critique Essay"
               placeholder="Write your cinema critique, reflections on cinematography, pacing, performances, or personal connection..."
-              minRows={14}
+              minRows={20}
+              className="h-full flex-grow"
+              textareaClassName="h-full min-h-[460px] sm:min-h-[560px] lg:min-h-[640px]"
             />
           </div>
 

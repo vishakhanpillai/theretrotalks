@@ -23,6 +23,11 @@ import {
   Check,
   X,
   Calendar,
+  Move,
+  Save,
+  GripVertical,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import type { Review, Movie } from "../types";
 import { getPosterUrl } from "../utils/images";
@@ -43,6 +48,7 @@ interface AdminPageProps {
   onSaveReview: (review: Review) => Promise<void>;
   onUpdateReview?: (reviewId: string | number, updatedData: Partial<Review>) => Promise<void>;
   onDeleteReview: (id: string | number) => Promise<void>;
+  onReorderReviews?: (orderedIds: (string | number)[]) => Promise<void>;
   onUpdatePoster: (reviewId: string | number, newPosterUrl: string) => Promise<void>;
   onUpdateBackdrop?: (reviewId: string | number, newBackdropUrl: string) => Promise<void>;
   onNavigateHome: () => void;
@@ -50,7 +56,7 @@ interface AdminPageProps {
 }
 
 type FilterTab = "all" | "favorites" | "5star" | "4star_plus";
-type SortOption = "newest" | "oldest" | "rating_desc" | "rating_asc" | "year_desc" | "title_asc";
+type SortOption = "custom" | "newest" | "oldest" | "rating_desc" | "rating_asc" | "year_desc" | "title_asc";
 
 export const AdminPage: React.FC<AdminPageProps> = ({
   reviews,
@@ -60,6 +66,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   onSaveReview,
   onUpdateReview,
   onDeleteReview,
+  onReorderReviews,
   onUpdatePoster,
   onUpdateBackdrop,
   onNavigateHome,
@@ -81,7 +88,44 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   // Filter & Sort State for Logged Reviews Grid
   const [gridSearch, setGridSearch] = useState("");
   const [filterTab, setFilterTab] = useState<FilterTab>("all");
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [sortBy, setSortBy] = useState<SortOption>("custom");
+
+  // Reordering Reviews State
+  const [isReorderMode, setIsReorderMode] = useState<boolean>(false);
+  const [orderedList, setOrderedList] = useState<Review[]>(reviews);
+  const [hasPendingReorder, setHasPendingReorder] = useState<boolean>(false);
+  const [savingReorder, setSavingReorder] = useState<boolean>(false);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // Sync orderedList when reviews prop updates (if not dirty)
+  useEffect(() => {
+    if (!hasPendingReorder) {
+      setOrderedList(reviews);
+    }
+  }, [reviews, hasPendingReorder]);
+
+  const moveReview = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= orderedList.length || fromIndex === toIndex) return;
+    const updated = [...orderedList];
+    const [moved] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, moved);
+    setOrderedList(updated);
+    setHasPendingReorder(true);
+  };
+
+  const handleSaveReorder = async () => {
+    if (!onReorderReviews) return;
+    setSavingReorder(true);
+    try {
+      await onReorderReviews(orderedList.map((r) => r.id));
+      setHasPendingReorder(false);
+      showToast("Display order updated on website!");
+    } catch (e) {
+      showToast("Failed to save display order.");
+    } finally {
+      setSavingReorder(false);
+    }
+  };
 
   // Modals inside Admin Page
   const [selectedMovieForReview, setSelectedMovieForReview] = useState<Movie | null>(null);
@@ -196,8 +240,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
   // Filter & Sort Logged Reviews
   const displayedReviews = useMemo(() => {
-    return reviews
+    const sourceList = isReorderMode ? orderedList : (sortBy === "custom" ? orderedList : reviews);
+    return sourceList
       .filter((r) => {
+        if (isReorderMode) return true; // Show all reviews in reorder mode
         // Tab Filter
         if (filterTab === "favorites" && !r.isFavorite) return false;
         if (filterTab === "5star" && r.rating < 5.0) return false;
@@ -216,8 +262,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         return true;
       })
       .sort((a, b) => {
+        if (sortBy === "custom" || isReorderMode) {
+          const indexA = orderedList.findIndex((item) => String(item.id) === String(a.id));
+          const indexB = orderedList.findIndex((item) => String(item.id) === String(b.id));
+          return (indexA === -1 ? 9999 : indexA) - (indexB === -1 ? 9999 : indexB);
+        }
         if (sortBy === "newest") {
-          // If createdAt exists, sort by it, otherwise reverse index
           return (Number(b.id) || 0) - (Number(a.id) || 0);
         }
         if (sortBy === "oldest") {
@@ -237,7 +287,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         }
         return 0;
       });
-  }, [reviews, filterTab, gridSearch, sortBy]);
+  }, [reviews, orderedList, isReorderMode, filterTab, gridSearch, sortBy]);
 
   // --------------------------------------------------------------------------
   // 1. UNAUTHENTICATED STATE: Sleek Admin Login View
@@ -642,6 +692,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                   onChange={(e) => setSortBy(e.target.value as SortOption)}
                   className="bg-transparent text-white outline-none cursor-pointer text-xs font-inter pr-1"
                 >
+                  <option value="custom" className="bg-[#0e1118] text-[#ff7a29]">Site Display Order (Default)</option>
                   <option value="newest" className="bg-[#0e1118] text-white">Date Added (Newest)</option>
                   <option value="oldest" className="bg-[#0e1118] text-white">Date Added (Oldest)</option>
                   <option value="rating_desc" className="bg-[#0e1118] text-white">Rating (Highest)</option>
@@ -650,18 +701,127 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                   <option value="title_asc" className="bg-[#0e1118] text-white">Title (A to Z)</option>
                 </select>
               </div>
+
+              {/* Rearrange Order Mode Toggle */}
+              {onReorderReviews && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextMode = !isReorderMode;
+                    setIsReorderMode(nextMode);
+                    if (nextMode) {
+                      setSortBy("custom");
+                      setGridSearch("");
+                      setFilterTab("all");
+                    }
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-inter font-medium transition-all cursor-pointer ${
+                    isReorderMode
+                      ? "bg-[#ff5500] text-black border-[#ff5500] shadow-[0_0_15px_rgba(255,85,0,0.35)] font-bold"
+                      : "bg-[#0e1118] border-white/[0.08] text-zinc-300 hover:text-white hover:border-white/20"
+                  }`}
+                  title="Rearrange order of reviews on homepage and reviews page"
+                >
+                  <Move className="w-3.5 h-3.5" />
+                  <span>{isReorderMode ? "Exit Rearrange" : "Rearrange Order"}</span>
+                </button>
+              )}
             </div>
           </div>
+
+          {/* REARRANGE MODE BANNER */}
+          {isReorderMode && (
+            <div className="mb-6 p-4 rounded-2xl bg-[#ff5500]/10 border border-[#ff5500]/30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-in fade-in">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-[#ff5500]/20 text-[#ff5500]">
+                  <Move className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold font-poppins text-white">
+                    Rearrange Review Order Mode
+                  </h4>
+                  <p className="text-xs font-inter text-zinc-300">
+                    Drag cards or use the arrow buttons to define the order of reviews shown across the site.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {hasPendingReorder && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOrderedList(reviews);
+                      setHasPendingReorder(false);
+                    }}
+                    disabled={savingReorder}
+                    className="px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-inter text-zinc-300 transition-colors cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleSaveReorder}
+                  disabled={savingReorder || !hasPendingReorder}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl font-inter font-bold text-xs transition-all cursor-pointer ${
+                    hasPendingReorder
+                      ? "bg-[#ff5500] hover:bg-[#ff6a1f] text-black shadow-[0_0_20px_rgba(255,85,0,0.4)] animate-pulse"
+                      : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                  }`}
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{savingReorder ? "Saving..." : hasPendingReorder ? "Save New Order" : "Order Saved"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsReorderMode(false)}
+                  className="px-3 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-xs font-inter text-white transition-colors cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* THE POSTER GRID */}
           {displayedReviews.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5 lg:gap-6">
-              {displayedReviews.map((rev) => {
+              {displayedReviews.map((rev, idx) => {
                 const poster = getPosterUrl(rev.poster, "w500");
                 return (
                   <div
                     key={rev.id}
-                    className="group relative flex flex-col rounded-2xl bg-[#0b0d13] border border-white/[0.08] hover:border-[#ff5500]/50 transition-all duration-300 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] hover:shadow-[0_15px_40px_rgba(255,85,0,0.18)]"
+                    draggable={isReorderMode}
+                    onDragStart={(e) => {
+                      if (!isReorderMode) return;
+                      e.dataTransfer.setData("text/plain", String(idx));
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
+                    onDragOver={(e) => {
+                      if (!isReorderMode) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      if (dragOverIndex !== idx) setDragOverIndex(idx);
+                    }}
+                    onDragLeave={() => {
+                      if (dragOverIndex === idx) setDragOverIndex(null);
+                    }}
+                    onDrop={(e) => {
+                      if (!isReorderMode) return;
+                      e.preventDefault();
+                      setDragOverIndex(null);
+                      const from = Number(e.dataTransfer.getData("text/plain"));
+                      if (!isNaN(from) && from !== idx) {
+                        moveReview(from, idx);
+                      }
+                    }}
+                    className={`group relative flex flex-col rounded-2xl bg-[#0b0d13] border transition-all duration-300 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] ${
+                      isReorderMode
+                        ? dragOverIndex === idx
+                          ? "border-[#ff5500] ring-2 ring-[#ff5500] scale-[1.03] cursor-grab active:cursor-grabbing"
+                          : "border-white/[0.15] hover:border-[#ff5500]/60 cursor-grab active:cursor-grabbing"
+                        : "border-white/[0.08] hover:border-[#ff5500]/50 hover:shadow-[0_15px_40px_rgba(255,85,0,0.18)]"
+                    }`}
                   >
                     {/* Poster with 2:3 ratio */}
                     <div className="relative aspect-[2/3] w-full overflow-hidden bg-[#141720]">
@@ -669,7 +829,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                         <img
                           src={poster}
                           alt={rev.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          className={`w-full h-full object-cover transition-transform duration-500 ${
+                            isReorderMode ? "" : "group-hover:scale-105"
+                          }`}
                           loading="lazy"
                         />
                       ) : (
@@ -680,34 +842,96 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
                       {/* Top Badges */}
                       <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none z-10">
-                        {/* Rating Badge */}
-                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/75 backdrop-blur-md border border-white/[0.12] text-xs font-inter font-bold text-[#ff7a29] shadow-md">
-                          <Star className="w-3 h-3 fill-[#ff5500] text-[#ff5500]" />
-                          <span>{rev.rating.toFixed(1)}</span>
-                        </div>
+                        {/* Position Badge in Reorder Mode or Rating Badge */}
+                        {isReorderMode ? (
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#ff5500] text-black text-xs font-inter font-extrabold shadow-[0_0_15px_rgba(255,85,0,0.5)]">
+                            <GripVertical className="w-3.5 h-3.5" />
+                            <span>#{idx + 1}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/75 backdrop-blur-md border border-white/[0.12] text-xs font-inter font-bold text-[#ff7a29] shadow-md">
+                            <Star className="w-3 h-3 fill-[#ff5500] text-[#ff5500]" />
+                            <span>{rev.rating.toFixed(1)}</span>
+                          </div>
+                        )}
 
                         {/* Favorite Badge */}
-                        {rev.isFavorite && (
+                        {!isReorderMode && rev.isFavorite && (
                           <div className="p-1 rounded-lg bg-black/75 backdrop-blur-md border border-[#ff5500]/30 shadow-md">
                             <Heart className="w-3.5 h-3.5 fill-[#ff5500] text-[#ff5500]" />
                           </div>
                         )}
                       </div>
 
-                      {/* Hover Overlay with Quick Actions */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between p-3.5 z-20">
-                        {/* Top View Link */}
-                        <div className="flex justify-end">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const target = rev.slug || slugify(rev.title) || rev.id;
-                              if (onNavigateToReview) {
-                                onNavigateToReview(target);
-                              } else {
-                                window.open(`/review/${target}`, "_blank");
-                              }
-                            }}
+                      {/* Reorder Direction Controls overlay */}
+                      {isReorderMode ? (
+                        <div className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/95 via-black/80 to-transparent flex flex-col gap-1.5 z-20">
+                          <div className="flex items-center justify-between gap-1">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                moveReview(idx, 0);
+                              }}
+                              disabled={idx === 0}
+                              title="Move to first"
+                              className="flex-1 py-1.5 rounded-lg bg-white/[0.08] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-20 disabled:hover:bg-white/[0.08] disabled:hover:text-zinc-300 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
+                            >
+                              <ChevronsLeft className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                moveReview(idx, idx - 1);
+                              }}
+                              disabled={idx === 0}
+                              title="Move left/up"
+                              className="flex-1 py-1.5 rounded-lg bg-white/[0.08] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-20 disabled:hover:bg-white/[0.08] disabled:hover:text-zinc-300 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
+                            >
+                              ←
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                moveReview(idx, idx + 1);
+                              }}
+                              disabled={idx === displayedReviews.length - 1}
+                              title="Move right/down"
+                              className="flex-1 py-1.5 rounded-lg bg-white/[0.08] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-20 disabled:hover:bg-white/[0.08] disabled:hover:text-zinc-300 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
+                            >
+                              →
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                moveReview(idx, displayedReviews.length - 1);
+                              }}
+                              disabled={idx === displayedReviews.length - 1}
+                              title="Move to last"
+                              className="flex-1 py-1.5 rounded-lg bg-white/[0.08] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-20 disabled:hover:bg-white/[0.08] disabled:hover:text-zinc-300 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
+                            >
+                              <ChevronsRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Standard Hover Overlay with Quick Actions */
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between p-3.5 z-20">
+                          {/* Top View Link */}
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const target = rev.slug || slugify(rev.title) || rev.id;
+                                if (onNavigateToReview) {
+                                  onNavigateToReview(target);
+                                } else {
+                                  window.open(`/review/${target}`, "_blank");
+                                }
+                              }}
                             className="p-1.5 rounded-xl bg-black/60 hover:bg-[#ff5500] hover:text-black border border-white/[0.15] text-white text-xs transition-colors cursor-pointer shadow-md"
                             title="View Public Review Page"
                           >
@@ -766,7 +990,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                           </button>
                         </div>
                       </div>
-                    </div>
+                    )}
+                  </div>
 
                     {/* Movie Info below poster */}
                     <div className="p-3.5 flex flex-col flex-grow justify-between bg-[#090b0f] space-y-2">
