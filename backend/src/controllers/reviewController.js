@@ -1,0 +1,136 @@
+const reviewRepository = require("../db/repositories/reviewRepository");
+const { TMDB_BASE_URL } = require("../config/env");
+const { fetchTMDB, extractTopCast, extractPrioritizedCrew } = require("../services/tmdbService");
+const { enrichReviewIfCreditsMissing } = require("../services/reviewEnrichmentService");
+
+const getAllReviews = (req, res) => {
+  try {
+    const reviews = reviewRepository.getAllReviews();
+    res.json({
+      count: reviews.length,
+      reviews,
+    });
+  } catch (err) {
+    console.error("Error fetching reviews from SQLite:", err);
+    res.status(500).json({ error: "Failed to load reviews" });
+  }
+};
+
+const getReviewById = async (req, res) => {
+  try {
+    let review = reviewRepository.getReviewById(req.params.id);
+    if (!review) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+
+    // Dynamic credit enrichment if missing
+    review = await enrichReviewIfCreditsMissing(review);
+
+    res.json(review);
+  } catch (err) {
+    console.error("Error fetching review:", err);
+    res.status(500).json({ error: "Failed to load review" });
+  }
+};
+
+const createReview = async (req, res) => {
+  try {
+    const reviewData = req.body;
+    if (!reviewData.title || !reviewData.review) {
+      return res.status(400).json({ error: "Title and review text are required" });
+    }
+
+    // Auto-fetch cast & crew from TMDB if not provided
+    const tmdbId = reviewData.tmdbId || reviewData.tmdb_id;
+    if ((!reviewData.cast || reviewData.cast.length === 0) && tmdbId) {
+      try {
+        const response = await fetchTMDB(`${TMDB_BASE_URL}/movie/${tmdbId}?append_to_response=credits`);
+        if (response && response.ok) {
+          const data = await response.json();
+          reviewData.cast = extractTopCast(data.credits?.cast, 10);
+          reviewData.crew = extractPrioritizedCrew(data.credits?.crew, 10);
+        }
+      } catch (e) {
+        console.warn("Could not fetch credits on review create:", e.message);
+      }
+    }
+
+    const newReview = reviewRepository.createReview(reviewData);
+    res.status(201).json(newReview);
+  } catch (err) {
+    console.error("Error creating review:", err);
+    res.status(500).json({ error: "Failed to save review to database" });
+  }
+};
+
+const updateReview = (req, res) => {
+  try {
+    const updated = reviewRepository.updateReview(req.params.id, req.body);
+    if (!updated) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+    res.json(updated);
+  } catch (err) {
+    console.error("Error updating review:", err);
+    res.status(500).json({ error: "Failed to update review in database" });
+  }
+};
+
+const updatePoster = (req, res) => {
+  try {
+    const { posterUrl } = req.body;
+    if (!posterUrl) {
+      return res.status(400).json({ error: "posterUrl is required" });
+    }
+
+    const updated = reviewRepository.updateReviewPoster(req.params.id, posterUrl);
+    if (!updated) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+    res.json(updated);
+  } catch (err) {
+    console.error("Error updating poster:", err);
+    res.status(500).json({ error: "Failed to update poster in database" });
+  }
+};
+
+const updateBackdrop = (req, res) => {
+  try {
+    const { backdropUrl } = req.body;
+    if (!backdropUrl) {
+      return res.status(400).json({ error: "backdropUrl is required" });
+    }
+
+    const updated = reviewRepository.updateReviewBackdrop(req.params.id, backdropUrl);
+    if (!updated) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+    res.json(updated);
+  } catch (err) {
+    console.error("Error updating backdrop:", err);
+    res.status(500).json({ error: "Failed to update backdrop in database" });
+  }
+};
+
+const deleteReview = (req, res) => {
+  try {
+    const success = reviewRepository.deleteReview(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+    res.json({ success: true, message: "Review deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting review:", err);
+    res.status(500).json({ error: "Failed to delete review from database" });
+  }
+};
+
+module.exports = {
+  getAllReviews,
+  getReviewById,
+  createReview,
+  updateReview,
+  updatePoster,
+  updateBackdrop,
+  deleteReview,
+};

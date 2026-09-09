@@ -13,6 +13,13 @@ export interface CrewMember {
   picture: string | null;
 }
 
+export interface MovieTrailer {
+  key: string;
+  name: string;
+  site: string;
+  url: string;
+}
+
 export interface Movie {
   id: number;
   title: string;
@@ -28,6 +35,7 @@ export interface Movie {
   tagline?: string | null;
   cast?: CastMember[];
   crew?: CrewMember[];
+  trailer?: MovieTrailer | null;
 }
 
 export interface Review {

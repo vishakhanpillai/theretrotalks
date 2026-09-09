@@ -1,0 +1,48 @@
+const initSchema = (db) => {
+  // Initialize Tables
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS reviews (
+      id TEXT PRIMARY KEY,
+      tmdb_id INTEGER,
+      title TEXT NOT NULL,
+      year TEXT,
+      poster TEXT NOT NULL,
+      backdrop TEXT,
+      director TEXT,
+      genres TEXT, -- JSON array
+      rating REAL NOT NULL,
+      review TEXT NOT NULL,
+      watched_date TEXT,
+      is_favorite INTEGER DEFAULT 0,
+      created_at INTEGER,
+      updated_at INTEGER
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_config (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_sessions (
+      token TEXT PRIMARY KEY,
+      created_at INTEGER
+    );
+  `);
+
+  // Safely ensure cast and crew columns exist in reviews table
+  try {
+    db.exec("ALTER TABLE reviews ADD COLUMN cast TEXT;");
+  } catch (e) {
+    // Column already exists
+  }
+
+  try {
+    db.exec("ALTER TABLE reviews ADD COLUMN crew TEXT;");
+  } catch (e) {
+    // Column already exists
+  }
+};
+
+module.exports = {
+  initSchema,
+};

@@ -11,7 +11,6 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
 }) => {
   const [movies, setMovies] = useState<UpcomingMovie[]>([]);
   const [monthName, setMonthName] = useState<string>("");
-  const [year, setYear] = useState<number>(new Date().getFullYear());
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +27,6 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
         if (isMounted) {
           setMovies(data.movies || []);
           setMonthName(data.monthName || "");
-          setYear(data.year || new Date().getFullYear());
         }
       })
       .catch((err) => {
@@ -50,20 +48,11 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
     <aside className="w-full bg-[#0b0d12] border border-white/[0.08] rounded-3xl p-5 sm:p-6 flex flex-col space-y-5 shadow-[0_15px_40px_rgba(0,0,0,0.6)]">
       
       {/* Sidebar Header */}
-      <div className="flex items-start justify-between gap-3 border-b border-white/[0.06] pb-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-inter text-[#ff7a29] uppercase tracking-wider mb-1">
-            <Calendar className="w-3.5 h-3.5 text-[#ff5500]" />
-            <span>Releasing {monthName || "This Month"} {year}</span>
-          </div>
-          <h3 className="text-base sm:text-lg font-black tracking-tight text-white font-poppins">
-            Upcoming Movies
-          </h3>
-        </div>
-
-        <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-[10px] font-inter text-zinc-400">
-          Theatrical & OTT
-        </span>
+      <div className="flex items-center gap-2.5 border-b border-white/[0.06] pb-4">
+        <Calendar className="w-4 h-4 text-[#ff5500] flex-shrink-0" />
+        <h3 className="text-base sm:text-lg font-black tracking-tight text-white font-poppins">
+          Upcoming {monthName || new Date().toLocaleString("en-US", { month: "long" })} Releases
+        </h3>
       </div>
 
       {/* Loading Skeleton */}

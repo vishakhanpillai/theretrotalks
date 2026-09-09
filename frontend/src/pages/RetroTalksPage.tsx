@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  Star,
-  Heart,
   Film,
 } from "lucide-react";
 import type { Movie, Review, UpcomingMovie } from "../types";
@@ -21,7 +19,6 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
 }) => {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [showAboutModal, setShowAboutModal] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<"all" | "favorites" | "top">("all");
 
   const [navSolidProgress, setNavSolidProgress] = useState<number>(0);
 
@@ -40,13 +37,6 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  // Filtered reviews
-  const filteredReviews = reviews.filter((r) => {
-    if (activeFilter === "favorites") return r.isFavorite;
-    if (activeFilter === "top") return r.rating >= 5.0;
-    return true;
-  });
 
   return (
     <div className="min-h-screen bg-[#07080a] text-[#ededed] flex flex-col font-poppins selection:bg-[#ff5500] selection:text-black">
@@ -106,58 +96,20 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
           {/* Left Column: Widened Reviews List */}
           <div className="flex-grow min-w-0 w-full space-y-6">
             
-            {/* Filter Bar */}
+            {/* Reviews Section Header */}
             <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <h2 className="text-xs font-inter uppercase tracking-wider text-zinc-400">
                   Reviews
                 </h2>
-                <span className="text-xs font-inter text-zinc-600">({filteredReviews.length})</span>
-              </div>
-
-              {/* Filter Pills */}
-              <div className="flex items-center gap-1 bg-[#0b0d13] p-1 rounded-xl border border-white/[0.06]">
-                <button
-                  onClick={() => setActiveFilter("all")}
-                  className={`px-3.5 py-1 text-xs rounded-lg font-inter transition-all cursor-pointer ${
-                    activeFilter === "all"
-                      ? "bg-[#ff5500] text-black font-semibold shadow-sm"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  All
-                </button>
-
-                <button
-                  onClick={() => setActiveFilter("favorites")}
-                  className={`flex items-center gap-1.5 px-3.5 py-1 text-xs rounded-lg font-inter transition-all cursor-pointer ${
-                    activeFilter === "favorites"
-                      ? "bg-[#ff5500] text-black font-semibold shadow-sm"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  <Heart className="w-3 h-3" />
-                  <span>Favorites</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveFilter("top")}
-                  className={`flex items-center gap-1.5 px-3.5 py-1 text-xs rounded-lg font-inter transition-all cursor-pointer ${
-                    activeFilter === "top"
-                      ? "bg-[#ff5500] text-black font-semibold shadow-sm"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  <Star className="w-3 h-3 fill-current" />
-                  <span>5 Stars</span>
-                </button>
+                <span className="text-xs font-inter text-zinc-600">({reviews.length})</span>
               </div>
             </div>
 
             {/* Widened Reviews Card List */}
-            {filteredReviews.length > 0 ? (
+            {reviews.length > 0 ? (
               <div className="space-y-6 sm:space-y-8">
-                {filteredReviews.map((rev) => (
+                {reviews.map((rev) => (
                   <ReviewCard
                     key={rev.id}
                     review={rev}
@@ -169,7 +121,7 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
             ) : (
               <div className="text-center py-20 bg-[#090b0e] border border-white/[0.06] rounded-3xl p-8 max-w-md mx-auto">
                 <Film className="w-6 h-6 text-zinc-600 mx-auto mb-3" />
-                <h3 className="text-base font-poppins font-bold text-white">No reviews in this category</h3>
+                <h3 className="text-base font-poppins font-bold text-white">No reviews published yet</h3>
                 <p className="text-xs text-zinc-400 mt-1">
                   Check back soon for new reflections.
                 </p>
