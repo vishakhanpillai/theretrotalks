@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import {
-  Film,
-} from "lucide-react";
+import { Film } from "lucide-react";
 import type { Movie, Review, UpcomingMovie } from "../types";
 import { ReviewCard } from "../components/ReviewCard";
 import { MovieModal } from "../components/MovieModal";
 import { AboutModal } from "../components/AboutModal";
 import { UpcomingMoviesSidebar } from "../components/UpcomingMoviesSidebar";
+import { AvengersCountdown } from "../components/AvengersCountdown";
+import { AvengersDoomsdayModal } from "../components/AvengersDoomsdayModal";
 
 interface RetroTalksPageProps {
   reviews: Review[];
@@ -19,6 +19,7 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
 }) => {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showDoomsdayModal, setShowDoomsdayModal] = useState(false);
 
   const [navSolidProgress, setNavSolidProgress] = useState<number>(0);
 
@@ -39,9 +40,19 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#07080a] text-[#ededed] flex flex-col font-poppins selection:bg-[#ff5500] selection:text-black">
+    <div className="min-h-screen bg-[#07080a] text-[#ededed] flex flex-col font-poppins selection:bg-[#ff5500] selection:text-black relative overflow-x-hidden">
       
-      {/* Top Header: same dynamic transparent-to-solid vibe as ReviewPage */}
+      {/* Ambient Cinema Lighting & Background Depth */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-[520px] pointer-events-none select-none overflow-hidden z-0">
+        {/* Subtle warm ember radial glow centered on the hero */}
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] sm:w-[820px] h-[380px] bg-gradient-to-b from-[#ff5500]/14 via-[#ff5500]/[0.025] to-transparent rounded-full blur-3xl" />
+        {/* Fine cinema grain texture */}
+        <div className="absolute inset-0 cinema-grain opacity-40" />
+        {/* Top hairline amber accent */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 sm:w-[480px] h-[1px] bg-gradient-to-r from-transparent via-[#ff5500]/40 to-transparent" />
+      </div>
+
+      {/* Top Header */}
       <header
         className="sticky top-0 z-40 w-full transition-colors duration-150"
         style={{
@@ -65,32 +76,45 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
             <span className="text-[10px] font-semibold tracking-[0.25em] uppercase text-[#ff5500] leading-none mb-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
               The
             </span>
-            <span className="text-xl sm:text-2xl font-black tracking-tight text-white leading-none font-poppins drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-zinc-200 transition-colors">
+            <span className="text-xl sm:text-2xl font-poppins font-medium font-[500] tracking-tight text-white leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-zinc-200 transition-colors">
               Retro Talks
             </span>
+          </div>
+
+          {/* Header Right Actions */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowAboutModal(true)}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-xs font-inter font-medium text-zinc-300 hover:text-white transition-all cursor-pointer shadow-sm"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#ff5500]" />
+              <span>About</span>
+            </button>
           </div>
 
         </div>
       </header>
 
-      {/* Hero Header */}
-      <section className="pt-14 pb-10 px-4 sm:px-6 lg:px-10 max-w-4xl mx-auto w-full text-center space-y-4">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] font-inter tracking-widest uppercase text-zinc-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#ff5500]" />
-          <span>Cinema Reflections & Film Archive</span>
+      {/* Hero Section - Modern Editorial Masthead */}
+      <section className="relative z-10 w-full px-4 sm:px-6 lg:px-10 xl:px-14 pt-8 sm:pt-12 pb-6">
+        <div className="w-full space-y-3 pb-8 border-b border-white/[0.07]">
+          <div className="flex items-center gap-2 text-[11px] font-mono tracking-[0.25em] text-[#ff5500] uppercase font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ff5500]" />
+            <span>Film Archive & Journal</span>
+          </div>
+          
+          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[2rem] xl:text-[2.35rem] 2xl:text-[2.65rem] font-bold tracking-tight text-white font-poppins leading-tight sm:whitespace-nowrap">
+            I watch movies. Sometimes I have a lot to say about them.
+          </h1>
+          
+          <p className="text-sm sm:text-base text-zinc-400 font-normal leading-relaxed max-w-2xl pt-1">
+            Most of it is probably unnecessary. I’m writing it down anyway.
+          </p>
         </div>
-
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-white font-poppins">
-          The Retro Talks
-        </h1>
-
-        <p className="text-sm sm:text-base text-zinc-400 max-w-xl mx-auto font-normal leading-relaxed">
-          A personal film diary documenting cinema reflections, character studies, and honest critique by Vishakhan Pillai V P.
-        </p>
       </section>
 
       {/* Main Content: 2-Column Layout */}
-      <main className="flex-grow w-full px-4 sm:px-6 lg:px-10 xl:px-14 py-6">
+      <main className="relative z-10 flex-grow w-full px-4 sm:px-6 lg:px-10 xl:px-14 py-6">
         <div className="flex flex-col lg:flex-row gap-8 xl:gap-10 items-start">
           
           {/* Left Column: Widened Reviews List */}
@@ -130,8 +154,9 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
 
           </div>
 
-          {/* Right Column: Upcoming Movies of the Month */}
-          <div className="w-full lg:w-[330px] xl:w-[380px] flex-shrink-0 lg:sticky lg:top-24">
+          {/* Right Column: Avengers Doomsday Countdown & Upcoming Movies of the Month */}
+          <div className="w-full lg:w-[330px] xl:w-[380px] flex-shrink-0 lg:sticky lg:top-20 space-y-6 lg:pt-[57px]">
+            <AvengersCountdown onClick={() => setShowDoomsdayModal(true)} />
             <UpcomingMoviesSidebar
               onSelectUpcoming={(upcoming: UpcomingMovie) => {
                 setSelectedMovie({
@@ -163,6 +188,12 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
           </button>
         </div>
       </footer>
+
+      {/* Avengers: Doomsday Summary Modal */}
+      <AvengersDoomsdayModal
+        isOpen={showDoomsdayModal}
+        onClose={() => setShowDoomsdayModal(false)}
+      />
 
       {/* Upcoming Movie Preview Modal */}
       {selectedMovie && (

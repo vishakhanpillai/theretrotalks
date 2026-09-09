@@ -134,4 +134,37 @@
   background-size: 4px 4px;
 }
 
+/* Marvel Avengers: Doomsday animations & glow utilities */
+@keyframes doom-pulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes doom-shimmer {
+  0% {
+    transform: translateX(-150%) skewX(-25deg);
+  }
+  100% {
+    transform: translateX(250%) skewX(-25deg);
+  }
+}
+
+.animate-doom-pulse {
+  animation: doom-pulse 5s ease-in-out infinite;
+}
+
+.animate-shimmer-sweep {
+  animation: doom-shimmer 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.glow-doom {
+  box-shadow: 0 0 35px -5px rgba(16, 185, 129, 0.45);
+}
+
 

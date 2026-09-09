@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import { X, User } from "lucide-react";
-import { GithubIcon, LinkedinIcon } from "./Icons";
 
 interface AboutModalProps {
   isOpen: boolean;
@@ -60,33 +59,12 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
           </p>
 
           <p className="text-justify leading-relaxed">
-            Outside of cinema, I'm curious about almost everything. I work in technology and cybersecurity, enjoy exploring new places, learning how things work, following Formula 1, and spending time discovering new perspectives. I have always enjoyed conversations that go beyond the surface, and that curiosity is what eventually led me to create The Retro Talks. This is a space where I can share my love for films, explore the stories behind them, and hopefully have meaningful conversations with people who love cinema as much as I do.
+            I have always enjoyed conversations that go beyond the surface, and that curiosity is what eventually led me to create The Retro Talks. This is a space where I can share my love for films, explore the stories behind them, and hopefully have meaningful conversations with people who love cinema as much as I do.
           </p>
         </div>
 
         {/* Footer */}
-        <div className="px-6 sm:px-8 py-4 bg-[#0d1016] border-t border-white/[0.08] flex items-center justify-between text-xs text-zinc-400">
-          <div className="flex items-center gap-3">
-            <a
-              href="https://github.com/vishakhanpillai"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white transition-colors"
-              title="GitHub"
-            >
-              <GithubIcon className="w-4 h-4" />
-            </a>
-            <a
-              href="https://www.linkedin.com/in/vishakhan-pillai-v-p-341334237/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-[#0077b5] transition-colors"
-              title="LinkedIn"
-            >
-              <LinkedinIcon className="w-4 h-4" />
-            </a>
-          </div>
-
+        <div className="px-6 sm:px-8 py-4 bg-[#0d1016] border-t border-white/[0.08] flex items-center justify-end text-xs text-zinc-400">
           <button
             onClick={onClose}
             className="px-4 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-300 hover:text-white border border-white/[0.08] transition-colors cursor-pointer font-inter"
