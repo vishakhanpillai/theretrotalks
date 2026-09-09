@@ -50,7 +50,7 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
       {/* Sidebar Header */}
       <div className="flex items-center gap-2.5 border-b border-white/[0.06] pb-4">
         <Calendar className="w-4 h-4 text-[#ff5500] flex-shrink-0" />
-        <h3 className="text-base sm:text-lg font-black tracking-tight text-white font-poppins">
+        <h3 className="text-base sm:text-lg font-poppins font-normal font-[400] text-white">
           Upcoming {monthName || new Date().toLocaleString("en-US", { month: "long" })} Releases
         </h3>
       </div>

@@ -8,8 +8,13 @@ const TMDB_IMAGE_BASE_URL = (process.env.TMDB_IMAGE_BASE_URL || "https://image.t
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || null;
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
 
-const DB_PATH = path.resolve(__dirname, "../../retro_talks.db");
-const FRONTEND_DIST = path.resolve(__dirname, "../../../frontend/dist");
+const DB_PATH = process.env.DB_PATH
+  ? path.resolve(process.env.DB_PATH)
+  : path.resolve(__dirname, "../../retro_talks.db");
+
+const FRONTEND_DIST = process.env.FRONTEND_DIST
+  ? path.resolve(process.env.FRONTEND_DIST)
+  : path.resolve(__dirname, "../../../frontend/dist");
 
 module.exports = {
   PORT,

@@ -13,11 +13,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Public health check
-app.get("/", (req, res) => {
+// Health check endpoint (for Docker, load balancers, orchestrators)
+app.get("/api/health", (req, res) => {
   res.json({
-    message: "The Retro Talks API is Running (SQLite Database Active)...",
     status: "healthy",
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -32,6 +32,14 @@ if (fs.existsSync(FRONTEND_DIST)) {
       return res.sendFile(path.join(FRONTEND_DIST, "index.html"));
     }
     next();
+  });
+} else {
+  // Public message fallback if frontend dist is not built
+  app.get("/", (req, res) => {
+    res.json({
+      message: "The Retro Talks API is Running (SQLite Database Active)...",
+      status: "healthy",
+    });
   });
 }
 

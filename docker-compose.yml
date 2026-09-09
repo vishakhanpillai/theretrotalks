@@ -1,0 +1,30 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: theretrotalks:latest
+    container_name: theretrotalks_app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - DB_PATH=/app/data/retro_talks.db
+      - TMDB_ACCESS_TOKEN=${TMDB_ACCESS_TOKEN}
+      - TMDB_BASE_URL=${TMDB_BASE_URL:-https://api.themoviedb.org/3}
+      - TMDB_IMAGE_BASE_URL=${TMDB_IMAGE_BASE_URL:-https://image.tmdb.org/t/p}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-retro2026}
+    env_file:
+      - path: backend/.env
+        required: false
+      - path: .env
+        required: false
+    volumes:
+      - retro_talks_data:/app/data
+
+volumes:
+  retro_talks_data:
+    driver: local
