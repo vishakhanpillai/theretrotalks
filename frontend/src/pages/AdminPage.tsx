@@ -32,6 +32,8 @@ import { PosterSelectorModal } from "../components/PosterSelectorModal";
 import { BackdropSelectorModal } from "../components/BackdropSelectorModal";
 import { EditReviewModal } from "../components/EditReviewModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
+import { Footer } from "../components/Footer";
+import { slugify } from "../utils/slugify";
 
 interface AdminPageProps {
   reviews: Review[];
@@ -699,10 +701,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                           <button
                             type="button"
                             onClick={() => {
+                              const target = rev.slug || slugify(rev.title) || rev.id;
                               if (onNavigateToReview) {
-                                onNavigateToReview(rev.id);
+                                onNavigateToReview(target);
                               } else {
-                                window.open(`/review/${rev.id}`, "_blank");
+                                window.open(`/review/${target}`, "_blank");
                               }
                             }}
                             className="p-1.5 rounded-xl bg-black/60 hover:bg-[#ff5500] hover:text-black border border-white/[0.15] text-white text-xs transition-colors cursor-pointer shadow-md"
@@ -826,12 +829,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.08] bg-[#050608] py-6 text-center text-xs font-inter text-zinc-500">
-        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span>The Retro Talks — Admin Console</span>
-          <span>Logged in as Administrator (Vishakhan Pillai)</span>
-        </div>
-      </footer>
+      <Footer />
 
       {/* MODAL 1: Movie Detail & Fast Review Logger Modal */}
       {selectedMovieForReview && (

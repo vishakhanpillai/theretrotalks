@@ -7,10 +7,11 @@ import { AboutModal } from "../components/AboutModal";
 import { UpcomingMoviesSidebar } from "../components/UpcomingMoviesSidebar";
 import { AvengersCountdown } from "../components/AvengersCountdown";
 import { AvengersDoomsdayModal } from "../components/AvengersDoomsdayModal";
+import { Footer } from "../components/Footer";
 
 interface RetroTalksPageProps {
   reviews: Review[];
-  onOpenReview: (id: string | number) => void;
+  onOpenReview: (review: Review | string | number) => void;
 }
 
 export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
@@ -137,7 +138,7 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
                   <ReviewCard
                     key={rev.id}
                     review={rev}
-                    onOpenReview={() => onOpenReview(rev.id)}
+                    onOpenReview={() => onOpenReview(rev)}
                     isAdmin={false}
                   />
                 ))}
@@ -176,18 +177,7 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.08] bg-[#050608] py-8 text-xs text-zinc-500 font-inter">
-        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="text-zinc-400">The Retro Talks</span>
-
-          <button
-            onClick={() => setShowAboutModal(true)}
-            className="text-zinc-400 hover:text-white transition-colors cursor-pointer"
-          >
-            About
-          </button>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Avengers: Doomsday Summary Modal */}
       <AvengersDoomsdayModal

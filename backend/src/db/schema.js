@@ -1,3 +1,5 @@
+const { slugify } = require("../utils/slugify");
+
 const initSchema = (db) => {
   // Initialize Tables
   db.exec(`
@@ -40,6 +42,31 @@ const initSchema = (db) => {
     db.exec("ALTER TABLE reviews ADD COLUMN crew TEXT;");
   } catch (e) {
     // Column already exists
+  }
+
+  try {
+    db.exec("ALTER TABLE reviews ADD COLUMN overview TEXT;");
+  } catch (e) {
+    // Column already exists
+  }
+
+  try {
+    db.exec("ALTER TABLE reviews ADD COLUMN slug TEXT;");
+  } catch (e) {
+    // Column already exists
+  }
+
+  // Populate empty slugs
+  try {
+    const unslugged = db.prepare("SELECT id, title FROM reviews WHERE slug IS NULL OR slug = ''").all();
+    if (unslugged.length > 0) {
+      const updateSlug = db.prepare("UPDATE reviews SET slug = ? WHERE id = ?");
+      for (const r of unslugged) {
+        updateSlug.run(slugify(r.title), r.id);
+      }
+    }
+  } catch (e) {
+    console.warn("Slug migration error:", e.message);
   }
 };
 

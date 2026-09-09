@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
-import { ArrowLeft, Heart, User, Film, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Heart, User, Film, Image as ImageIcon, AlignLeft } from "lucide-react";
 import type { Review } from "../types";
 import { getBackdropUrl, getPosterUrl } from "../utils/images";
-import { AboutModal } from "../components/AboutModal";
 import { StarRating } from "../components/StarRating";
 import { PosterSelectorModal } from "../components/PosterSelectorModal";
 import { BackdropSelectorModal } from "../components/BackdropSelectorModal";
 import { FormattedReviewText } from "../components/FormattedReviewText";
+import { Footer } from "../components/Footer";
 
 interface ReviewPageProps {
   reviewId: string;
@@ -27,7 +27,8 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
 }) => {
   const [review, setReview] = useState<Review | null>(initialReview || null);
   const [loading, setLoading] = useState<boolean>(!initialReview);
-  const [showAboutModal, setShowAboutModal] = useState<boolean>(false);
+  const [synopsis, setSynopsis] = useState<string | null>(initialReview?.overview || null);
+  const [synopsisLoading, setSynopsisLoading] = useState<boolean>(false);
   const [showPosterModal, setShowPosterModal] = useState<boolean>(false);
   const [showBackdropModal, setShowBackdropModal] = useState<boolean>(false);
   const [posterError, setPosterError] = useState<boolean>(false);
@@ -36,38 +37,99 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
   const [navSolidProgress, setNavSolidProgress] = useState<number>(0);
   const headerRef = useRef<HTMLDivElement>(null);
 
-  // Progressive scroll interpolation for top nav transparency and sticky review header
+  // Fetch synopsis if not already present on the review
+  useEffect(() => {
+    if (review?.overview) {
+      setSynopsis(review.overview);
+      return;
+    }
+
+    if (review?.tmdbId) {
+      let isMounted = true;
+      setSynopsisLoading(true);
+      fetch(`/api/movies/${review.tmdbId}`)
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to fetch movie details");
+          return res.json();
+        })
+        .then((data) => {
+          if (isMounted && data.overview) {
+            setSynopsis(data.overview);
+          }
+        })
+        .catch((err) => {
+          console.warn("Could not load synopsis from TMDB:", err);
+        })
+        .finally(() => {
+          if (isMounted) setSynopsisLoading(false);
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [review?.overview, review?.tmdbId]);
+
+  // Progressive scroll interpolation: transparent over backdrop, smoothstep fade to solid when reaching the main review
   useEffect(() => {
     const handleScroll = () => {
-      // 1. Top Navbar transition: fully transparent at top, solid #07080a as user scrolls down
-      const currentScrollY = window.scrollY;
-      const solidThreshold = 90;
-      const progress = Math.min(1, Math.max(0, currentScrollY / solidThreshold));
-      setNavSolidProgress(Math.round(progress * 100) / 100);
+      // Always fully transparent at the top of the page
+      if (window.scrollY <= 10) {
+        setNavSolidProgress(0);
+        setHeaderOpacity(0);
+        return;
+      }
 
-      // 2. Sticky review header fade
       if (headerRef.current) {
         const rect = headerRef.current.getBoundingClientRect();
         const stickPoint = 64; // Sticky at top-16 (64px)
-        const fadeStart = 134; // Begin gradual fade 70px before sticking
-        
-        let target = 0;
-        if (rect.top <= stickPoint) {
-          target = 1;
-        } else if (rect.top >= fadeStart) {
-          target = 0;
-        } else {
-          // Smooth progressive opacity directly linked to user's scroll speed
-          target = Math.round(((fadeStart - rect.top) / (fadeStart - stickPoint)) * 100) / 100;
-        }
+        const fadeStart = 260; // Begins smooth fade as the review approaches the navbar
 
-        setHeaderOpacity((prev) => (prev !== target ? target : prev));
+        let navProgress = 0;
+        if (rect.top <= stickPoint) {
+          navProgress = 1;
+        } else if (rect.top >= fadeStart) {
+          navProgress = 0;
+        } else {
+          // Smoothstep interpolation (3t^2 - 2t^3) for a natural, buttery smooth curve
+          const t = Math.min(1, Math.max(0, (fadeStart - rect.top) / (fadeStart - stickPoint)));
+          navProgress = t * t * (3 - 2 * t);
+        }
+        setNavSolidProgress(Math.round(navProgress * 1000) / 1000);
+
+        // Sticky review title background mask fade
+        const maskFadeStart = 140;
+        let maskProgress = 0;
+        if (rect.top <= stickPoint) {
+          maskProgress = 1;
+        } else if (rect.top >= maskFadeStart) {
+          maskProgress = 0;
+        } else {
+          const t = Math.min(1, Math.max(0, (maskFadeStart - rect.top) / (maskFadeStart - stickPoint)));
+          maskProgress = t * t * (3 - 2 * t);
+        }
+        setHeaderOpacity(Math.round(maskProgress * 1000) / 1000);
+      } else {
+        // Fallback before element is mounted
+        const currentScrollY = window.scrollY;
+        const fadeStart = 200;
+        const solidThreshold = 450;
+        if (currentScrollY <= fadeStart) {
+          setNavSolidProgress(0);
+        } else {
+          const t = Math.min(1, Math.max(0, (currentScrollY - fadeStart) / (solidThreshold - fadeStart)));
+          setNavSolidProgress(Math.round(t * t * (3 - 2 * t) * 1000) / 1000);
+        }
       }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
   }, [loading]);
 
   // Scroll to top on load
@@ -143,27 +205,27 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
   return (
     <div className="min-h-screen bg-[#07080a] text-[#ededed] flex flex-col font-poppins selection:bg-[#ff5500] selection:text-black">
       
-      {/* Top Header Navigation: fully transparent at top, solid site color (#07080a) as user scrolls down */}
+      {/* Top Header Navigation: fully transparent over backdrop banner, transitions to solid #07080a when reaching review */}
       <header
-        className="fixed top-0 left-0 right-0 z-50 transition-colors duration-150"
+        className="fixed top-0 left-0 right-0 z-50 transition-[background-color,border-color,box-shadow] duration-200 ease-out"
         style={{
           backgroundColor: `rgba(7, 8, 10, ${navSolidProgress})`,
           borderBottomColor: `rgba(255, 255, 255, ${0.08 * navSolidProgress})`,
           borderBottomWidth: "1px",
           borderBottomStyle: "solid",
           boxShadow:
-            navSolidProgress > 0.4
+            navSolidProgress > 0.3
               ? `0 4px 20px rgba(0, 0, 0, ${0.6 * navSolidProgress})`
               : "none",
         }}
       >
         <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 h-16 flex items-center justify-between">
           
-          {/* Back Button (Only necessary button) */}
+          {/* Back Button */}
           <div className="flex items-center">
             <button
               onClick={onNavigateHome}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-inter transition-all group cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-inter transition-all duration-200 group cursor-pointer ${
                 navSolidProgress < 0.4
                   ? "bg-black/45 hover:bg-black/70 border border-white/20 hover:border-white/40 backdrop-blur-md text-white shadow-lg"
                   : "bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.2] text-zinc-300 hover:text-white"
@@ -265,6 +327,29 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
                 </button>
               )}
             </div>
+
+            {/* Movie Synopsis Card */}
+            {(synopsis || synopsisLoading) && (
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#0b0d12] border border-white/[0.06] space-y-2 text-xs text-zinc-400 font-inter shadow-xl">
+                <div className="flex items-center gap-2 pb-2 border-b border-white/[0.06]">
+                  <AlignLeft className="w-3.5 h-3.5 text-[#ff5500]" />
+                  <h3 className="text-[11px] font-mono uppercase tracking-[0.2em] text-zinc-300 font-semibold">
+                    Synopsis
+                  </h3>
+                </div>
+                {synopsisLoading ? (
+                  <div className="space-y-1.5 py-1 animate-pulse">
+                    <div className="h-2.5 bg-white/[0.06] rounded w-full" />
+                    <div className="h-2.5 bg-white/[0.06] rounded w-5/6" />
+                    <div className="h-2.5 bg-white/[0.06] rounded w-4/6" />
+                  </div>
+                ) : (
+                  <p className="text-xs text-zinc-300 font-normal leading-relaxed text-justify sm:text-left">
+                    {synopsis}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Quick Metadata Box */}
             <div className="p-4 sm:p-5 rounded-2xl bg-[#0b0d12] border border-white/[0.06] space-y-3 text-xs text-zinc-400 font-inter shadow-xl">
@@ -510,33 +595,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.08] bg-[#050608] py-8 text-xs text-zinc-500 font-inter mt-20">
-        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="text-zinc-400">The Retro Talks</span>
-
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => setShowAboutModal(true)}
-              className="text-zinc-400 hover:text-white transition-colors cursor-pointer"
-            >
-              About
-            </button>
-            <button
-              onClick={onNavigateHome}
-              className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-3.5 h-3.5 text-[#ff5500]" />
-              <span>Return to All Reviews</span>
-            </button>
-          </div>
-        </div>
-      </footer>
-
-      {/* About Modal */}
-      <AboutModal
-        isOpen={showAboutModal}
-        onClose={() => setShowAboutModal(false)}
-      />
+      <Footer />
 
       {/* Poster Selector Modal */}
       {review.tmdbId && (

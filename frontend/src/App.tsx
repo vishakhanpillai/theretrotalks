@@ -4,6 +4,7 @@ import { RetroTalksPage } from "./pages/RetroTalksPage";
 import { AdminPage } from "./pages/AdminPage";
 import { ReviewPage } from "./pages/ReviewPage";
 import { INITIAL_REVIEWS } from "./data/sampleReviews";
+import { slugify, getReviewSlug } from "./utils/slugify";
 
 const STORAGE_KEY = "the_retro_talks_personal_reviews";
 const ADMIN_TOKEN_KEY = "the_retro_talks_admin_token";
@@ -130,9 +131,19 @@ function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const navigateToReview = (id: string | number) => {
-    setRoute({ page: "review", reviewId: String(id) });
-    window.history.pushState({}, "", `/review/${id}`);
+  const navigateToReview = (item: Review | string | number) => {
+    let slugOrId: string;
+    if (typeof item === "object" && item !== null) {
+      slugOrId = getReviewSlug(item);
+    } else {
+      const clean = String(item).trim();
+      const matched = reviews.find(
+        (r) => String(r.id) === clean || r.slug === clean || slugify(r.title) === clean
+      );
+      slugOrId = matched ? getReviewSlug(matched) : clean;
+    }
+    setRoute({ page: "review", reviewId: slugOrId });
+    window.history.pushState({}, "", `/review/${slugOrId}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -324,7 +335,12 @@ function App() {
 
   // 2. Standalone Dedicated Cinema Review Page
   if (route.page === "review" && route.reviewId) {
-    const matchedReview = reviews.find((r) => String(r.id) === String(route.reviewId));
+    const matchedReview = reviews.find(
+      (r) =>
+        r.slug === route.reviewId ||
+        slugify(r.title) === route.reviewId ||
+        String(r.id) === String(route.reviewId)
+    );
     return (
       <ReviewPage
         reviewId={route.reviewId}

@@ -1,9 +1,11 @@
 const { db } = require("../connection");
+const { slugify } = require("../../utils/slugify");
 
 const getAllReviews = () => {
   const rows = db.prepare("SELECT * FROM reviews ORDER BY created_at DESC").all();
   return rows.map((row) => ({
     id: row.id,
+    slug: row.slug || slugify(row.title),
     tmdbId: row.tmdb_id,
     title: row.title,
     year: row.year,
@@ -17,15 +19,26 @@ const getAllReviews = () => {
     isFavorite: Boolean(row.is_favorite),
     cast: row.cast ? JSON.parse(row.cast) : [],
     crew: row.crew ? JSON.parse(row.crew) : [],
+    overview: row.overview || null,
     createdAt: row.created_at,
   }));
 };
 
-const getReviewById = (id) => {
-  const row = db.prepare("SELECT * FROM reviews WHERE id = ?").get(String(id));
+const getReviewById = (idOrSlug) => {
+  if (!idOrSlug) return null;
+  const clean = String(idOrSlug).trim();
+  let row = db.prepare("SELECT * FROM reviews WHERE id = ?").get(clean);
+  if (!row) {
+    row = db.prepare("SELECT * FROM reviews WHERE slug = ?").get(clean);
+  }
+  if (!row) {
+    const all = db.prepare("SELECT * FROM reviews").all();
+    row = all.find((r) => r.slug === clean || slugify(r.title) === clean);
+  }
   if (!row) return null;
   return {
     id: row.id,
+    slug: row.slug || slugify(row.title),
     tmdbId: row.tmdb_id,
     title: row.title,
     year: row.year,
@@ -39,19 +52,22 @@ const getReviewById = (id) => {
     isFavorite: Boolean(row.is_favorite),
     cast: row.cast ? JSON.parse(row.cast) : [],
     crew: row.crew ? JSON.parse(row.crew) : [],
+    overview: row.overview || null,
+    createdAt: row.created_at,
   };
 };
 
 const createReview = (reviewData) => {
   const id = reviewData.id || `rev-${Date.now()}`;
   const now = Date.now();
+  const slug = reviewData.slug || slugify(reviewData.title);
   const genresStr = JSON.stringify(reviewData.genres || []);
   const castStr = JSON.stringify(reviewData.cast || []);
   const crewStr = JSON.stringify(reviewData.crew || []);
 
   const stmt = db.prepare(`
-    INSERT INTO reviews (id, tmdb_id, title, year, poster, backdrop, director, genres, rating, review, watched_date, is_favorite, cast, crew, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO reviews (id, tmdb_id, title, year, poster, backdrop, director, genres, rating, review, watched_date, is_favorite, cast, crew, overview, slug, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   stmt.run(
@@ -69,6 +85,8 @@ const createReview = (reviewData) => {
     reviewData.isFavorite ? 1 : 0,
     castStr,
     crewStr,
+    reviewData.overview || null,
+    slug,
     now,
     now
   );
@@ -88,13 +106,15 @@ const updateReview = (id, updates) => {
   const title = updates.title !== undefined ? updates.title : current.title;
   const year = updates.year !== undefined ? updates.year : current.year;
   const director = updates.director !== undefined ? updates.director : current.director;
+  const slug = updates.slug || (updates.title ? slugify(updates.title) : current.slug);
 
   db.prepare(`
     UPDATE reviews 
-    SET title = ?, year = ?, director = ?, rating = ?, review = ?, watched_date = ?, is_favorite = ?, updated_at = ?
+    SET title = ?, slug = ?, year = ?, director = ?, rating = ?, review = ?, watched_date = ?, is_favorite = ?, updated_at = ?
     WHERE id = ?
   `).run(
     title,
+    slug,
     year,
     director,
     rating,
@@ -131,6 +151,12 @@ const updateReviewBackdrop = (id, newBackdropUrl) => {
   return getReviewById(id);
 };
 
+const updateReviewOverview = (id, overview) => {
+  const now = Date.now();
+  db.prepare("UPDATE reviews SET overview = ?, updated_at = ? WHERE id = ?").run(overview, now, String(id));
+  return getReviewById(id);
+};
+
 const deleteReview = (id) => {
   const info = db.prepare("DELETE FROM reviews WHERE id = ?").run(String(id));
   return info.changes > 0;
@@ -144,5 +170,6 @@ module.exports = {
   updateReviewCredits,
   updateReviewPoster,
   updateReviewBackdrop,
+  updateReviewOverview,
   deleteReview,
 };

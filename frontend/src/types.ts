@@ -53,6 +53,8 @@ export interface Review {
   isFavorite?: boolean;
   cast?: CastMember[];
   crew?: CrewMember[];
+  overview?: string | null;
+  slug?: string;
 }
 
 export interface UpcomingMovie {

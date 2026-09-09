@@ -5,11 +5,11 @@ const reviewRepository = require("../db/repositories/reviewRepository");
 const enrichReviewIfCreditsMissing = async (review) => {
   if (!review) return review;
 
-  const isCreditsMissing =
-    (!review.cast || review.cast.length === 0 || !review.crew || review.crew.length < 10) &&
-    Boolean(review.tmdbId);
+  const isEnrichmentNeeded =
+    Boolean(review.tmdbId) &&
+    (!review.cast || review.cast.length === 0 || !review.crew || review.crew.length < 10 || !review.overview);
 
-  if (!isCreditsMissing) return review;
+  if (!isEnrichmentNeeded) return review;
 
   try {
     const response = await fetchTMDB(`${TMDB_BASE_URL}/movie/${review.tmdbId}?append_to_response=credits`);
@@ -18,8 +18,13 @@ const enrichReviewIfCreditsMissing = async (review) => {
       const cast = extractTopCast(data.credits?.cast, 10);
       const crew = extractPrioritizedCrew(data.credits?.crew, 10);
       if (cast.length > 0 || crew.length > 0) {
-        return reviewRepository.updateReviewCredits(review.id, cast, crew);
+        reviewRepository.updateReviewCredits(review.id, cast, crew);
       }
+      if (data.overview) {
+        reviewRepository.updateReviewOverview(review.id, data.overview);
+        review.overview = data.overview;
+      }
+      return reviewRepository.getReviewById(review.id);
     }
   } catch (err) {
     console.warn(`Dynamic enrichment failed for review ${review.id}:`, err.message);
@@ -34,7 +39,7 @@ const enrichAllReviewsOnStartup = async () => {
     for (const review of reviews) {
       if (
         review.tmdbId &&
-        (!review.cast || review.cast.length === 0 || !review.crew || review.crew.length < 10)
+        (!review.cast || review.cast.length === 0 || !review.crew || review.crew.length < 10 || !review.overview)
       ) {
         try {
           const response = await fetchTMDB(
@@ -45,8 +50,13 @@ const enrichAllReviewsOnStartup = async () => {
             const cast = extractTopCast(data.credits?.cast, 10);
             const crew = extractPrioritizedCrew(data.credits?.crew, 10);
 
-            reviewRepository.updateReviewCredits(review.id, cast, crew);
-            console.log(`Auto-enriched cast and crew for: "${review.title}"`);
+            if (cast.length > 0 || crew.length > 0) {
+              reviewRepository.updateReviewCredits(review.id, cast, crew);
+            }
+            if (data.overview) {
+              reviewRepository.updateReviewOverview(review.id, data.overview);
+            }
+            console.log(`Auto-enriched cast, crew, and overview for: "${review.title}"`);
           }
         } catch (err) {
           console.warn(`Credits enrichment skipped for "${review.title}":`, err.message);
