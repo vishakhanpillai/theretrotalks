@@ -18,6 +18,7 @@ import {
   Archive,
   RotateCcw,
   BookOpen,
+  Pipette,
 } from "lucide-react";
 import { toPng } from "html-to-image";
 import JSZip from "jszip";
@@ -39,6 +40,78 @@ interface StoryCardBuilderModalProps {
 
 type StoryTheme = "cinematic" | "poster_hero" | "editorial";
 type StudioMode = "summary" | "full_set";
+type FooterHandleOption = "theretrotalks" | "personal" | "custom" | "hidden";
+
+export interface PalettePreset {
+  id: string;
+  name: string;
+  primary: string;
+  secondary: string;
+  glow: string;
+  bgRgba: string;
+}
+
+export const PALETTE_PRESETS: PalettePreset[] = [
+  {
+    id: "orange",
+    name: "Retro Orange",
+    primary: "#ff5500",
+    secondary: "#ff7a29",
+    glow: "rgba(255, 85, 0, 0.4)",
+    bgRgba: "rgba(255, 85, 0, 0.15)",
+  },
+  {
+    id: "gold",
+    name: "Monochrome Gold",
+    primary: "#e5b869",
+    secondary: "#f3cf8a",
+    glow: "rgba(229, 184, 105, 0.4)",
+    bgRgba: "rgba(229, 184, 105, 0.15)",
+  },
+  {
+    id: "crimson",
+    name: "Crimson Red",
+    primary: "#ff2a4b",
+    secondary: "#ff5c75",
+    glow: "rgba(255, 42, 75, 0.4)",
+    bgRgba: "rgba(255, 42, 75, 0.15)",
+  },
+  {
+    id: "cyan",
+    name: "Cyber Cyan",
+    primary: "#00e5ff",
+    secondary: "#38efff",
+    glow: "rgba(0, 229, 255, 0.4)",
+    bgRgba: "rgba(0, 229, 255, 0.15)",
+  },
+  {
+    id: "emerald",
+    name: "Emerald Green",
+    primary: "#00e676",
+    secondary: "#33eb91",
+    glow: "rgba(0, 230, 118, 0.4)",
+    bgRgba: "rgba(0, 230, 118, 0.15)",
+  },
+];
+
+/**
+ * Convert 3 or 6 digit hex color to an rgba string with specified opacity
+ */
+const hexToRgba = (hex: string, alpha: number): string => {
+  let cleanHex = hex.replace("#", "").trim();
+  if (cleanHex.length === 3) {
+    cleanHex = cleanHex[0] + cleanHex[0] + cleanHex[1] + cleanHex[1] + cleanHex[2] + cleanHex[2];
+  }
+  if (cleanHex.length === 6) {
+    const r = parseInt(cleanHex.substring(0, 2), 16);
+    const g = parseInt(cleanHex.substring(2, 4), 16);
+    const b = parseInt(cleanHex.substring(4, 6), 16);
+    if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+  }
+  return `rgba(255, 85, 0, ${alpha})`;
+};
 
 /**
  * Split a full review into readable story slide chunks for 9:16 vertical cards.
@@ -46,7 +119,8 @@ type StudioMode = "summary" | "full_set";
  */
 const splitReviewIntoSlides = (
   text: string,
-  density: "dense" | "standard" | "spacious" = "dense"
+  density: "dense" | "standard" | "spacious" = "dense",
+  hasSlide1Callout: boolean = false
 ): string[] => {
   if (!text) return [""];
 
@@ -61,9 +135,10 @@ const splitReviewIntoSlides = (
 
   const trimmed = text.trim();
   const maxChunk = density === "dense" ? 1350 : density === "spacious" ? 800 : 1050;
+  const slide1Max = hasSlide1Callout ? Math.max(400, maxChunk - 260) : maxChunk;
 
   // 2. If the review fits on 1 slide (with 5% tolerance), keep it on 1 slide
-  if (trimmed.length <= maxChunk * 1.05) {
+  if (trimmed.length <= slide1Max * 1.05) {
     return [trimmed];
   }
 
@@ -74,18 +149,19 @@ const splitReviewIntoSlides = (
 
   for (let pIdx = 0; pIdx < paragraphs.length; pIdx++) {
     const p = paragraphs[pIdx];
+    const targetChunk = slides.length === 0 ? slide1Max : maxChunk;
     const sep = current ? "\n\n" : "";
     const candidate = current ? current + sep + p : p;
 
     // A. If whole paragraph fits into current slide (with 3% tolerance), keep paragraph intact & flow text
-    if (candidate.length <= maxChunk * 1.03) {
+    if (candidate.length <= targetChunk * 1.03) {
       current = candidate;
       continue;
     }
 
     // B. If current slide is already well-filled (>= 60% of capacity) and the paragraph fits on its own slide,
     // push current slide so the paragraph stays whole without being chopped in half.
-    if (current.length >= maxChunk * 0.60 && p.length <= maxChunk * 1.03) {
+    if (current.length >= targetChunk * 0.60 && p.length <= (slides.length + 1 === 0 ? slide1Max : maxChunk) * 1.03) {
       slides.push(current.trim());
       current = p;
       continue;
@@ -100,10 +176,11 @@ const splitReviewIntoSlides = (
       const s = sents[sIdx].trim();
       if (!s) continue;
 
+      const currentLimit = slides.length === 0 ? slide1Max : maxChunk;
       const sSep = current ? (isFirstSent ? "\n\n" : " ") : "";
       const sCand = current ? current + sSep + s : s;
 
-      if (sCand.length <= maxChunk) {
+      if (sCand.length <= currentLimit) {
         current = sCand;
         isFirstSent = false;
       } else {
@@ -151,6 +228,32 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
     return draft || clean.slice(0, 240);
   };
 
+  // Initial standout quote extracted from review or blank
+  const getInitialStandoutQuote = (text: string) => {
+    if (!text) return "";
+    const quoteMatch = text.match(/^>\s*(.+)$/m);
+    if (quoteMatch && quoteMatch[1]) {
+      return quoteMatch[1].trim().replace(/\*\*|__|\*|_/g, "");
+    }
+    const quoteInvertedMatch = text.match(/"([^"]{15,140})"/);
+    if (quoteInvertedMatch && quoteInvertedMatch[1]) {
+      return quoteInvertedMatch[1].trim();
+    }
+    const clean = text
+      .replace(/\*\*|__|\*|_|~~|\|\|/g, "")
+      .replace(/^>+\s*/gm, "")
+      .replace(/^#{1,6}\s+/gm, "")
+      .trim();
+    const sentences = clean.match(/[^.!?]+[.!?]+/g) || [clean];
+    for (const s of sentences) {
+      const trimmedSent = s.trim();
+      if (trimmedSent.length >= 20 && trimmedSent.length <= 130) {
+        return trimmedSent;
+      }
+    }
+    return clean.slice(0, 110);
+  };
+
   // Studio Mode: "summary" (Single 9:16 Story Card) or "full_set" (Multi-Slide Full Review Story Set)
   const [studioMode, setStudioMode] = useState<StudioMode>("summary");
 
@@ -181,12 +284,52 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
   const [theme, setTheme] = useState<StoryTheme>("cinematic");
   const [headline, setHeadline] = useState<string>("Quick Reflection");
   const [showBadgeTag, setShowBadgeTag] = useState<boolean>(true);
-  const [showFooterBrand, setShowFooterBrand] = useState<boolean>(true);
   const [backdropDim, setBackdropDim] = useState<number>(65);
   const [backdropBlur, setBackdropBlur] = useState<number>(0);
   const [showPoster, setShowPoster] = useState<boolean>(true);
   const [showWatermark, setShowWatermark] = useState<boolean>(true);
   const [showGenres, setShowGenres] = useState<boolean>(true);
+
+  // 1. Palette Accent State (Retro Orange default, Cinematic presets, or Custom Picker)
+  const [selectedPaletteId, setSelectedPaletteId] = useState<string>("orange");
+  const [customColorHex, setCustomColorHex] = useState<string>("#ff5500");
+
+  const activePalette: PalettePreset = useMemo(() => {
+    if (selectedPaletteId === "custom") {
+      const formatted = customColorHex.startsWith("#") ? customColorHex : `#${customColorHex}`;
+      const isComplete = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(formatted);
+      const safeColor = isComplete ? formatted : "#ff5500";
+      return {
+        id: "custom",
+        name: `Custom (${safeColor.toUpperCase()})`,
+        primary: safeColor,
+        secondary: safeColor,
+        glow: hexToRgba(safeColor, 0.45),
+        bgRgba: hexToRgba(safeColor, 0.15),
+      };
+    }
+    return PALETTE_PRESETS.find((p) => p.id === selectedPaletteId) || PALETTE_PRESETS[0];
+  }, [selectedPaletteId, customColorHex]);
+
+  // 2. Custom Handle / Watermark State
+  const [footerHandleOption, setFooterHandleOption] = useState<FooterHandleOption>("theretrotalks");
+  const [customHandle, setCustomHandle] = useState<string>("@vishakhanpillai");
+
+  const effectiveHandle = useMemo(() => {
+    if (footerHandleOption === "hidden") return null;
+    if (footerHandleOption === "theretrotalks") return "@theretrotalks";
+    if (footerHandleOption === "personal") return "@vishakhanpillai";
+    if (footerHandleOption === "custom") {
+      const trimmed = customHandle.trim();
+      if (!trimmed) return null;
+      return trimmed.startsWith("@") ? trimmed : `@${trimmed}`;
+    }
+    return "@theretrotalks";
+  }, [footerHandleOption, customHandle]);
+
+  // 3. Standout Quote Callout State (Slide 1 Hook)
+  const [showStandoutQuote, setShowStandoutQuote] = useState<boolean>(false);
+  const [standoutQuoteText, setStandoutQuoteText] = useState<string>("");
 
   // High-res preloaded image URLs (as base64 data URLs to eliminate CORS export blocks)
   const [posterDataUrl, setPosterDataUrl] = useState<string>("");
@@ -314,12 +457,17 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
       setTheme("cinematic");
       setHeadline("Quick Reflection");
       setShowBadgeTag(true);
-      setShowFooterBrand(true);
       setBackdropDim(65);
       setBackdropBlur(0);
       setShowPoster(true);
       setShowWatermark(true);
       setShowGenres(true);
+      setSelectedPaletteId("orange");
+      setCustomColorHex("#ff5500");
+      setFooterHandleOption("theretrotalks");
+      setCustomHandle("@vishakhanpillai");
+      setShowStandoutQuote(false);
+      setStandoutQuoteText(getInitialStandoutQuote(review.review));
       setIsExporting(false);
       setExportProgress("");
     }
@@ -372,10 +520,12 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
     };
   }, [isOpen, currentPoster, currentBackdrop]);
 
+  const hasSlide1Callout = showStandoutQuote && Boolean(standoutQuoteText.trim());
+
   // Derived slide list for full review set based on selected text density
   const reviewSlides = useMemo(() => {
-    return splitReviewIntoSlides(fullReviewText, textDensity);
-  }, [fullReviewText, textDensity]);
+    return splitReviewIntoSlides(fullReviewText, textDensity, hasSlide1Callout);
+  }, [fullReviewText, textDensity, hasSlide1Callout]);
 
   // Active clamped slide index
   const activeSlideIndex = Math.min(currentSlideIndex, Math.max(0, reviewSlides.length - 1));
@@ -486,7 +636,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
   // Formatting helpers
   const displayBackdrop = backdropDataUrl || getBackdropUrl(currentBackdrop, "original");
   const displayPoster = posterDataUrl || getPosterUrl(currentPoster, "w500");
-  const hasFooterContent = showFooterBrand || (showGenres && Boolean(review.genres && review.genres.length > 0));
+  const hasFooterContent = Boolean(effectiveHandle) || (showGenres && Boolean(review.genres && review.genres.length > 0));
 
   // Story card numeric rating formatter (uses standard numbers e.g. 5/5 or 4.5/5)
   const formatStoryCardRating = (val: number): string => {
@@ -512,7 +662,8 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
       return (
         <Star
           key={starIndex}
-          className={`${sizeClass} fill-[#ff5500] text-[#ff5500] shrink-0`}
+          style={{ fill: activePalette.primary, color: activePalette.primary }}
+          className={`${sizeClass} shrink-0`}
         />
       );
     }
@@ -526,7 +677,10 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
           <Star className={`${sizeClass} fill-white/10 text-white/20`} />
           {/* Left half filled with precision 50% width clip */}
           <div className="absolute inset-y-0 left-0 w-1/2 overflow-hidden pointer-events-none">
-            <Star className={`${sizeClass} fill-[#ff5500] text-[#ff5500] max-w-none`} />
+            <Star
+              style={{ fill: activePalette.primary, color: activePalette.primary }}
+              className={`${sizeClass} max-w-none`}
+            />
           </div>
         </div>
       );
@@ -836,7 +990,13 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
               <div className="relative z-10 px-5 pt-14 pb-2 flex items-center justify-between shrink-0">
                 {showWatermark ? (
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-[#ff5500] shadow-[0_0_8px_#ff5500]" />
+                    <div
+                      className="w-2 h-2 rounded-full"
+                      style={{
+                        backgroundColor: activePalette.primary,
+                        boxShadow: `0 0 8px ${activePalette.primary}`,
+                      }}
+                    />
                     <span className="text-[11px] font-poppins font-semibold uppercase tracking-[0.2em] text-white/90">
                       The Retro Talks
                     </span>
@@ -847,7 +1007,10 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
 
                 {studioMode === "full_set" ? null : (
                   showBadgeTag && headline.trim() ? (
-                    <span className="px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[9px] font-mono text-[#ff7a29] uppercase tracking-wider">
+                    <span
+                      className="px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[9px] font-mono uppercase tracking-wider"
+                      style={{ color: activePalette.secondary }}
+                    >
                       {headline}
                     </span>
                   ) : (
@@ -891,16 +1054,42 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                             renderStoryStar(starIndex, rating, "w-4 h-4")
                           )}
                         </div>
-                        <span className="text-[11px] font-mono font-bold text-[#ff7a29] tracking-wider drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+                        <span
+                          className="text-[11px] font-mono font-bold tracking-wider drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]"
+                          style={{ color: activePalette.secondary }}
+                        >
                           {formatStoryCardRating(rating)}
                         </span>
                       </div>
 
-                      {/* Summarized Review (Floating Pull-Quote - No Box) */}
+                      {/* Summarized Review / Standout Quote */}
                       <div className="w-full px-2 py-1 text-center relative flex flex-col items-center">
-                        <p className="text-[13px] font-inter italic text-white/95 leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)] line-clamp-6 max-w-[310px]">
-                          {summaryReview ? `"${summaryReview}"` : "Write your summarized thoughts in the studio..."}
-                        </p>
+                        {showStandoutQuote && standoutQuoteText.trim() ? (
+                          <div
+                            className="w-full max-w-[310px] px-3.5 py-2.5 rounded-2xl backdrop-blur-md bg-black/55 border-l-[3px] text-left shadow-xl"
+                            style={{ borderColor: activePalette.primary }}
+                          >
+                            <div
+                              className="flex items-center gap-1.5 mb-1 text-[9px] font-mono uppercase tracking-wider font-bold"
+                              style={{ color: activePalette.secondary }}
+                            >
+                              <Quote className="w-3 h-3 shrink-0" />
+                              <span>Standout Critique</span>
+                            </div>
+                            <p className="text-[13px] font-poppins font-bold italic text-white leading-snug drop-shadow-md">
+                              "{standoutQuoteText.trim()}"
+                            </p>
+                            {summaryReview && summaryReview !== standoutQuoteText && (
+                              <p className="text-[11.5px] font-inter italic text-zinc-300 mt-2 pt-2 border-t border-white/10 line-clamp-3 leading-relaxed">
+                                {summaryReview}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-[13px] font-inter italic text-white/95 leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)] line-clamp-6 max-w-[310px]">
+                            {summaryReview ? `"${summaryReview}"` : "Write your summarized thoughts in the studio..."}
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -934,17 +1123,43 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                               renderStoryStar(starIndex, rating, "w-3 h-3")
                             )}
                           </div>
-                          <span className="text-[10px] font-mono font-bold text-[#ff7a29] tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
+                          <span
+                            className="text-[10px] font-mono font-bold tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]"
+                            style={{ color: activePalette.secondary }}
+                          >
                             {formatStoryCardRating(rating)}
                           </span>
                         </div>
                       </div>
 
-                      {/* Summarized Review (Floating Quote - No Box) */}
+                      {/* Summarized Review / Standout Quote */}
                       <div className="w-full px-3 py-1.5 text-center flex flex-col items-center">
-                        <p className="text-xs font-inter italic text-zinc-100 leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.98)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)] line-clamp-5 max-w-[310px]">
-                          {summaryReview ? `“${summaryReview}”` : "Write your summarized thoughts in the studio..."}
-                        </p>
+                        {showStandoutQuote && standoutQuoteText.trim() ? (
+                          <div
+                            className="w-full max-w-[310px] px-3 py-2 rounded-2xl backdrop-blur-md bg-black/55 border-l-[3px] text-left shadow-xl"
+                            style={{ borderColor: activePalette.primary }}
+                          >
+                            <div
+                              className="flex items-center gap-1.5 mb-1 text-[9px] font-mono uppercase tracking-wider font-bold"
+                              style={{ color: activePalette.secondary }}
+                            >
+                              <Quote className="w-3 h-3 shrink-0" />
+                              <span>Standout Critique</span>
+                            </div>
+                            <p className="text-[12.5px] font-poppins font-bold italic text-white leading-snug drop-shadow-md">
+                              "{standoutQuoteText.trim()}"
+                            </p>
+                            {summaryReview && summaryReview !== standoutQuoteText && (
+                              <p className="text-[11px] font-inter italic text-zinc-300 mt-1.5 pt-1.5 border-t border-white/10 line-clamp-2 leading-relaxed">
+                                {summaryReview}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-xs font-inter italic text-zinc-100 leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.98)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)] line-clamp-5 max-w-[310px]">
+                            {summaryReview ? `“${summaryReview}”` : "Write your summarized thoughts in the studio..."}
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -976,21 +1191,43 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                                 renderStoryStar(s, rating, "w-3 h-3")
                               )}
                             </div>
-                            <span className="text-[10px] font-mono font-bold text-[#ff7a29] tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
+                            <span
+                              className="text-[10px] font-mono font-bold tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]"
+                              style={{ color: activePalette.secondary }}
+                            >
                               {formatStoryCardRating(rating)}
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Summarized Review (Editorial Column Accent - No Box) */}
-                      <div className="w-full pl-3.5 border-l-2 border-[#ff5500] py-1 my-1">
-                        <div className="text-[9px] font-mono text-[#ff7a29] uppercase tracking-widest mb-1.5 font-bold drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
-                          Editorial Review
+                      {/* Summarized Review / Standout Quote */}
+                      <div
+                        className="w-full pl-3.5 border-l-2 py-1 my-1"
+                        style={{ borderColor: activePalette.primary }}
+                      >
+                        <div
+                          className="text-[9px] font-mono uppercase tracking-widest mb-1.5 font-bold drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]"
+                          style={{ color: activePalette.secondary }}
+                        >
+                          {showStandoutQuote ? "Standout Critique" : "Editorial Review"}
                         </div>
-                        <p className="text-[13px] font-inter text-white/95 leading-relaxed italic drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)] line-clamp-7">
-                          {summaryReview ? `"${summaryReview}"` : "Write your summarized thoughts in the studio..."}
-                        </p>
+                        {showStandoutQuote && standoutQuoteText.trim() ? (
+                          <div className="space-y-1.5">
+                            <p className="text-[13.5px] font-poppins font-bold italic text-white leading-snug drop-shadow-md">
+                              "{standoutQuoteText.trim()}"
+                            </p>
+                            {summaryReview && summaryReview !== standoutQuoteText && (
+                              <p className="text-[11.5px] font-inter text-white/90 leading-relaxed italic line-clamp-3">
+                                {summaryReview}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-[13px] font-inter text-white/95 leading-relaxed italic drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)] line-clamp-7">
+                            {summaryReview ? `"${summaryReview}"` : "Write your summarized thoughts in the studio..."}
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1026,12 +1263,33 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                             renderStoryStar(starIndex, rating, "w-3 h-3")
                           )}
                         </div>
-                        <span className="text-[10px] font-mono font-bold text-[#ff7a29] tracking-wider drop-shadow-sm">
+                        <span
+                          className="text-[10px] font-mono font-bold tracking-wider drop-shadow-sm"
+                          style={{ color: activePalette.secondary }}
+                        >
                           {formatStoryCardRating(rating)}
                         </span>
                       </div>
                     </div>
                   </div>
+
+                  {/* Standout Quote Callout on Slide 1 */}
+                  {showStandoutQuote && activeSlideIndex === 0 && standoutQuoteText.trim() && (
+                    <div
+                      className="my-2 p-3 rounded-2xl border-l-[3px] backdrop-blur-md bg-black/55 shadow-lg relative overflow-hidden shrink-0"
+                      style={{ borderColor: activePalette.primary }}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <Quote
+                          className="w-4 h-4 shrink-0 mt-0.5 opacity-90"
+                          style={{ color: activePalette.primary }}
+                        />
+                        <p className="text-[13px] sm:text-[13.5px] font-poppins font-bold text-white italic leading-snug tracking-tight drop-shadow-md">
+                          "{standoutQuoteText.trim()}"
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* The rest of the card filled with the logged review (rich formatted markdown & justified text) */}
                   <div className="flex-1 pt-2 pb-1 overflow-hidden flex flex-col min-h-0 justify-start">
@@ -1049,11 +1307,11 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
               {/* -------------------- CARD BOTTOM FOOTER -------------------- */}
               {hasFooterContent ? (
                 <div className="relative z-10 px-5 pb-6 pt-2.5 flex items-center justify-between border-t border-white/10 bg-black/40 backdrop-blur-md shrink-0">
-                  {showFooterBrand ? (
+                  {effectiveHandle ? (
                     <div className="flex items-center gap-1.5">
-                      <Film className="w-3 h-3 text-[#ff5500]" />
-                      <span className="text-[9px] font-inter text-zinc-400 tracking-wider uppercase font-medium">
-                        theretrotalks.com
+                      <Film className="w-3 h-3" style={{ color: activePalette.primary }} />
+                      <span className="text-[9.5px] font-inter text-zinc-300 tracking-wider font-semibold">
+                        {effectiveHandle}
                       </span>
                     </div>
                   ) : (
@@ -1416,6 +1674,56 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
               </div>
             )}
 
+            {/* Standout Quote Callout (Optional Slide 1 Critique Hook) */}
+            <div className="p-4 rounded-2xl bg-[#0c0f16] border border-white/[0.07] space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold font-poppins text-white flex items-center gap-1.5">
+                  <Quote className="w-3.5 h-3.5 text-[#ff5500]" />
+                  <span>Standout Quote Callout (Slide 1 Hook)</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-inter text-zinc-400 hover:text-white">
+                  <input
+                    type="checkbox"
+                    checked={showStandoutQuote}
+                    onChange={(e) => setShowStandoutQuote(e.target.checked)}
+                    className="accent-[#ff5500] w-3 h-3 cursor-pointer"
+                  />
+                  <span className={showStandoutQuote ? "text-white font-medium" : ""}>
+                    {showStandoutQuote ? "Enabled" : "Disabled"}
+                  </span>
+                </label>
+              </div>
+
+              {showStandoutQuote && (
+                <div className="space-y-2 pt-1 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between text-[11px] font-inter text-zinc-400">
+                    <span>Feature a punchy one-liner or critique hook in bold editorial typography</span>
+                    <button
+                      type="button"
+                      onClick={() => setStandoutQuoteText(getInitialStandoutQuote(review.review))}
+                      className="text-[#ff7a29] hover:underline cursor-pointer font-medium"
+                      title="Auto-extract punchy sentence from review"
+                    >
+                      Auto-Extract
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={standoutQuoteText}
+                    onChange={(e) => setStandoutQuoteText(e.target.value)}
+                    placeholder="e.g. A haunting, masterclass in neo-noir atmosphere..."
+                    className="w-full bg-[#050608] border border-white/[0.1] focus:border-[#ff5500] rounded-xl px-3 py-2 text-xs font-poppins text-white outline-none transition-all placeholder-zinc-600"
+                  />
+                  <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500">
+                    <span>Displays on Slide 1</span>
+                    <span className={standoutQuoteText.length > 130 ? "text-amber-400 font-bold" : ""}>
+                      {standoutQuoteText.length} chars
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* 3. Rating & Headline Adjuster */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
@@ -1510,7 +1818,209 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
               </div>
             )}
 
-            {/* 5. Backdrop Ambiance Controls */}
+            {/* 5. Palette Accent Switcher */}
+            <div className="p-4 rounded-2xl bg-[#0c0f16] border border-white/[0.07] space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold font-poppins text-white flex items-center gap-1.5">
+                  <Palette className="w-3.5 h-3.5 text-[#ff5500]" />
+                  <span>Palette Accent (Story Tone)</span>
+                </label>
+                <span className="text-[10px] font-mono font-bold" style={{ color: activePalette.secondary }}>
+                  {activePalette.name}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {PALETTE_PRESETS.map((p) => {
+                  const isSelected = p.id === activePalette.id && selectedPaletteId !== "custom";
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setSelectedPaletteId(p.id)}
+                      className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-white/[0.08] shadow-sm"
+                          : "bg-white/[0.02] border-white/[0.07] hover:border-white/20 hover:bg-white/[0.05]"
+                      }`}
+                      style={isSelected ? { borderColor: p.primary, boxShadow: `0 0 12px ${p.glow}` } : {}}
+                    >
+                      <span
+                        className="w-3 h-3 rounded-full shrink-0 shadow-sm"
+                        style={{ backgroundColor: p.primary, boxShadow: `0 0 6px ${p.primary}` }}
+                      />
+                      <span className="text-[10.5px] font-poppins text-zinc-200 truncate font-medium">
+                        {p.name.replace(/(Retro |Monochrome |Cyber )/, "")}
+                      </span>
+                    </button>
+                  );
+                })}
+
+                {/* Custom Color Button */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedPaletteId("custom")}
+                  className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border text-left transition-all cursor-pointer ${
+                    selectedPaletteId === "custom"
+                      ? "bg-white/[0.08] shadow-sm"
+                      : "bg-white/[0.02] border-white/[0.07] hover:border-white/20 hover:bg-white/[0.05]"
+                  }`}
+                  style={
+                    selectedPaletteId === "custom"
+                      ? { borderColor: activePalette.primary, boxShadow: `0 0 12px ${activePalette.glow}` }
+                      : {}
+                  }
+                >
+                  <span
+                    className="w-3 h-3 rounded-full shrink-0 shadow-sm"
+                    style={{
+                      backgroundColor: selectedPaletteId === "custom" ? activePalette.primary : "#a855f7",
+                      boxShadow: selectedPaletteId === "custom" ? `0 0 6px ${activePalette.primary}` : "none",
+                    }}
+                  />
+                  <span className="text-[10.5px] font-poppins text-zinc-200 truncate font-medium">
+                    Custom...
+                  </span>
+                </button>
+              </div>
+
+              {/* Custom Color Picker & Hex Input Drawer */}
+              {selectedPaletteId === "custom" && (
+                <div className="p-3 rounded-xl bg-[#08090d] border border-white/10 space-y-2.5 animate-in fade-in duration-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      {/* Visual Color Picker (Clickable swatch + native browser picker) */}
+                      <div className="relative w-9 h-9 rounded-xl overflow-hidden border border-white/25 shrink-0 cursor-pointer shadow-md group">
+                        <div
+                          className="w-full h-full flex items-center justify-center transition-transform group-hover:scale-105"
+                          style={{ backgroundColor: activePalette.primary }}
+                        >
+                          <Pipette className="w-4 h-4 text-white drop-shadow" />
+                        </div>
+                        <input
+                          type="color"
+                          value={customColorHex.startsWith("#") && customColorHex.length === 7 ? customColorHex : "#ff5500"}
+                          onChange={(e) => {
+                            setCustomColorHex(e.target.value);
+                            setSelectedPaletteId("custom");
+                          }}
+                          className="absolute -inset-2 w-16 h-16 opacity-0 cursor-pointer"
+                          title="Click to open visual color picker"
+                        />
+                      </div>
+
+                      {/* HEX Text Input */}
+                      <div className="space-y-0.5">
+                        <div className="text-[10px] font-mono text-zinc-400">CUSTOM HEX COLOR</div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={customColorHex}
+                            onChange={(e) => {
+                              let val = e.target.value.trim();
+                              if (!val.startsWith("#") && val.length > 0) val = `#${val}`;
+                              setCustomColorHex(val);
+                              setSelectedPaletteId("custom");
+                            }}
+                            placeholder="#ff5500"
+                            maxLength={7}
+                            className="bg-[#050608] border border-white/15 focus:border-[#ff5500] rounded-lg px-2.5 py-1 text-xs font-mono text-white outline-none w-24 uppercase"
+                          />
+                          <span className="text-[10px] font-inter text-zinc-500">Pick color or paste hex</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Active Tone Badge */}
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] self-start sm:self-auto">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shadow-sm"
+                        style={{ backgroundColor: activePalette.primary, boxShadow: `0 0 8px ${activePalette.primary}` }}
+                      />
+                      <span className="text-[11px] font-mono font-bold text-white uppercase">{activePalette.primary}</span>
+                    </div>
+                  </div>
+
+                  {/* Cinematic Color Ideas */}
+                  <div className="flex items-center gap-1.5 pt-2 border-t border-white/[0.06] overflow-x-auto scrollbar-none">
+                    <span className="text-[10px] font-mono text-zinc-500 mr-1 shrink-0">Try:</span>
+                    {[
+                      { name: "Purple", hex: "#a855f7" },
+                      { name: "Violet", hex: "#7c3aed" },
+                      { name: "Pink", hex: "#f43f5e" },
+                      { name: "Amber", hex: "#f59e0b" },
+                      { name: "Sky", hex: "#38bdf8" },
+                      { name: "Lime", hex: "#84cc16" },
+                    ].map((sug) => (
+                      <button
+                        key={sug.hex}
+                        type="button"
+                        onClick={() => {
+                          setCustomColorHex(sug.hex);
+                          setSelectedPaletteId("custom");
+                        }}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] text-[10px] font-mono text-zinc-300 transition-colors shrink-0 cursor-pointer"
+                      >
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: sug.hex }} />
+                        <span>{sug.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 6. Footer Watermark & Instagram Handle Selector */}
+            <div className="p-4 rounded-2xl bg-[#0c0f16] border border-white/[0.07] space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold font-poppins text-white flex items-center gap-1.5">
+                  <Film className="w-3.5 h-3.5 text-[#ff5500]" />
+                  <span>Footer Watermark / Handle</span>
+                </label>
+                <span className="text-[10px] font-mono text-zinc-400">
+                  {effectiveHandle || "Hidden"}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { id: "theretrotalks", label: "@theretrotalks" },
+                  { id: "personal", label: "@vishakhanpillai" },
+                  { id: "custom", label: "Custom Handle" },
+                  { id: "hidden", label: "Off (Hidden)" },
+                ].map((h) => {
+                  const isSelected = footerHandleOption === h.id;
+                  return (
+                    <button
+                      key={h.id}
+                      type="button"
+                      onClick={() => setFooterHandleOption(h.id as FooterHandleOption)}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-inter transition-all cursor-pointer border text-center ${
+                        isSelected
+                          ? "bg-[#ff5500] text-black border-[#ff5500] font-bold shadow-[0_0_12px_rgba(255,85,0,0.35)]"
+                          : "bg-white/[0.03] text-zinc-400 hover:text-white border-white/[0.07]"
+                      }`}
+                    >
+                      {h.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {footerHandleOption === "custom" && (
+                <div className="pt-1 space-y-1 animate-in fade-in duration-200">
+                  <input
+                    type="text"
+                    value={customHandle}
+                    onChange={(e) => setCustomHandle(e.target.value)}
+                    placeholder="@yourhandle or theretrotalks.com"
+                    className="w-full bg-[#050608] border border-white/[0.1] focus:border-[#ff5500] rounded-xl px-3 py-1.5 text-xs font-inter text-white outline-none"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* 7. Backdrop Ambiance Controls */}
             <div className="p-4 rounded-2xl bg-[#0c0f16] border border-white/[0.07] space-y-4">
               <div className="text-xs font-semibold font-poppins text-white flex items-center gap-1.5">
                 <Palette className="w-3.5 h-3.5 text-[#ff5500]" />
@@ -1576,16 +2086,6 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                     <span>Badge Tag</span>
                   </label>
                 )}
-
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showFooterBrand}
-                    onChange={(e) => setShowFooterBrand(e.target.checked)}
-                    className="accent-[#ff5500] w-3.5 h-3.5"
-                  />
-                  <span>theretrotalks.com</span>
-                </label>
 
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
