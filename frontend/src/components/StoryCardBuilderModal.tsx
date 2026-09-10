@@ -1034,13 +1034,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   </div>
 
                   {/* The rest of the card filled with the logged review (rich formatted markdown & justified text) */}
-                  <div
-                    className={`flex-1 pt-2 pb-1 overflow-hidden flex flex-col min-h-0 ${
-                      (reviewSlides[activeSlideIndex] || "").length < 350
-                        ? "justify-center"
-                        : "justify-start"
-                    }`}
-                  >
+                  <div className="flex-1 pt-2 pb-1 overflow-hidden flex flex-col min-h-0 justify-start">
                     <FormattedReviewText
                       content={reviewSlides[activeSlideIndex] || "No review content."}
                       variant="story"
