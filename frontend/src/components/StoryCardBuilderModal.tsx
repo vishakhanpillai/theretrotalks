@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   X,
   Sparkles,
@@ -21,11 +21,12 @@ import {
 } from "lucide-react";
 import { toPng } from "html-to-image";
 import JSZip from "jszip";
-import type { Review } from "../types";
+import type { Review, BackdropFraming } from "../types";
 import { getBackdropUrl, getPosterUrl } from "../utils/images";
 import { slugify } from "../utils/slugify";
 import { PosterSelectorModal } from "./PosterSelectorModal";
 import { BackdropSelectorModal } from "./BackdropSelectorModal";
+import { FormattedReviewText } from "./FormattedReviewText";
 
 interface StoryCardBuilderModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ interface StoryCardBuilderModalProps {
   review: Review;
   onUpdatePoster?: (reviewId: string | number, newPosterUrl: string) => Promise<void> | void;
   onUpdateBackdrop?: (reviewId: string | number, newBackdropUrl: string) => Promise<void> | void;
+  onUpdateBackdropFraming?: (reviewId: string | number, newFraming: BackdropFraming) => Promise<void> | void;
 }
 
 type StoryTheme = "cinematic" | "poster_hero" | "editorial";
@@ -40,11 +42,15 @@ type StudioMode = "summary" | "full_set";
 
 /**
  * Split a full review into readable story slide chunks for 9:16 vertical cards.
+ * Balances content across slides evenly so no slide is left with an orphan paragraph or empty space.
  */
-const splitReviewIntoSlides = (text: string): string[] => {
+const splitReviewIntoSlides = (
+  text: string,
+  density: "dense" | "standard" | "spacious" = "dense"
+): string[] => {
   if (!text) return [""];
 
-  // 1. If user used explicit --- slide dividers, respect them
+  // 1. If user used explicit --- slide dividers, respect them exactly
   if (text.includes("---")) {
     const manualParts = text
       .split(/\n\s*---\s*\n/)
@@ -53,47 +59,60 @@ const splitReviewIntoSlides = (text: string): string[] => {
     if (manualParts.length > 0) return manualParts;
   }
 
-  // 2. Clean markdown headers/formatting
-  const cleanText = text.replace(/^#{1,6}\s+/gm, "").trim();
+  const trimmed = text.trim();
+  const maxChunk = density === "dense" ? 1550 : density === "spacious" ? 850 : 1200;
 
-  // 3. Break by paragraphs first
-  const paragraphs = cleanText.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  // 2. If the review fits on 1 slide (with 15% tolerance), keep it on 1 slide to eliminate orphan slides!
+  if (trimmed.length <= maxChunk * 1.15) {
+    return [trimmed];
+  }
+
+  // 3. Balanced multi-slide distribution:
+  // Calculate the ideal number of slides and distribute content evenly
+  const numSlides = Math.ceil(trimmed.length / maxChunk);
+  const targetPerSlide = Math.ceil(trimmed.length / numSlides);
+
+  const paragraphs = trimmed.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+
+  // Decompose paragraphs into sentence units with paragraph boundary flags
+  const units: { text: string; isParaStart: boolean }[] = [];
+  paragraphs.forEach((p, pIdx) => {
+    const sents = p.match(/[^.!?]+[.!?]+(\s+|$)|[^\n]+/g) || [p];
+    sents.forEach((s, sIdx) => {
+      const sTrim = s.trim();
+      if (!sTrim) return;
+      units.push({
+        text: sTrim,
+        isParaStart: sIdx === 0 && pIdx > 0,
+      });
+    });
+  });
 
   const slides: string[] = [];
-  let currentSlide = "";
-  const TARGET_CHUNK_SIZE = 420; // Optimal length for Poppins typography on 9:16 vertical card
+  let current = "";
 
-  for (const para of paragraphs) {
-    if (para.length > TARGET_CHUNK_SIZE) {
-      // Large paragraph: split into sentences
-      const sentences = para.match(/[^.!?]+[.!?]+(\s+|$)/g) || [para];
-      for (const sent of sentences) {
-        if (!currentSlide) {
-          currentSlide = sent.trim();
-        } else if ((currentSlide + " " + sent.trim()).length <= TARGET_CHUNK_SIZE) {
-          currentSlide += " " + sent.trim();
-        } else {
-          slides.push(currentSlide);
-          currentSlide = sent.trim();
-        }
-      }
+  for (let i = 0; i < units.length; i++) {
+    const unit = units[i];
+    const sep = current ? (unit.isParaStart ? "\n\n" : " ") : "";
+    const candidate = current ? current + sep + unit.text : unit.text;
+
+    // Split when candidate reaches balanced target, provided we still have remaining slides to create
+    if (current && candidate.length > targetPerSlide && slides.length < numSlides - 1) {
+      slides.push(current);
+      current = unit.text;
+    } else if (candidate.length > maxChunk * 1.05) {
+      slides.push(current);
+      current = unit.text;
     } else {
-      if (!currentSlide) {
-        currentSlide = para;
-      } else if ((currentSlide + "\n\n" + para).length <= TARGET_CHUNK_SIZE) {
-        currentSlide += "\n\n" + para;
-      } else {
-        slides.push(currentSlide);
-        currentSlide = para;
-      }
+      current = candidate;
     }
   }
 
-  if (currentSlide.trim()) {
-    slides.push(currentSlide.trim());
+  if (current.trim()) {
+    slides.push(current.trim());
   }
 
-  return slides.length > 0 ? slides : [cleanText];
+  return slides.length > 0 ? slides : [trimmed];
 };
 
 export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
@@ -102,6 +121,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
   review,
   onUpdatePoster,
   onUpdateBackdrop,
+  onUpdateBackdropFraming,
 }) => {
   // Initial summary extracted from review or blank
   const getInitialSummary = (text: string) => {
@@ -139,7 +159,16 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
   const [showPosterSelector, setShowPosterSelector] = useState<boolean>(false);
   const [showBackdropSelector, setShowBackdropSelector] = useState<boolean>(false);
 
+  // Backdrop Crop & Framing State
+  const [backdropCropX, setBackdropCropX] = useState<number>(review.backdropFraming?.x ?? 50);
+  const [backdropCropY, setBackdropCropY] = useState<number>(review.backdropFraming?.y ?? 0);
+  const [backdropZoom, setBackdropZoom] = useState<number>(review.backdropFraming?.zoom ?? 100);
+  const [isCroppingBackdrop, setIsCroppingBackdrop] = useState<boolean>(false);
+  const [isSavingFraming, setIsSavingFraming] = useState<boolean>(false);
+  const [framingSavedSuccess, setFramingSavedSuccess] = useState<boolean>(false);
+
   // Styling & Toggles
+  const [textDensity, setTextDensity] = useState<"dense" | "standard" | "spacious">("dense");
   const [rating, setRating] = useState<number>(review.rating);
   const [theme, setTheme] = useState<StoryTheme>("cinematic");
   const [headline, setHeadline] = useState<string>("Quick Reflection");
@@ -160,6 +189,103 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
 
   const cardRef = useRef<HTMLDivElement>(null);
 
+  // Drag-to-reposition logic for Backdrop Crop Mode
+  const isDraggingBackdrop = useRef(false);
+  const dragStartRef = useRef<{ clientX: number; clientY: number; startX: number; startY: number }>({
+    clientX: 0,
+    clientY: 0,
+    startX: 50,
+    startY: 0,
+  });
+
+  const handleBackdropMouseDown = (e: React.MouseEvent) => {
+    if (!isCroppingBackdrop) return;
+    e.preventDefault();
+    isDraggingBackdrop.current = true;
+    dragStartRef.current = {
+      clientX: e.clientX,
+      clientY: e.clientY,
+      startX: backdropCropX,
+      startY: backdropCropY,
+    };
+  };
+
+  const handleBackdropMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDraggingBackdrop.current || !cardRef.current) return;
+    const deltaX = e.clientX - dragStartRef.current.clientX;
+    const deltaY = e.clientY - dragStartRef.current.clientY;
+    const cardWidth = cardRef.current.clientWidth || 360;
+    const cardHeight = cardRef.current.clientHeight || 640;
+
+    const newX = Math.min(100, Math.max(0, Math.round(dragStartRef.current.startX - (deltaX / cardWidth) * 100)));
+    const newY = Math.min(100, Math.max(0, Math.round(dragStartRef.current.startY - (deltaY / cardHeight) * 100)));
+
+    setBackdropCropX(newX);
+    setBackdropCropY(newY);
+  }, []);
+
+  const handleBackdropMouseUp = useCallback(() => {
+    isDraggingBackdrop.current = false;
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", handleBackdropMouseMove);
+    window.addEventListener("mouseup", handleBackdropMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleBackdropMouseMove);
+      window.removeEventListener("mouseup", handleBackdropMouseUp);
+    };
+  }, [handleBackdropMouseMove, handleBackdropMouseUp]);
+
+  const handleBackdropTouchStart = (e: React.TouchEvent) => {
+    if (!isCroppingBackdrop || e.touches.length !== 1) return;
+    isDraggingBackdrop.current = true;
+    dragStartRef.current = {
+      clientX: e.touches[0].clientX,
+      clientY: e.touches[0].clientY,
+      startX: backdropCropX,
+      startY: backdropCropY,
+    };
+  };
+
+  const handleBackdropTouchMove = (e: React.TouchEvent) => {
+    if (!isDraggingBackdrop.current || !cardRef.current || e.touches.length !== 1) return;
+    const deltaX = e.touches[0].clientX - dragStartRef.current.clientX;
+    const deltaY = e.touches[0].clientY - dragStartRef.current.clientY;
+    const cardWidth = cardRef.current.clientWidth || 360;
+    const cardHeight = cardRef.current.clientHeight || 640;
+
+    const newX = Math.min(100, Math.max(0, Math.round(dragStartRef.current.startX - (deltaX / cardWidth) * 100)));
+    const newY = Math.min(100, Math.max(0, Math.round(dragStartRef.current.startY - (deltaY / cardHeight) * 100)));
+
+    setBackdropCropX(newX);
+    setBackdropCropY(newY);
+  };
+
+  const handleBackdropTouchEnd = () => {
+    isDraggingBackdrop.current = false;
+  };
+
+  const handleSaveFraming = async () => {
+    if (!onUpdateBackdropFraming) return;
+    setIsSavingFraming(true);
+    try {
+      const newFraming: BackdropFraming = {
+        y: backdropCropY,
+        x: backdropCropX,
+        height: review.backdropFraming?.height ?? 70,
+        zoom: backdropZoom,
+      };
+      await onUpdateBackdropFraming(review.id, newFraming);
+      setFramingSavedSuccess(true);
+      setTimeout(() => setFramingSavedSuccess(false), 2500);
+    } catch (err) {
+      console.error("Failed to save backdrop framing:", err);
+    } finally {
+      setIsSavingFraming(false);
+    }
+  };
+
   // Initialize summary, text and rating when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -169,6 +295,13 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
       setStudioMode("summary");
       setCurrentPoster(review.poster);
       setCurrentBackdrop(review.backdrop);
+      setBackdropCropX(review.backdropFraming?.x ?? 50);
+      setBackdropCropY(review.backdropFraming?.y ?? 0);
+      setBackdropZoom(review.backdropFraming?.zoom ?? 100);
+      setIsCroppingBackdrop(false);
+      setIsSavingFraming(false);
+      setFramingSavedSuccess(false);
+      setTextDensity("dense");
       setRating(review.rating);
       setTheme("cinematic");
       setHeadline("Quick Reflection");
@@ -231,10 +364,10 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
     };
   }, [isOpen, currentPoster, currentBackdrop]);
 
-  // Derived slide list for full review set
+  // Derived slide list for full review set based on selected text density
   const reviewSlides = useMemo(() => {
-    return splitReviewIntoSlides(fullReviewText);
-  }, [fullReviewText]);
+    return splitReviewIntoSlides(fullReviewText, textDensity);
+  }, [fullReviewText, textDensity]);
 
   // Active clamped slide index
   const activeSlideIndex = Math.min(currentSlideIndex, Math.max(0, reviewSlides.length - 1));
@@ -590,7 +723,15 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
             <div
               ref={cardRef}
               style={{ width: "360px", height: "640px" }}
-              className="relative rounded-none overflow-hidden bg-[#07080a] shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(255,85,0,0.15)] border border-white/[0.12] flex flex-col justify-between select-none"
+              onMouseDown={handleBackdropMouseDown}
+              onTouchStart={handleBackdropTouchStart}
+              onTouchMove={handleBackdropTouchMove}
+              onTouchEnd={handleBackdropTouchEnd}
+              className={`relative rounded-none overflow-hidden bg-[#07080a] shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(255,85,0,0.15)] border flex flex-col justify-between select-none ${
+                isCroppingBackdrop
+                  ? "cursor-move border-[#ff5500] ring-2 ring-[#ff5500]/50"
+                  : "border-white/[0.12]"
+              }`}
             >
               {/* Full Bleed Backdrop Image Background */}
               {displayBackdrop && (
@@ -600,10 +741,11 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                     alt={review.title}
                     crossOrigin="anonymous"
                     style={{
-                      objectPosition: `center ${review.backdropFraming?.y ?? 0}%`,
+                      objectPosition: `${backdropCropX}% ${backdropCropY}%`,
+                      transform: backdropZoom > 100 ? `scale(${backdropZoom / 100})` : undefined,
                       filter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : "none",
                     }}
-                    className="w-full h-full object-cover object-top scale-105"
+                    className="w-full h-full object-cover select-none"
                   />
                   {/* Backdrop Tint / Dimmer */}
                   <div
@@ -616,8 +758,37 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                 </div>
               )}
 
+              {/* Crop Mode Interactive Overlay & Rule of Thirds Guide */}
+              {isCroppingBackdrop && (
+                <div className="absolute inset-0 z-20 pointer-events-none">
+                  {/* Rule of Thirds Grid */}
+                  <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 opacity-30">
+                    <div className="border-r border-b border-white" />
+                    <div className="border-r border-b border-white" />
+                    <div className="border-b border-white" />
+                    <div className="border-r border-b border-white" />
+                    <div className="border-r border-b border-white" />
+                    <div className="border-b border-white" />
+                    <div className="border-r border-b border-white" />
+                    <div className="border-r border-b border-white" />
+                    <div />
+                  </div>
+
+                  {/* Top Floating Guide Pill */}
+                  <div className="absolute top-2.5 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/90 border border-[#ff5500] text-[#ff7a29] text-[10px] font-mono font-bold rounded-full shadow-2xl flex items-center gap-1.5 animate-pulse whitespace-nowrap">
+                    <Crop className="w-3 h-3 text-[#ff5500]" />
+                    <span>Drag card to pan backdrop</span>
+                  </div>
+
+                  {/* Bottom Stats Pill */}
+                  <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-black/85 border border-white/20 text-white text-[9px] font-mono rounded-full whitespace-nowrap">
+                    X: {backdropCropX}% · Y: {backdropCropY}% · Zoom: {(backdropZoom / 100).toFixed(2)}x
+                  </div>
+                </div>
+              )}
+
               {/* -------------------- CARD TOP HEADER -------------------- */}
-              <div className="relative z-10 px-5 pt-5 pb-2 flex items-center justify-between">
+              <div className="relative z-10 px-5 pt-6 pb-2 flex items-center justify-between">
                 {showWatermark ? (
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-[#ff5500] shadow-[0_0_8px_#ff5500]" />
@@ -629,11 +800,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   <div />
                 )}
 
-                {studioMode === "full_set" ? (
-                  <span className="px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[9px] font-mono text-[#ff7a29] uppercase tracking-wider font-semibold">
-                    Part {activeSlideIndex + 1} of {reviewSlides.length}
-                  </span>
-                ) : (
+                {studioMode === "full_set" ? null : (
                   showBadgeTag && headline.trim() ? (
                     <span className="px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[9px] font-mono text-[#ff7a29] uppercase tracking-wider">
                       {headline}
@@ -787,58 +954,56 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
 
               {/* -------------------- MODE 2: FULL REVIEW STORY SET -------------------- */}
               {studioMode === "full_set" && (
-                <div className="relative z-10 px-6 flex flex-col justify-between flex-grow py-3">
-                  {/* Slide Top Metadata */}
-                  <div className="space-y-1.5 text-center">
-                    <h2 className="text-xl font-bold font-poppins text-white leading-tight drop-shadow-md">
+                <div className="relative z-10 px-4 flex flex-col flex-grow py-1.5 min-h-0 overflow-hidden">
+                  {/* Slide Top Left-Aligned Header: Title, Year, Director & Star Rating */}
+                  <div className="text-left space-y-0.5 pb-1.5 border-b border-white/[0.1] shrink-0">
+                    <h2 className="text-base sm:text-lg font-bold font-poppins text-white leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
                       {review.title}
                     </h2>
-                    <p className="text-[11px] font-poppins text-zinc-300 drop-shadow-sm">
-                      {review.year && <span>{review.year} · </span>}
-                      <span>Dir. {review.director}</span>
-                    </p>
 
-                    {/* Star Rating & Number */}
-                    <div className="flex flex-col items-center justify-center gap-1 pt-1">
-                      <div className="flex items-center justify-center gap-1">
-                        {[0, 1, 2, 3, 4].map((starIndex) =>
-                          renderStoryStar(starIndex, rating, "w-3.5 h-3.5")
-                        )}
+                    <div className="flex items-center gap-2 text-[10px] sm:text-[10.5px] font-poppins text-zinc-300 drop-shadow-sm flex-wrap pt-0.5">
+                      {(review.year || review.director) && (
+                        <span className="font-normal text-zinc-300">
+                          {review.year && `${review.year}`}
+                          {review.year && review.director && ` · `}
+                          {review.director && `Dir. ${review.director}`}
+                        </span>
+                      )}
+
+                      {(review.year || review.director) && (
+                        <span className="text-white/30 text-[10px]">|</span>
+                      )}
+
+                      {/* Star Rating & Number next to Year & Director */}
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-0.5">
+                          {[0, 1, 2, 3, 4].map((starIndex) =>
+                            renderStoryStar(starIndex, rating, "w-3 h-3")
+                          )}
+                        </div>
+                        <span className="text-[10px] font-mono font-bold text-[#ff7a29] tracking-wider drop-shadow-sm">
+                          {formatStoryCardRating(rating)}
+                        </span>
                       </div>
-                      <span className="text-[10px] font-mono font-bold text-[#ff7a29] tracking-wider drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
-                        {formatStoryCardRating(rating)}
-                      </span>
                     </div>
-
-                    <div className="w-12 h-0.5 bg-[#ff5500]/60 mx-auto rounded-full mt-2" />
                   </div>
 
-                  {/* Full Review Text Chunk in font-poppins */}
-                  <div className="my-auto py-3">
-                    <p className="font-poppins text-[13.5px] leading-[1.75] text-zinc-100 whitespace-pre-line text-left drop-shadow-[0_2px_12px_rgba(0,0,0,0.98)] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
-                      {reviewSlides[activeSlideIndex] || "No review content."}
-                    </p>
-                  </div>
-
-                  {/* Slide Progress / Swipe Hint */}
-                  <div className="pt-2 flex items-center justify-between text-[10px] font-poppins text-zinc-400">
-                    <span className="font-mono text-[#ff7a29] font-bold">
-                      Story {activeSlideIndex + 1} of {reviewSlides.length}
-                    </span>
-                    {activeSlideIndex < reviewSlides.length - 1 ? (
-                      <span className="text-zinc-400 italic">
-                        Swipe for Part {activeSlideIndex + 2} →
-                      </span>
-                    ) : (
-                      <span className="text-[#ff5500] font-semibold">● End of Review</span>
-                    )}
+                  {/* The rest of the card filled with the logged review (rich formatted markdown & justified text) */}
+                  <div className="flex-1 pt-1.5 pb-0.5 overflow-hidden flex flex-col justify-center min-h-0">
+                    <FormattedReviewText
+                      content={reviewSlides[activeSlideIndex] || "No review content."}
+                      variant="story"
+                      density={textDensity}
+                      revealSpoilers={true}
+                      className="w-full text-justify font-poppins [text-align-last:left]"
+                    />
                   </div>
                 </div>
               )}
 
               {/* -------------------- CARD BOTTOM FOOTER -------------------- */}
               {hasFooterContent ? (
-                <div className="relative z-10 px-5 pb-5 pt-2 flex items-center justify-between border-t border-white/10 bg-black/40 backdrop-blur-md">
+                <div className="relative z-10 px-5 pb-6 pt-2.5 flex items-center justify-between border-t border-white/10 bg-black/40 backdrop-blur-md">
                   {showFooterBrand ? (
                     <div className="flex items-center gap-1.5">
                       <Film className="w-3 h-3 text-[#ff5500]" />
@@ -857,7 +1022,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   )}
                 </div>
               ) : (
-                <div className="pb-4" />
+                <div className="pb-6" />
               )}
             </div>
           </div>
@@ -879,17 +1044,17 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 {/* Change Poster */}
                 <button
                   type="button"
                   onClick={() => setShowPosterSelector(true)}
                   disabled={!review.tmdbId}
-                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] text-xs font-inter text-zinc-200 hover:text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex flex-col items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] text-xs font-inter text-zinc-200 hover:text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-center"
                   title={!review.tmdbId ? "TMDB ID required for alternate artwork" : "Select alternate official posters from TMDB"}
                 >
                   <ImageIcon className="w-3.5 h-3.5 text-[#ff5500]" />
-                  <span>Change Poster</span>
+                  <span className="text-[11px] font-medium">Poster</span>
                 </button>
 
                 {/* Change Backdrop */}
@@ -897,13 +1062,190 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   type="button"
                   onClick={() => setShowBackdropSelector(true)}
                   disabled={!review.tmdbId}
-                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] text-xs font-inter text-zinc-200 hover:text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex flex-col items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] text-xs font-inter text-zinc-200 hover:text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-center"
                   title={!review.tmdbId ? "TMDB ID required for alternate artwork" : "Select alternate official backdrops from TMDB"}
                 >
+                  <Layers className="w-3.5 h-3.5 text-[#ff5500]" />
+                  <span className="text-[11px] font-medium">Backdrop</span>
+                </button>
+
+                {/* Crop Backdrop */}
+                <button
+                  type="button"
+                  onClick={() => setIsCroppingBackdrop((prev) => !prev)}
+                  className={`flex flex-col items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl text-xs font-inter transition-all cursor-pointer text-center border ${
+                    isCroppingBackdrop
+                      ? "bg-[#ff5500]/20 text-[#ff7a29] border-[#ff5500] shadow-[0_0_12px_rgba(255,85,0,0.35)]"
+                      : "bg-white/[0.04] hover:bg-white/[0.08] border-white/[0.1] text-zinc-200 hover:text-white"
+                  }`}
+                  title="Crop & reposition backdrop for story card (Pan & Zoom)"
+                >
                   <Crop className="w-3.5 h-3.5 text-[#ff5500]" />
-                  <span>Change Backdrop</span>
+                  <span className="text-[11px] font-medium">
+                    {isCroppingBackdrop ? "Done Crop" : "Crop"}
+                  </span>
                 </button>
               </div>
+
+              {/* Collapsible Backdrop Crop & Positioning Controls */}
+              {isCroppingBackdrop && (
+                <div className="mt-3 p-3.5 rounded-xl bg-[#08090d] border border-[#ff5500]/30 space-y-3.5 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
+                    <div className="flex items-center gap-1.5 text-xs font-poppins font-semibold text-white">
+                      <Crop className="w-3.5 h-3.5 text-[#ff5500]" />
+                      <span>Backdrop Framing & Crop</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-[#ff7a29]">Drag card or use sliders</span>
+                  </div>
+
+                  {/* Horizontal Pan (X Offset) */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-inter">
+                      <span className="text-zinc-300">Horizontal Pan (X)</span>
+                      <span className="font-mono text-[#ff7a29] font-bold">{backdropCropX}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={backdropCropX}
+                      onChange={(e) => setBackdropCropX(Number(e.target.value))}
+                      className="w-full accent-[#ff5500] cursor-pointer"
+                    />
+                    <div className="flex items-center justify-between gap-1 pt-0.5">
+                      {[
+                        { label: "Left", val: 0 },
+                        { label: "Center", val: 50 },
+                        { label: "Right", val: 100 },
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => setBackdropCropX(preset.val)}
+                          className={`flex-1 py-1 rounded-md text-[10px] font-mono border transition-all cursor-pointer ${
+                            backdropCropX === preset.val
+                              ? "bg-[#ff5500]/20 text-[#ff7a29] border-[#ff5500]"
+                              : "bg-white/[0.03] text-zinc-400 border-white/[0.06] hover:text-white"
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Vertical Position (Y Offset) */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-inter">
+                      <span className="text-zinc-300">Vertical Position (Y)</span>
+                      <span className="font-mono text-[#ff7a29] font-bold">{backdropCropY}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={backdropCropY}
+                      onChange={(e) => setBackdropCropY(Number(e.target.value))}
+                      className="w-full accent-[#ff5500] cursor-pointer"
+                    />
+                    <div className="flex items-center justify-between gap-1 pt-0.5">
+                      {[
+                        { label: "Top", val: 0 },
+                        { label: "Center", val: 50 },
+                        { label: "Bottom", val: 100 },
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => setBackdropCropY(preset.val)}
+                          className={`flex-1 py-1 rounded-md text-[10px] font-mono border transition-all cursor-pointer ${
+                            backdropCropY === preset.val
+                              ? "bg-[#ff5500]/20 text-[#ff7a29] border-[#ff5500]"
+                              : "bg-white/[0.03] text-zinc-400 border-white/[0.06] hover:text-white"
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Zoom / Scale */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-inter">
+                      <span className="text-zinc-300">Scale / Zoom</span>
+                      <span className="font-mono text-[#ff7a29] font-bold">{(backdropZoom / 100).toFixed(2)}x</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={100}
+                      max={200}
+                      step={5}
+                      value={backdropZoom}
+                      onChange={(e) => setBackdropZoom(Number(e.target.value))}
+                      className="w-full accent-[#ff5500] cursor-pointer"
+                    />
+                    <div className="flex items-center justify-between gap-1 pt-0.5">
+                      {[
+                        { label: "1.0x", val: 100 },
+                        { label: "1.25x", val: 125 },
+                        { label: "1.5x", val: 150 },
+                        { label: "2.0x", val: 200 },
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => setBackdropZoom(preset.val)}
+                          className={`flex-1 py-1 rounded-md text-[10px] font-mono border transition-all cursor-pointer ${
+                            backdropZoom === preset.val
+                              ? "bg-[#ff5500]/20 text-[#ff7a29] border-[#ff5500]"
+                              : "bg-white/[0.03] text-zinc-400 border-white/[0.06] hover:text-white"
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Action Buttons: Reset & Save to Review */}
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/[0.08]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBackdropCropX(50);
+                        setBackdropCropY(review.backdropFraming?.y ?? 0);
+                        setBackdropZoom(review.backdropFraming?.zoom ?? 100);
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[11px] font-inter text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Reset</span>
+                    </button>
+
+                    {onUpdateBackdropFraming && (
+                      <button
+                        type="button"
+                        onClick={handleSaveFraming}
+                        disabled={isSavingFraming}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#ff5500] hover:bg-[#ff7a29] text-black text-[11px] font-poppins font-bold transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {framingSavedSuccess ? (
+                          <>
+                            <Check className="w-3 h-3 stroke-[3]" />
+                            <span>Saved!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Check className="w-3 h-3" />
+                            <span>{isSavingFraming ? "Saving..." : "Save Framing"}</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 2. Text Editor Section (Switches according to active mode) */}
@@ -982,8 +1324,42 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                 />
 
                 <div className="flex items-center justify-between text-[11px] font-inter text-zinc-400">
-                  <span>Auto-chunked by paragraph · Type <code className="text-[#ff7a29] font-mono">---</code> on a new line to force slide breaks</span>
+                  <span>Supports **bold**, *italic*, &gt; quote · <code className="text-[#ff7a29] font-mono">---</code> forces slide breaks</span>
                   <span className="font-mono text-zinc-500">{fullReviewText.length} chars</span>
+                </div>
+
+                {/* Density / Word Capacity Selector */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-[#050608] border border-white/[0.08]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-poppins font-medium text-white">Card Word Capacity:</span>
+                    <span className="text-[10px] font-mono text-[#ff7a29]">
+                      {textDensity === "dense"
+                        ? "~1,550 chars / card (Max Content)"
+                        : textDensity === "standard"
+                        ? "~1,200 chars / card"
+                        : "~850 chars / card"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {[
+                      { key: "dense", label: "Max Words" },
+                      { key: "standard", label: "Standard" },
+                      { key: "spacious", label: "Spacious" },
+                    ].map((d) => (
+                      <button
+                        key={d.key}
+                        type="button"
+                        onClick={() => setTextDensity(d.key as any)}
+                        className={`px-2.5 py-1 rounded-lg text-[10.5px] font-poppins transition-all cursor-pointer ${
+                          textDensity === d.key
+                            ? "bg-[#ff5500] text-black font-bold shadow-[0_0_10px_rgba(255,85,0,0.3)]"
+                            : "bg-white/[0.04] text-zinc-400 hover:text-white"
+                        }`}
+                      >
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

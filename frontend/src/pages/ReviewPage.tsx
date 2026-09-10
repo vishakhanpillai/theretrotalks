@@ -727,6 +727,12 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
         review={review}
         onUpdatePoster={onUpdatePoster}
         onUpdateBackdrop={onUpdateBackdrop}
+        onUpdateBackdropFraming={async (reviewId, newFraming) => {
+          if (onUpdateBackdropFraming) {
+            await onUpdateBackdropFraming(reviewId, newFraming);
+          }
+          setReview((prev) => (prev ? { ...prev, backdropFraming: newFraming } : null));
+        }}
       />
 
     </div>

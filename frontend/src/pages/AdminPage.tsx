@@ -1109,6 +1109,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           review={storyStudioReview}
           onUpdatePoster={onUpdatePoster}
           onUpdateBackdrop={onUpdateBackdrop}
+          onUpdateBackdropFraming={onUpdateBackdropFraming}
         />
       )}
 

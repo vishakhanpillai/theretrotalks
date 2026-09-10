@@ -40,6 +40,7 @@ export interface Movie {
 
 export interface BackdropFraming {
   y: number; // 0 (top) to 100 (bottom)
+  x?: number; // 0 (left) to 100 (right)
   height: number; // in vh, e.g. 45 to 90
   zoom: number; // in percentage, e.g. 100 to 150
 }

@@ -3,6 +3,9 @@ import React, { useState } from "react";
 interface FormattedReviewTextProps {
   content: string;
   className?: string;
+  variant?: "default" | "story";
+  density?: "dense" | "standard" | "spacious";
+  revealSpoilers?: boolean;
 }
 
 const SpoilerSpan: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -27,7 +30,7 @@ const SpoilerSpan: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 // Parses inline tokens (bold, italics, strikethrough, spoiler, link, line-breaks)
-function renderInline(text: string): React.ReactNode[] {
+function renderInline(text: string, revealSpoilers = false): React.ReactNode[] {
   const tokens: React.ReactNode[] = [];
   // Tokenizer pattern
   // 1. Spoilers: ||text|| or <spoiler>text</spoiler>
@@ -58,15 +61,23 @@ function renderInline(text: string): React.ReactNode[] {
 
     if (spoiler1 !== undefined || spoiler2 !== undefined) {
       const content = spoiler1 ?? spoiler2;
-      tokens.push(<SpoilerSpan key={key}>{renderInline(content)}</SpoilerSpan>);
+      if (revealSpoilers) {
+        tokens.push(
+          <span key={key} className="bg-[#ff5500]/20 text-zinc-100 border border-[#ff5500]/30 rounded px-1 py-0.5 mx-0.5">
+            {renderInline(content, revealSpoilers)}
+          </span>
+        );
+      } else {
+        tokens.push(<SpoilerSpan key={key}>{renderInline(content, revealSpoilers)}</SpoilerSpan>);
+      }
     } else if (bold1 !== undefined || bold2 !== undefined || bold3 !== undefined) {
       const content = bold1 ?? bold2 ?? bold3;
-      tokens.push(<strong key={key} className="text-white font-semibold">{renderInline(content)}</strong>);
+      tokens.push(<strong key={key} className="text-white font-bold">{renderInline(content, revealSpoilers)}</strong>);
     } else if (italic1 !== undefined || italic2 !== undefined || italic3 !== undefined || italic4 !== undefined) {
       const content = italic1 ?? italic2 ?? italic3 ?? italic4;
-      tokens.push(<em key={key} className="text-zinc-100 italic">{renderInline(content)}</em>);
+      tokens.push(<em key={key} className="text-zinc-100 italic">{renderInline(content, revealSpoilers)}</em>);
     } else if (strike !== undefined) {
-      tokens.push(<del key={key} className="line-through text-zinc-500">{renderInline(strike)}</del>);
+      tokens.push(<del key={key} className="line-through text-zinc-500">{renderInline(strike, revealSpoilers)}</del>);
     } else if (linkText !== undefined && linkUrl !== undefined) {
       tokens.push(
         <a
@@ -95,14 +106,58 @@ function renderInline(text: string): React.ReactNode[] {
 export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
   content,
   className = "",
+  variant = "default",
+  density = "dense",
+  revealSpoilers = variant === "story",
 }) => {
   if (!content) return null;
+
+  const isStory = variant === "story";
+  const len = content.length;
+
+  // Story density styling profiles with content-aware adaptive sizing:
+  // Shorter content automatically expands with larger font & comfortable line-height so the card never looks empty!
+  const storyContainerSpacing =
+    density === "spacious"
+      ? "space-y-2.5"
+      : density === "standard"
+      ? "space-y-2"
+      : len < 650
+      ? "space-y-3"
+      : len < 1100
+      ? "space-y-2"
+      : "space-y-1.5";
+
+  const storyParagraphClass =
+    density === "spacious"
+      ? "leading-[1.68] text-zinc-100 text-[13px] sm:text-[13.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]"
+      : density === "standard"
+      ? "leading-[1.58] text-zinc-100 text-[12px] sm:text-[12.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]"
+      : len < 650
+      ? "leading-[1.65] text-zinc-100 text-[13px] sm:text-[13.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]"
+      : len < 1100
+      ? "leading-[1.54] text-zinc-100 text-[12px] sm:text-[12.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_7px_rgba(0,0,0,0.95)]"
+      : "leading-[1.46] text-zinc-100 text-[11px] sm:text-[11.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]";
+
+  const storyQuoteClass =
+    density === "spacious" || (density === "dense" && len < 650)
+      ? "my-2 pl-3 pr-2 py-1.5 border-l-2 border-[#ff5500] bg-black/40 text-zinc-100 italic rounded-r-lg leading-relaxed text-[12px] font-poppins text-justify [text-align-last:left]"
+      : density === "standard" || (density === "dense" && len < 1100)
+      ? "my-1.5 pl-2.5 pr-2 py-1 border-l-2 border-[#ff5500] bg-black/40 text-zinc-100 italic rounded-r-md leading-relaxed text-[11px] font-poppins text-justify [text-align-last:left]"
+      : "my-1.5 pl-2.5 pr-1.5 py-1 border-l-2 border-[#ff5500] bg-black/40 text-zinc-100 italic rounded-r-md leading-snug text-[10.5px] font-poppins text-justify [text-align-last:left]";
+
+  const storyListClass =
+    density === "spacious" || (density === "dense" && len < 650)
+      ? "my-2 space-y-1 list-disc list-inside text-zinc-100 text-[12.5px] font-poppins text-justify [text-align-last:left]"
+      : density === "standard" || (density === "dense" && len < 1100)
+      ? "my-1.5 space-y-0.5 list-disc list-inside text-zinc-100 text-[11.5px] font-poppins text-justify [text-align-last:left]"
+      : "my-1 space-y-0.5 list-disc list-inside text-zinc-100 text-[11px] font-poppins text-justify [text-align-last:left]";
 
   // Split content by paragraphs (two or more newlines)
   const blocks = content.split(/\n{2,}/);
 
   return (
-    <div className={`space-y-4 ${className}`}>
+    <div className={`${isStory ? storyContainerSpacing : "space-y-4"} ${className}`}>
       {blocks.map((block, bIdx) => {
         const trimmed = block.trim();
         if (!trimmed) return null;
@@ -118,11 +173,15 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
           return (
             <blockquote
               key={bIdx}
-              className="my-4 pl-4 pr-3 py-2 border-l-2 border-[#ff5500] bg-white/[0.02] text-zinc-300 italic rounded-r-xl leading-relaxed text-sm sm:text-base font-inter"
+              className={
+                isStory
+                  ? storyQuoteClass
+                  : "my-4 pl-4 pr-3 py-2 border-l-2 border-[#ff5500] bg-white/[0.02] text-zinc-300 italic rounded-r-xl leading-relaxed text-sm sm:text-base font-inter"
+              }
             >
               {quoteLines.split("\n").map((line, lIdx) => (
                 <React.Fragment key={lIdx}>
-                  {renderInline(line)}
+                  {renderInline(line, revealSpoilers)}
                   {lIdx < quoteLines.split("\n").length - 1 && <br />}
                 </React.Fragment>
               ))}
@@ -137,21 +196,42 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
           const hText = headingMatch[2];
           if (level === 1) {
             return (
-              <h2 key={bIdx} className="font-poppins font-bold text-xl sm:text-2xl text-white pt-2 pb-1 border-b border-white/[0.08]">
-                {renderInline(hText)}
+              <h2
+                key={bIdx}
+                className={
+                  isStory
+                    ? "font-poppins font-bold text-xs sm:text-[13px] text-white pt-0.5 pb-0.5 border-b border-white/10 text-left"
+                    : "font-poppins font-bold text-xl sm:text-2xl text-white pt-2 pb-1 border-b border-white/[0.08]"
+                }
+              >
+                {renderInline(hText, revealSpoilers)}
               </h2>
             );
           }
           if (level === 2) {
             return (
-              <h3 key={bIdx} className="font-poppins font-bold text-lg sm:text-xl text-white pt-2">
-                {renderInline(hText)}
+              <h3
+                key={bIdx}
+                className={
+                  isStory
+                    ? "font-poppins font-bold text-[11px] sm:text-xs text-[#ff7a29] pt-0.5 text-left"
+                    : "font-poppins font-bold text-lg sm:text-xl text-white pt-2"
+                }
+              >
+                {renderInline(hText, revealSpoilers)}
               </h3>
             );
           }
           return (
-            <h4 key={bIdx} className="font-poppins font-semibold text-base sm:text-lg text-zinc-100 pt-1">
-              {renderInline(hText)}
+            <h4
+              key={bIdx}
+              className={
+                isStory
+                  ? "font-poppins font-semibold text-[10.5px] text-zinc-100 pt-0.5 text-left"
+                  : "font-poppins font-semibold text-base sm:text-lg text-zinc-100 pt-1"
+              }
+            >
+              {renderInline(hText, revealSpoilers)}
             </h4>
           );
         }
@@ -161,10 +241,17 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
         const isList = lines.every((l) => l.trim().startsWith("- ") || l.trim().startsWith("* "));
         if (isList) {
           return (
-            <ul key={bIdx} className="my-3 space-y-1.5 list-disc list-inside text-zinc-200 text-sm sm:text-base">
+            <ul
+              key={bIdx}
+              className={
+                isStory
+                  ? storyListClass
+                  : "my-3 space-y-1.5 list-disc list-inside text-zinc-200 text-sm sm:text-base"
+              }
+            >
               {lines.map((l, lIdx) => {
                 const itemText = l.trim().replace(/^[-*]\s+/, "");
-                return <li key={lIdx}>{renderInline(itemText)}</li>;
+                return <li key={lIdx}>{renderInline(itemText, revealSpoilers)}</li>;
               })}
             </ul>
           );
@@ -172,10 +259,17 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
 
         // Normal paragraph (render with internal single line-breaks if any)
         return (
-          <p key={bIdx} className="leading-[1.9] text-zinc-200 text-base sm:text-lg">
+          <p
+            key={bIdx}
+            className={
+              isStory
+                ? storyParagraphClass
+                : "leading-[1.9] text-zinc-200 text-base sm:text-lg"
+            }
+          >
             {lines.map((line, lIdx) => (
               <React.Fragment key={lIdx}>
-                {renderInline(line)}
+                {renderInline(line, revealSpoilers)}
                 {lIdx < lines.length - 1 && <br />}
               </React.Fragment>
             ))}
