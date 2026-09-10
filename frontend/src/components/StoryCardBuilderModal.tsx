@@ -15,6 +15,7 @@ import { toPng } from "html-to-image";
 import type { Review } from "../types";
 import { getBackdropUrl, getPosterUrl } from "../utils/images";
 import { slugify } from "../utils/slugify";
+import { formatRating } from "../utils/formatRating";
 
 interface StoryCardBuilderModalProps {
   isOpen: boolean;
@@ -55,6 +56,8 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
   const [rating, setRating] = useState<number>(review.rating);
   const [theme, setTheme] = useState<StoryTheme>("cinematic");
   const [headline, setHeadline] = useState<string>("Quick Reflection");
+  const [showBadgeTag, setShowBadgeTag] = useState<boolean>(true);
+  const [showFooterBrand, setShowFooterBrand] = useState<boolean>(true);
   const [backdropDim, setBackdropDim] = useState<number>(65); // 0 to 90% opacity of dark overlay
   const [backdropBlur, setBackdropBlur] = useState<number>(0); // blur px
   const [showPoster, setShowPoster] = useState<boolean>(true);
@@ -76,6 +79,8 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
       setRating(review.rating);
       setTheme("cinematic");
       setHeadline("Quick Reflection");
+      setShowBadgeTag(true);
+      setShowFooterBrand(true);
       setBackdropDim(65);
       setBackdropBlur(0);
       setShowPoster(true);
@@ -165,6 +170,48 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
   // Formatting helpers
   const displayBackdrop = backdropDataUrl || getBackdropUrl(review.backdrop, "original");
   const displayPoster = posterDataUrl || getPosterUrl(review.poster, "w500");
+
+  // Render true half-star with 50% clipping or full/empty star
+  const renderStoryStar = (
+    starIndex: number,
+    currentRating: number,
+    sizeClass = "w-3.5 h-3.5"
+  ) => {
+    const fullValue = starIndex + 1;
+    const halfValue = starIndex + 0.5;
+    const isFull = currentRating >= fullValue;
+    const isHalf = !isFull && currentRating >= halfValue;
+
+    if (isFull) {
+      return (
+        <Star
+          key={starIndex}
+          className={`${sizeClass} fill-[#ff5500] text-[#ff5500] shrink-0`}
+        />
+      );
+    }
+    if (isHalf) {
+      return (
+        <div
+          key={starIndex}
+          className={`relative inline-flex items-center justify-center shrink-0 ${sizeClass}`}
+        >
+          {/* Background empty star */}
+          <Star className={`${sizeClass} fill-white/10 text-white/20`} />
+          {/* Left half filled with precision 50% width clip */}
+          <div className="absolute inset-y-0 left-0 w-1/2 overflow-hidden pointer-events-none">
+            <Star className={`${sizeClass} fill-[#ff5500] text-[#ff5500] max-w-none`} />
+          </div>
+        </div>
+      );
+    }
+    return (
+      <Star
+        key={starIndex}
+        className={`${sizeClass} fill-white/10 text-white/20 shrink-0`}
+      />
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200 select-none">
@@ -263,11 +310,17 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                       The Retro Talks
                     </span>
                   </div>
-                ) : <div />}
+                ) : (
+                  <div />
+                )}
 
-                <span className="px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[9px] font-mono text-[#ff7a29] uppercase tracking-wider">
-                  {headline}
-                </span>
+                {showBadgeTag && headline.trim() ? (
+                  <span className="px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[9px] font-mono text-[#ff7a29] uppercase tracking-wider">
+                    {headline}
+                  </span>
+                ) : (
+                  <div />
+                )}
               </div>
 
               {/* Center Content based on selected Theme */}
@@ -296,32 +349,18 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                     </p>
                   </div>
 
-                  {/* Rating Stars & Badge */}
-                  <div className="flex items-center gap-2 py-0.5">
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((starIndex) => (
-                        <Star
-                          key={starIndex}
-                          className={`w-3.5 h-3.5 ${
-                            starIndex <= rating
-                              ? "fill-[#ff5500] text-[#ff5500]"
-                              : starIndex - 0.5 <= rating
-                              ? "fill-[#ff5500]/60 text-[#ff5500]"
-                              : "fill-white/10 text-white/20"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="px-2 py-0.5 rounded-md bg-[#ff5500] text-black font-inter font-extrabold text-[11px]">
-                      {rating.toFixed(1)}
-                    </span>
+                  {/* Rating Stars (Stars Only) */}
+                  <div className="flex items-center justify-center gap-1 py-0.5">
+                    {[0, 1, 2, 3, 4].map((starIndex) =>
+                      renderStoryStar(starIndex, rating, "w-4 h-4")
+                    )}
                   </div>
 
-                  {/* Summarized Review Card */}
-                  <div className="w-full rounded-2xl bg-black/70 backdrop-blur-md border border-white/15 p-4 text-left shadow-2xl relative">
-                    <Quote className="w-4 h-4 text-[#ff5500] mb-1.5 opacity-80" />
-                    <p className="text-xs font-inter text-zinc-200 leading-relaxed italic line-clamp-6">
-                      "{summaryReview || "Write your summarized thoughts in the studio..."}"
+                  {/* Summarized Review (Floating Pull-Quote - No Box) */}
+                  <div className="w-full px-2 py-2 text-center relative flex flex-col items-center">
+                    <Quote className="w-5 h-5 text-[#ff5500] opacity-85 mb-1.5 rotate-180 drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]" />
+                    <p className="text-[13px] font-inter italic text-white/95 leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)] line-clamp-6 max-w-[310px]">
+                      {summaryReview ? `"${summaryReview}"` : "Write your summarized thoughts in the studio..."}
                     </p>
                   </div>
                 </div>
@@ -342,23 +381,25 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   )}
 
                   <div>
-                    <h2 className="text-lg font-bold font-poppins text-white leading-tight">
+                    <h2 className="text-lg font-bold font-poppins text-white leading-tight drop-shadow-md">
                       {review.title}
                     </h2>
                     <div className="flex items-center justify-center gap-2 mt-1">
-                      <span className="text-[10px] font-inter text-zinc-400">
+                      <span className="text-[10px] font-inter text-zinc-300">
                         {review.year} · {review.director}
                       </span>
-                      <span className="px-1.5 py-0.5 rounded bg-[#ff5500] text-black font-bold text-[10px]">
-                        ★ {rating.toFixed(1)}
-                      </span>
+                    </div>
+                    <div className="flex items-center justify-center gap-1 mt-1.5">
+                      {[0, 1, 2, 3, 4].map((starIndex) =>
+                        renderStoryStar(starIndex, rating, "w-3 h-3")
+                      )}
                     </div>
                   </div>
 
-                  {/* Summarized Review Card */}
-                  <div className="w-full rounded-2xl bg-black/75 backdrop-blur-md border border-white/15 p-3.5 text-left shadow-2xl">
-                    <p className="text-xs font-inter text-zinc-200 leading-relaxed line-clamp-5">
-                      "{summaryReview || "Write your summarized thoughts in the studio..."}"
+                  {/* Summarized Review (Floating Quote - No Box) */}
+                  <div className="w-full px-3 py-1.5 text-center flex flex-col items-center">
+                    <p className="text-xs font-inter italic text-zinc-100 leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.98)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)] line-clamp-5 max-w-[310px]">
+                      {summaryReview ? `“${summaryReview}”` : "Write your summarized thoughts in the studio..."}
                     </p>
                   </div>
                 </div>
@@ -385,29 +426,21 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                       <p className="text-[10px] font-inter text-zinc-400">
                         {review.year} · Dir. {review.director}
                       </p>
-                      <div className="flex items-center gap-1 mt-1">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star
-                            key={s}
-                            className={`w-3 h-3 ${
-                              s <= rating ? "fill-[#ff5500] text-[#ff5500]" : "fill-white/10 text-white/20"
-                            }`}
-                          />
-                        ))}
-                        <span className="text-[10px] font-bold text-[#ff7a29] ml-1">
-                          {rating.toFixed(1)}/5.0
-                        </span>
+                      <div className="flex items-center gap-1 mt-1.5">
+                        {[0, 1, 2, 3, 4].map((s) =>
+                          renderStoryStar(s, rating, "w-3 h-3")
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Big Editorial Card */}
-                  <div className="rounded-2xl bg-black/75 backdrop-blur-md border border-white/15 p-4 shadow-2xl relative">
-                    <div className="text-[9px] font-mono text-[#ff7a29] uppercase tracking-widest mb-1.5 font-bold">
+                  {/* Summarized Review (Editorial Column Accent - No Box) */}
+                  <div className="w-full pl-3.5 border-l-2 border-[#ff5500] py-1 my-1">
+                    <div className="text-[9px] font-mono text-[#ff7a29] uppercase tracking-widest mb-1.5 font-bold drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
                       Editorial Review
                     </div>
-                    <p className="text-xs font-inter text-zinc-100 leading-relaxed line-clamp-7">
-                      "{summaryReview || "Write your summarized thoughts in the studio..."}"
+                    <p className="text-[13px] font-inter text-white/95 leading-relaxed italic drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)] line-clamp-7">
+                      {summaryReview ? `"${summaryReview}"` : "Write your summarized thoughts in the studio..."}
                     </p>
                   </div>
                 </div>
@@ -415,12 +448,16 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
 
               {/* Bottom Footer */}
               <div className="relative z-10 px-5 pb-5 pt-2 flex items-center justify-between border-t border-white/10 bg-black/40 backdrop-blur-md">
-                <div className="flex items-center gap-1.5">
-                  <Film className="w-3 h-3 text-[#ff5500]" />
-                  <span className="text-[9px] font-inter text-zinc-400 tracking-wider uppercase font-medium">
-                    theretrotalks.com
-                  </span>
-                </div>
+                {showFooterBrand ? (
+                  <div className="flex items-center gap-1.5">
+                    <Film className="w-3 h-3 text-[#ff5500]" />
+                    <span className="text-[9px] font-inter text-zinc-400 tracking-wider uppercase font-medium">
+                      theretrotalks.com
+                    </span>
+                  </div>
+                ) : (
+                  <div />
+                )}
 
                 {showGenres && review.genres && review.genres.length > 0 && (
                   <span className="text-[9px] font-mono text-zinc-400">
@@ -480,27 +517,29 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
               {/* Rating adjustment */}
-              <div className="p-4 rounded-2xl bg-[#0c0f16] border border-white/[0.07] space-y-2">
+              <div className="p-4 rounded-2xl bg-[#0c0f16] border border-white/[0.07] space-y-2.5">
                 <label className="text-xs font-semibold font-poppins text-white flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <Star className="w-3.5 h-3.5 text-[#ff5500]" />
                     Story Card Rating
                   </span>
-                  <span className="text-[#ff7a29] font-mono font-bold">{rating.toFixed(1)} / 5.0</span>
+                  <span className="text-[#ff7a29] font-mono font-bold">
+                    {formatRating(rating)} / 5
+                  </span>
                 </label>
-                <div className="flex items-center gap-2 pt-1">
-                  {[1, 2, 3, 4, 5].map((num) => (
+                <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
+                  {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((num) => (
                     <button
                       key={num}
                       type="button"
                       onClick={() => setRating(num)}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-inter font-bold transition-all cursor-pointer border ${
-                        Math.round(rating) === num
+                      className={`px-2 py-1.5 rounded-lg text-xs font-inter font-bold transition-all cursor-pointer border shrink-0 ${
+                        Math.abs(rating - num) < 0.01
                           ? "bg-[#ff5500] text-black border-[#ff5500] shadow-[0_0_10px_rgba(255,85,0,0.4)]"
                           : "bg-white/[0.04] text-zinc-400 hover:text-white border-white/[0.06]"
                       }`}
                     >
-                      {num}★
+                      {formatRating(num)}★
                     </button>
                   ))}
                 </div>
@@ -508,16 +547,29 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
 
               {/* Headline Badge */}
               <div className="p-4 rounded-2xl bg-[#0c0f16] border border-white/[0.07] space-y-2">
-                <label className="text-xs font-semibold font-poppins text-white flex items-center justify-between">
-                  <span>Badge Tag</span>
-                  <span className="text-zinc-500 text-[10px] font-mono">Top-right pill</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold font-poppins text-white flex items-center gap-1.5">
+                    <span>Badge Tag</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-inter text-zinc-400 hover:text-white">
+                    <input
+                      type="checkbox"
+                      checked={showBadgeTag}
+                      onChange={(e) => setShowBadgeTag(e.target.checked)}
+                      className="accent-[#ff5500] w-3 h-3"
+                    />
+                    <span>Show Badge</span>
+                  </label>
+                </div>
                 <input
                   type="text"
+                  disabled={!showBadgeTag}
                   value={headline}
                   onChange={(e) => setHeadline(e.target.value)}
                   placeholder="e.g. Quick Reflection, Verdict..."
-                  className="w-full bg-[#050608] border border-white/[0.1] focus:border-[#ff5500] rounded-xl px-3 py-1.5 text-xs font-inter text-white outline-none"
+                  className={`w-full bg-[#050608] border border-white/[0.1] focus:border-[#ff5500] rounded-xl px-3 py-1.5 text-xs font-inter text-white outline-none transition-opacity ${
+                    !showBadgeTag ? "opacity-35 cursor-not-allowed" : ""
+                  }`}
                 />
               </div>
 
@@ -532,9 +584,9 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
 
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { id: "cinematic", title: "Cinematic Glass", desc: "Balanced floating poster & review card" },
-                  { id: "poster_hero", title: "Poster Hero", desc: "Large hero poster with quote card" },
-                  { id: "editorial", title: "Editorial Journal", desc: "Compact poster badge with long critique" },
+                  { id: "cinematic", title: "Cinematic Glass", desc: "Balanced floating poster & review quote" },
+                  { id: "poster_hero", title: "Poster Hero", desc: "Large hero poster with floating quote" },
+                  { id: "editorial", title: "Editorial Journal", desc: "Compact poster with editorial column" },
                 ].map((t) => (
                   <button
                     key={t.id}
@@ -609,11 +661,31 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
+                    checked={showBadgeTag}
+                    onChange={(e) => setShowBadgeTag(e.target.checked)}
+                    className="accent-[#ff5500] w-3.5 h-3.5"
+                  />
+                  <span>Badge Tag</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showFooterBrand}
+                    onChange={(e) => setShowFooterBrand(e.target.checked)}
+                    className="accent-[#ff5500] w-3.5 h-3.5"
+                  />
+                  <span>theretrotalks.com</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
                     checked={showWatermark}
                     onChange={(e) => setShowWatermark(e.target.checked)}
                     className="accent-[#ff5500] w-3.5 h-3.5"
                   />
-                  <span>Retro Talks Watermark</span>
+                  <span>Top Logo</span>
                 </label>
 
                 <label className="flex items-center gap-2 cursor-pointer">

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Star } from "lucide-react";
+import { formatRating } from "../utils/formatRating";
 
 export interface StarRatingProps {
   rating: number;
@@ -135,14 +136,14 @@ export const StarRating: React.FC<StarRatingProps> = ({
             valueClassName || valueSizes[size]
           }`}
         >
-          <span>{current > 0 ? `${current.toFixed(1)}` : "—"}</span>
+          <span>{formatRating(current)}</span>
           {size !== "xs" && size !== "sm" && current > 0 && (
             <span
               className={`text-zinc-300 font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] ml-1 ${
                 maxValSizes[size]
               }`}
             >
-              / 5.0
+              / 5
             </span>
           )}
         </span>

@@ -41,6 +41,7 @@ import { EditReviewModal } from "../components/EditReviewModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 import { Footer } from "../components/Footer";
 import { slugify } from "../utils/slugify";
+import { formatRating } from "../utils/formatRating";
 
 interface AdminPageProps {
   reviews: Review[];
@@ -856,7 +857,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                         ) : (
                           <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/75 backdrop-blur-md border border-white/[0.12] text-xs font-inter font-bold text-[#ff7a29] shadow-md">
                             <Star className="w-3 h-3 fill-[#ff5500] text-[#ff5500]" />
-                            <span>{rev.rating.toFixed(1)}</span>
+                            <span>{formatRating(rev.rating)}</span>
                           </div>
                         )}
 

@@ -3,6 +3,7 @@ import { Heart, Trash2, User, ArrowRight, Calendar, Star, Film } from "lucide-re
 import type { Review, CastMember, CrewMember } from "../types";
 import { getPosterUrl, getBackdropUrl } from "../utils/images";
 import { StarRating } from "./StarRating";
+import { formatRating } from "../utils/formatRating";
 
 interface ReviewCardProps {
   review: Review;
@@ -97,7 +98,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
           {/* Star Rating Badge */}
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/80 backdrop-blur-md border border-white/[0.12] text-xs font-inter font-bold text-[#ff7a29] shadow-lg">
             <Star className="w-3.5 h-3.5 fill-[#ff5500] text-[#ff5500]" />
-            <span>{review.rating.toFixed(1)}</span>
+            <span>{formatRating(review.rating)}</span>
           </div>
 
           {/* Favorite Badge */}

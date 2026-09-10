@@ -107,7 +107,14 @@ function App() {
 
   // Sync browser back/forward history navigation
   useEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+
     const handlePopState = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
       setRoute(parseCurrentRoute());
     };
 
@@ -120,15 +127,19 @@ function App() {
   }, []);
 
   const navigateToHome = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
     setRoute({ page: "home", reviewId: null });
     window.history.pushState({}, "", "/");
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const navigateToAdmin = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
     setRoute({ page: "admin", reviewId: null });
     window.history.pushState({}, "", "/admin");
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const navigateToReview = (item: Review | string | number) => {
@@ -142,9 +153,13 @@ function App() {
       );
       slugOrId = matched ? getReviewSlug(matched) : clean;
     }
+    // Instantly reset scroll to top before route transition renders
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
     setRoute({ page: "review", reviewId: slugOrId });
     window.history.pushState({}, "", `/review/${slugOrId}`);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Secret keyboard shortcut: Ctrl+Shift+A or Cmd+Shift+A jumps to /admin
@@ -401,6 +416,7 @@ function App() {
     );
     return (
       <ReviewPage
+        key={route.reviewId}
         reviewId={route.reviewId}
         initialReview={matchedReview}
         isAdmin={isAdmin}

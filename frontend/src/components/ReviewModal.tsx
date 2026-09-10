@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { X, Star, Sparkles, Check, Calendar, Quote, Film, User } from "lucide-react";
+import { X, Sparkles, Check, Calendar, Quote, Film, User } from "lucide-react";
 import type { Review } from "../types";
 import { getBackdropUrl, getPosterUrl } from "../utils/images";
 import { PosterSelectorModal } from "./PosterSelectorModal";
 import { StarRating } from "./StarRating";
+import { formatRating } from "../utils/formatRating";
 
 interface ReviewModalProps {
   review: Review | null;
@@ -33,7 +34,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     : review.review;
 
   const handleCopyStory = () => {
-    navigator.clipboard.writeText(`"${smartSummary}" — ${review.title} (${review.year}) ★ ${review.rating}/5.0 via The Retro Talks`);
+    navigator.clipboard.writeText(`"${smartSummary}" — ${review.title} (${review.year}) ★ ${formatRating(review.rating)}/5 via The Retro Talks`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -298,16 +299,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                     </p>
 
                     <div className="flex items-center gap-1 mt-1.5">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-2.5 h-2.5 ${
-                            i < Math.floor(review.rating)
-                              ? "fill-[#ff5500] text-[#ff5500]"
-                              : "text-zinc-700"
-                          }`}
-                        />
-                      ))}
+                      <StarRating rating={review.rating} readonly size="xs" showValue={false} />
                     </div>
 
                     <div className="mt-2.5 px-2">

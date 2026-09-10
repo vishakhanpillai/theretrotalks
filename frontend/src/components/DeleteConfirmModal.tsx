@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { AlertTriangle, Trash2, X, Loader2, Film } from "lucide-react";
 import type { Review } from "../types";
 import { getPosterUrl } from "../utils/images";
+import { formatRating } from "../utils/formatRating";
 
 interface DeleteConfirmModalProps {
   review: Review | null;
@@ -83,7 +84,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
               {review.year && `${review.year} · `}Dir. {review.director}
             </p>
             <div className="text-[11px] font-inter text-[#ff7a29] mt-1 font-medium">
-              ★ {review.rating.toFixed(1)} / 5.0
+              ★ {formatRating(review.rating)} / 5
             </div>
           </div>
         </div>

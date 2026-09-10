@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useState, useRef } from "react";
 import { ArrowLeft, Heart, User, Film, Image as ImageIcon, AlignLeft, Crop, Sparkles } from "lucide-react";
 import type { Review, BackdropFraming } from "../types";
 import { getBackdropUrl, getPosterUrl } from "../utils/images";
@@ -138,10 +138,21 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
     };
   }, [loading]);
 
-  // Scroll to top on load
-  useEffect(() => {
-    window.scrollTo(0, 0);
+  // Scroll to top instantly before browser paints
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }, [reviewId]);
+
+  // Ensure scroll remains at top when async review data finishes loading
+  useLayoutEffect(() => {
+    if (!loading) {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [loading]);
 
   // Fetch review from backend (always loads freshest data including cast & prioritized crew)
   useEffect(() => {
