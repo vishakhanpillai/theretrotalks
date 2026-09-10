@@ -122,22 +122,22 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
       ? "space-y-2.5"
       : density === "standard"
       ? "space-y-2"
-      : len < 650
-      ? "space-y-3"
-      : len < 1100
+      : len < 600
+      ? "space-y-2.5"
+      : len < 1000
       ? "space-y-2"
       : "space-y-1.5";
 
   const storyParagraphClass =
     density === "spacious"
-      ? "leading-[1.68] text-zinc-100 text-[13px] sm:text-[13.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]"
-      : density === "standard"
-      ? "leading-[1.58] text-zinc-100 text-[12px] sm:text-[12.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]"
-      : len < 650
       ? "leading-[1.65] text-zinc-100 text-[13px] sm:text-[13.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]"
-      : len < 1100
-      ? "leading-[1.54] text-zinc-100 text-[12px] sm:text-[12.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_7px_rgba(0,0,0,0.95)]"
-      : "leading-[1.46] text-zinc-100 text-[11px] sm:text-[11.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]";
+      : density === "standard"
+      ? "leading-[1.55] text-zinc-100 text-[12px] sm:text-[12.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]"
+      : len < 600
+      ? "leading-[1.62] text-zinc-100 text-[13px] sm:text-[13.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]"
+      : len < 1000
+      ? "leading-[1.52] text-zinc-100 text-[12px] sm:text-[12.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_7px_rgba(0,0,0,0.95)]"
+      : "leading-[1.44] text-zinc-100 text-[11px] sm:text-[11.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]";
 
   const storyQuoteClass =
     density === "spacious" || (density === "dense" && len < 650)

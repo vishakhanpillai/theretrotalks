@@ -60,51 +60,59 @@ const splitReviewIntoSlides = (
   }
 
   const trimmed = text.trim();
-  const maxChunk = density === "dense" ? 1550 : density === "spacious" ? 850 : 1200;
+  const maxChunk = density === "dense" ? 1350 : density === "spacious" ? 800 : 1050;
 
-  // 2. If the review fits on 1 slide (with 15% tolerance), keep it on 1 slide to eliminate orphan slides!
-  if (trimmed.length <= maxChunk * 1.15) {
+  // 2. If the review fits on 1 slide (with 5% tolerance), keep it on 1 slide
+  if (trimmed.length <= maxChunk * 1.05) {
     return [trimmed];
   }
 
-  // 3. Balanced multi-slide distribution:
-  // Calculate the ideal number of slides and distribute content evenly
-  const numSlides = Math.ceil(trimmed.length / maxChunk);
-  const targetPerSlide = Math.ceil(trimmed.length / numSlides);
-
+  // 3. Continuous text flow packing with paragraph preservation
   const paragraphs = trimmed.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
-
-  // Decompose paragraphs into sentence units with paragraph boundary flags
-  const units: { text: string; isParaStart: boolean }[] = [];
-  paragraphs.forEach((p, pIdx) => {
-    const sents = p.match(/[^.!?]+[.!?]+(\s+|$)|[^\n]+/g) || [p];
-    sents.forEach((s, sIdx) => {
-      const sTrim = s.trim();
-      if (!sTrim) return;
-      units.push({
-        text: sTrim,
-        isParaStart: sIdx === 0 && pIdx > 0,
-      });
-    });
-  });
-
   const slides: string[] = [];
   let current = "";
 
-  for (let i = 0; i < units.length; i++) {
-    const unit = units[i];
-    const sep = current ? (unit.isParaStart ? "\n\n" : " ") : "";
-    const candidate = current ? current + sep + unit.text : unit.text;
+  for (let pIdx = 0; pIdx < paragraphs.length; pIdx++) {
+    const p = paragraphs[pIdx];
+    const sep = current ? "\n\n" : "";
+    const candidate = current ? current + sep + p : p;
 
-    // Split when candidate reaches balanced target, provided we still have remaining slides to create
-    if (current && candidate.length > targetPerSlide && slides.length < numSlides - 1) {
-      slides.push(current);
-      current = unit.text;
-    } else if (candidate.length > maxChunk * 1.05) {
-      slides.push(current);
-      current = unit.text;
-    } else {
+    // A. If whole paragraph fits into current slide (with 3% tolerance), keep paragraph intact & flow text
+    if (candidate.length <= maxChunk * 1.03) {
       current = candidate;
+      continue;
+    }
+
+    // B. If current slide is already well-filled (>= 60% of capacity) and the paragraph fits on its own slide,
+    // push current slide so the paragraph stays whole without being chopped in half.
+    if (current.length >= maxChunk * 0.60 && p.length <= maxChunk * 1.03) {
+      slides.push(current.trim());
+      current = p;
+      continue;
+    }
+
+    // C. Otherwise, current slide still has room below, or the paragraph is huge:
+    // Flow sentences from p into current slide to fill up the available space!
+    const sents = p.match(/[^.!?]+[.!?]+(\s+|$)|[^\n]+/g) || [p];
+    let isFirstSent = true;
+
+    for (let sIdx = 0; sIdx < sents.length; sIdx++) {
+      const s = sents[sIdx].trim();
+      if (!s) continue;
+
+      const sSep = current ? (isFirstSent ? "\n\n" : " ") : "";
+      const sCand = current ? current + sSep + s : s;
+
+      if (sCand.length <= maxChunk) {
+        current = sCand;
+        isFirstSent = false;
+      } else {
+        if (current.trim()) {
+          slides.push(current.trim());
+        }
+        current = s;
+        isFirstSent = false;
+      }
     }
   }
 
@@ -315,7 +323,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
       setIsExporting(false);
       setExportProgress("");
     }
-  }, [isOpen, review]);
+  }, [isOpen, review.id]);
 
   // Preload poster and backdrop through proxy as base64 for instant, lossless export
   useEffect(() => {
@@ -734,29 +742,66 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
               }`}
             >
               {/* Full Bleed Backdrop Image Background */}
-              {displayBackdrop && (
-                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-                  <img
-                    src={displayBackdrop}
-                    alt={review.title}
-                    crossOrigin="anonymous"
-                    style={{
-                      objectPosition: `${backdropCropX}% ${backdropCropY}%`,
-                      transform: backdropZoom > 100 ? `scale(${backdropZoom / 100})` : undefined,
-                      filter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : "none",
-                    }}
-                    className="w-full h-full object-cover select-none"
-                  />
-                  {/* Backdrop Tint / Dimmer */}
-                  <div
-                    style={{ backgroundColor: `rgba(7, 8, 10, ${backdropDim / 100})` }}
-                    className="absolute inset-0"
-                  />
-                  {/* Ambient cinema gradients */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#07080a] via-[#07080a]/60 to-[#07080a]/40" />
-                  <div className="absolute inset-0 bg-gradient-to-b from-[#07080a]/80 via-transparent to-[#07080a]" />
-                </div>
-              )}
+              {displayBackdrop && (() => {
+                const z = Math.max(30, backdropZoom) / 100;
+                const aspect = 16 / 9;
+                const imgW = 640 * aspect * z;
+                const imgH = 640 * z;
+
+                let left = 0;
+                if (imgW > 360) {
+                  left = - (backdropCropX / 100) * (imgW - 360);
+                } else {
+                  left = (360 - imgW) / 2;
+                }
+
+                let top = 0;
+                if (imgH > 640) {
+                  top = - (backdropCropY / 100) * (imgH - 640);
+                } else {
+                  top = (backdropCropY / 100) * (640 - imgH);
+                }
+
+                return (
+                  <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                    {/* Ambient blurred backdrop background (ensures beautiful ambient glow when backdrop is scaled to show full width) */}
+                    <img
+                      src={displayBackdrop}
+                      alt=""
+                      aria-hidden="true"
+                      crossOrigin="anonymous"
+                      className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none filter blur-2xl opacity-40 scale-110"
+                    />
+
+                    {/* Sharp, framed backdrop image (fully controllable from 100% full image to any zoom/crop) */}
+                    <img
+                      src={displayBackdrop}
+                      alt={review.title}
+                      crossOrigin="anonymous"
+                      style={{
+                        position: "absolute",
+                        width: `${imgW}px`,
+                        height: `${imgH}px`,
+                        left: `${left}px`,
+                        top: `${top}px`,
+                        maxWidth: "none",
+                        maxHeight: "none",
+                        filter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : "none",
+                      }}
+                      className="select-none pointer-events-none"
+                    />
+
+                    {/* Backdrop Tint / Dimmer */}
+                    <div
+                      style={{ backgroundColor: `rgba(7, 8, 10, ${backdropDim / 100})` }}
+                      className="absolute inset-0"
+                    />
+                    {/* Ambient cinema gradients */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#07080a] via-[#07080a]/60 to-[#07080a]/40" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-[#07080a]/80 via-transparent to-[#07080a]" />
+                  </div>
+                );
+              })()}
 
               {/* Crop Mode Interactive Overlay & Rule of Thirds Guide */}
               {isCroppingBackdrop && (
@@ -782,13 +827,13 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
 
                   {/* Bottom Stats Pill */}
                   <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-black/85 border border-white/20 text-white text-[9px] font-mono rounded-full whitespace-nowrap">
-                    X: {backdropCropX}% · Y: {backdropCropY}% · Zoom: {(backdropZoom / 100).toFixed(2)}x
+                    X: {backdropCropX}% · Y: {backdropCropY}% · {backdropZoom <= 35 ? "Full Image" : `Zoom: ${(backdropZoom / 100).toFixed(2)}x`}
                   </div>
                 </div>
               )}
 
               {/* -------------------- CARD TOP HEADER -------------------- */}
-              <div className="relative z-10 px-5 pt-6 pb-2 flex items-center justify-between">
+              <div className="relative z-10 px-5 pt-6 pb-2 flex items-center justify-between shrink-0">
                 {showWatermark ? (
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-[#ff5500] shadow-[0_0_8px_#ff5500]" />
@@ -815,7 +860,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
               {studioMode === "summary" && (
                 <>
                   {theme === "cinematic" && (
-                    <div className="relative z-10 px-5 flex flex-col items-center text-center space-y-3 flex-grow justify-center">
+                    <div className="relative z-10 px-5 flex flex-col items-center text-center space-y-3 flex-1 justify-center min-h-0 overflow-hidden pb-2">
                       {/* Floating Poster */}
                       {showPoster && displayPoster && (
                         <div className="relative w-28 aspect-[2/3] rounded-none overflow-hidden shadow-[0_15px_35px_rgba(0,0,0,0.9),0_0_20px_rgba(255,85,0,0.2)] border border-white/20">
@@ -861,7 +906,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   )}
 
                   {theme === "poster_hero" && (
-                    <div className="relative z-10 px-5 flex flex-col items-center text-center space-y-3 flex-grow justify-center">
+                    <div className="relative z-10 px-5 flex flex-col items-center text-center space-y-3 flex-1 justify-center min-h-0 overflow-hidden pb-2">
                       {/* Larger Poster Hero */}
                       {showPoster && displayPoster && (
                         <div className="relative w-36 aspect-[2/3] rounded-none overflow-hidden shadow-[0_20px_45px_rgba(0,0,0,0.95),0_0_30px_rgba(255,85,0,0.3)] border-2 border-white/25">
@@ -905,7 +950,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   )}
 
                   {theme === "editorial" && (
-                    <div className="relative z-10 px-5 flex flex-col space-y-3.5 flex-grow justify-center text-left">
+                    <div className="relative z-10 px-5 flex flex-col space-y-3.5 flex-1 justify-center text-left min-h-0 overflow-hidden pb-2">
                       {/* Top Poster + Info Row */}
                       <div className="flex items-center gap-3 bg-black/60 backdrop-blur-md border border-white/15 p-2.5 rounded-2xl">
                         {showPoster && displayPoster && (
@@ -954,7 +999,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
 
               {/* -------------------- MODE 2: FULL REVIEW STORY SET -------------------- */}
               {studioMode === "full_set" && (
-                <div className="relative z-10 px-4 flex flex-col flex-grow py-1.5 min-h-0 overflow-hidden">
+                <div className="relative z-10 px-4 flex flex-col flex-1 min-h-0 overflow-hidden pt-1 pb-2">
                   {/* Slide Top Left-Aligned Header: Title, Year, Director & Star Rating */}
                   <div className="text-left space-y-0.5 pb-1.5 border-b border-white/[0.1] shrink-0">
                     <h2 className="text-base sm:text-lg font-bold font-poppins text-white leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
@@ -989,7 +1034,13 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   </div>
 
                   {/* The rest of the card filled with the logged review (rich formatted markdown & justified text) */}
-                  <div className="flex-1 pt-1.5 pb-0.5 overflow-hidden flex flex-col justify-center min-h-0">
+                  <div
+                    className={`flex-1 pt-2 pb-1 overflow-hidden flex flex-col min-h-0 ${
+                      (reviewSlides[activeSlideIndex] || "").length < 350
+                        ? "justify-center"
+                        : "justify-start"
+                    }`}
+                  >
                     <FormattedReviewText
                       content={reviewSlides[activeSlideIndex] || "No review content."}
                       variant="story"
@@ -1003,7 +1054,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
 
               {/* -------------------- CARD BOTTOM FOOTER -------------------- */}
               {hasFooterContent ? (
-                <div className="relative z-10 px-5 pb-6 pt-2.5 flex items-center justify-between border-t border-white/10 bg-black/40 backdrop-blur-md">
+                <div className="relative z-10 px-5 pb-6 pt-2.5 flex items-center justify-between border-t border-white/10 bg-black/40 backdrop-blur-md shrink-0">
                   {showFooterBrand ? (
                     <div className="flex items-center gap-1.5">
                       <Film className="w-3 h-3 text-[#ff5500]" />
@@ -1022,7 +1073,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   )}
                 </div>
               ) : (
-                <div className="pb-6" />
+                <div className="pb-6 shrink-0" />
               )}
             </div>
           </div>
@@ -1174,21 +1225,28 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-[11px] font-inter">
                       <span className="text-zinc-300">Scale / Zoom</span>
-                      <span className="font-mono text-[#ff7a29] font-bold">{(backdropZoom / 100).toFixed(2)}x</span>
+                      <span className="font-mono text-[#ff7a29] font-bold">
+                        {backdropZoom <= 35
+                          ? "Full Image (100% visible)"
+                          : backdropZoom < 100
+                          ? `${(backdropZoom / 100).toFixed(2)}x (Wide)`
+                          : `${(backdropZoom / 100).toFixed(2)}x (Fill Card)`}
+                      </span>
                     </div>
                     <input
                       type="range"
-                      min={100}
+                      min={32}
                       max={200}
-                      step={5}
+                      step={2}
                       value={backdropZoom}
                       onChange={(e) => setBackdropZoom(Number(e.target.value))}
                       className="w-full accent-[#ff5500] cursor-pointer"
                     />
                     <div className="flex items-center justify-between gap-1 pt-0.5">
                       {[
-                        { label: "1.0x", val: 100 },
-                        { label: "1.25x", val: 125 },
+                        { label: "Full Image", val: 32 },
+                        { label: "Wide", val: 65 },
+                        { label: "Fill Card", val: 100 },
                         { label: "1.5x", val: 150 },
                         { label: "2.0x", val: 200 },
                       ].map((preset) => (
@@ -1197,7 +1255,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                           type="button"
                           onClick={() => setBackdropZoom(preset.val)}
                           className={`flex-1 py-1 rounded-md text-[10px] font-mono border transition-all cursor-pointer ${
-                            backdropZoom === preset.val
+                            (preset.val === 32 && backdropZoom <= 35) || (preset.val !== 32 && Math.abs(backdropZoom - preset.val) <= 5)
                               ? "bg-[#ff5500]/20 text-[#ff7a29] border-[#ff5500]"
                               : "bg-white/[0.03] text-zinc-400 border-white/[0.06] hover:text-white"
                           }`}
@@ -1334,10 +1392,10 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                     <span className="text-[11px] font-poppins font-medium text-white">Card Word Capacity:</span>
                     <span className="text-[10px] font-mono text-[#ff7a29]">
                       {textDensity === "dense"
-                        ? "~1,550 chars / card (Max Content)"
+                        ? "~1,350 chars / card (Max Words)"
                         : textDensity === "standard"
-                        ? "~1,200 chars / card"
-                        : "~850 chars / card"}
+                        ? "~1,050 chars / card"
+                        : "~800 chars / card"}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">

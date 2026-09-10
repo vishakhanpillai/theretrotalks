@@ -1109,7 +1109,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           review={storyStudioReview}
           onUpdatePoster={onUpdatePoster}
           onUpdateBackdrop={onUpdateBackdrop}
-          onUpdateBackdropFraming={onUpdateBackdropFraming}
+          onUpdateBackdropFraming={async (reviewId, newFraming) => {
+            if (onUpdateBackdropFraming) {
+              await onUpdateBackdropFraming(reviewId, newFraming);
+            }
+            setStoryStudioReview((prev) => (prev ? { ...prev, backdropFraming: newFraming } : null));
+          }}
         />
       )}
 

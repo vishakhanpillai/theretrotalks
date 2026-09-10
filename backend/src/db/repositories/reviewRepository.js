@@ -2,16 +2,17 @@ const { db } = require("../connection");
 const { slugify } = require("../../utils/slugify");
 
 const parseBackdropFraming = (val) => {
-  if (!val) return { y: 0, height: 70, zoom: 100 };
+  if (!val) return { y: 0, x: 50, height: 70, zoom: 100 };
   try {
     const parsed = typeof val === "string" ? JSON.parse(val) : val;
     return {
       y: typeof parsed.y === "number" ? Math.min(100, Math.max(0, parsed.y)) : 0,
+      x: typeof parsed.x === "number" ? Math.min(100, Math.max(0, parsed.x)) : 50,
       height: typeof parsed.height === "number" ? Math.min(95, Math.max(40, parsed.height)) : 70,
-      zoom: typeof parsed.zoom === "number" ? Math.min(200, Math.max(100, parsed.zoom)) : 100,
+      zoom: typeof parsed.zoom === "number" ? Math.min(200, Math.max(30, parsed.zoom)) : 100,
     };
   } catch (e) {
-    return { y: 0, height: 70, zoom: 100 };
+    return { y: 0, x: 50, height: 70, zoom: 100 };
   }
 };
 
