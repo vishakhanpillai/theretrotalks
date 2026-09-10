@@ -15,7 +15,6 @@ import { toPng } from "html-to-image";
 import type { Review } from "../types";
 import { getBackdropUrl, getPosterUrl } from "../utils/images";
 import { slugify } from "../utils/slugify";
-import { formatRating } from "../utils/formatRating";
 
 interface StoryCardBuilderModalProps {
   isOpen: boolean;
@@ -170,6 +169,16 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
   // Formatting helpers
   const displayBackdrop = backdropDataUrl || getBackdropUrl(review.backdrop, "original");
   const displayPoster = posterDataUrl || getPosterUrl(review.poster, "w500");
+  const hasFooterContent = showFooterBrand || (showGenres && Boolean(review.genres && review.genres.length > 0));
+
+  // Story card numeric rating formatter (uses standard numbers e.g. 5/5 or 4.5/5)
+  const formatStoryCardRating = (val: number): string => {
+    return Number.isInteger(val) ? `${val} / 5` : `${val.toFixed(1)}/5`;
+  };
+
+  const formatStoryCardNumber = (val: number): string => {
+    return Number.isInteger(val) ? `${val}` : `${val.toFixed(1)}`;
+  };
 
   // Render true half-star with 50% clipping or full/empty star
   const renderStoryStar = (
@@ -232,9 +241,6 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   9:16 · 1080×1920
                 </span>
               </div>
-              <p className="text-xs font-inter text-zinc-400 truncate max-w-md">
-                Compose custom summary reviews and export high-res Instagram stories for {review.title}
-              </p>
             </div>
           </div>
 
@@ -273,7 +279,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
             <div
               ref={cardRef}
               style={{ width: "360px", height: "640px" }}
-              className="relative rounded-[28px] overflow-hidden bg-[#07080a] shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(255,85,0,0.15)] border border-white/[0.12] flex flex-col justify-between select-none"
+              className="relative rounded-none overflow-hidden bg-[#07080a] shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(255,85,0,0.15)] border border-white/[0.12] flex flex-col justify-between select-none"
             >
               {/* Full Bleed Backdrop Image Background */}
               {displayBackdrop && (
@@ -328,7 +334,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                 <div className="relative z-10 px-5 flex flex-col items-center text-center space-y-3 flex-grow justify-center">
                   {/* Floating Poster */}
                   {showPoster && displayPoster && (
-                    <div className="relative w-28 aspect-[2/3] rounded-xl overflow-hidden shadow-[0_15px_35px_rgba(0,0,0,0.9),0_0_20px_rgba(255,85,0,0.2)] border border-white/20">
+                    <div className="relative w-28 aspect-[2/3] rounded-none overflow-hidden shadow-[0_15px_35px_rgba(0,0,0,0.9),0_0_20px_rgba(255,85,0,0.2)] border border-white/20">
                       <img
                         src={displayPoster}
                         alt={review.title}
@@ -349,16 +355,20 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                     </p>
                   </div>
 
-                  {/* Rating Stars (Stars Only) */}
-                  <div className="flex items-center justify-center gap-1 py-0.5">
-                    {[0, 1, 2, 3, 4].map((starIndex) =>
-                      renderStoryStar(starIndex, rating, "w-4 h-4")
-                    )}
+                  {/* Rating Stars & Text Rating */}
+                  <div className="flex flex-col items-center justify-center gap-1 py-0.5">
+                    <div className="flex items-center justify-center gap-1">
+                      {[0, 1, 2, 3, 4].map((starIndex) =>
+                        renderStoryStar(starIndex, rating, "w-4 h-4")
+                      )}
+                    </div>
+                    <span className="text-[11px] font-mono font-bold text-[#ff7a29] tracking-wider drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+                      {formatStoryCardRating(rating)}
+                    </span>
                   </div>
 
                   {/* Summarized Review (Floating Pull-Quote - No Box) */}
-                  <div className="w-full px-2 py-2 text-center relative flex flex-col items-center">
-                    <Quote className="w-5 h-5 text-[#ff5500] opacity-85 mb-1.5 rotate-180 drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]" />
+                  <div className="w-full px-2 py-1 text-center relative flex flex-col items-center">
                     <p className="text-[13px] font-inter italic text-white/95 leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)] line-clamp-6 max-w-[310px]">
                       {summaryReview ? `"${summaryReview}"` : "Write your summarized thoughts in the studio..."}
                     </p>
@@ -367,10 +377,10 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
               )}
 
               {theme === "poster_hero" && (
-                <div className="relative z-10 px-5 flex flex-col items-center text-center space-y-3.5 flex-grow justify-center">
+                <div className="relative z-10 px-5 flex flex-col items-center text-center space-y-3 flex-grow justify-center">
                   {/* Larger Poster Hero */}
                   {showPoster && displayPoster && (
-                    <div className="relative w-36 aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_20px_45px_rgba(0,0,0,0.95),0_0_30px_rgba(255,85,0,0.3)] border-2 border-white/25">
+                    <div className="relative w-36 aspect-[2/3] rounded-none overflow-hidden shadow-[0_20px_45px_rgba(0,0,0,0.95),0_0_30px_rgba(255,85,0,0.3)] border-2 border-white/25">
                       <img
                         src={displayPoster}
                         alt={review.title}
@@ -389,10 +399,15 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                         {review.year} · {review.director}
                       </span>
                     </div>
-                    <div className="flex items-center justify-center gap-1 mt-1.5">
-                      {[0, 1, 2, 3, 4].map((starIndex) =>
-                        renderStoryStar(starIndex, rating, "w-3 h-3")
-                      )}
+                    <div className="flex flex-col items-center justify-center gap-1 mt-1.5">
+                      <div className="flex items-center justify-center gap-1">
+                        {[0, 1, 2, 3, 4].map((starIndex) =>
+                          renderStoryStar(starIndex, rating, "w-3 h-3")
+                        )}
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-[#ff7a29] tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
+                        {formatStoryCardRating(rating)}
+                      </span>
                     </div>
                   </div>
 
@@ -410,7 +425,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   {/* Top Poster + Info Row */}
                   <div className="flex items-center gap-3 bg-black/60 backdrop-blur-md border border-white/15 p-2.5 rounded-2xl">
                     {showPoster && displayPoster && (
-                      <div className="relative w-14 aspect-[2/3] rounded-lg overflow-hidden flex-shrink-0 border border-white/20">
+                      <div className="relative w-14 aspect-[2/3] rounded-none overflow-hidden flex-shrink-0 border border-white/20">
                         <img
                           src={displayPoster}
                           alt={review.title}
@@ -426,10 +441,15 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                       <p className="text-[10px] font-inter text-zinc-400">
                         {review.year} · Dir. {review.director}
                       </p>
-                      <div className="flex items-center gap-1 mt-1.5">
-                        {[0, 1, 2, 3, 4].map((s) =>
-                          renderStoryStar(s, rating, "w-3 h-3")
-                        )}
+                      <div className="flex flex-col items-start gap-1 mt-1.5">
+                        <div className="flex items-center gap-1">
+                          {[0, 1, 2, 3, 4].map((s) =>
+                            renderStoryStar(s, rating, "w-3 h-3")
+                          )}
+                        </div>
+                        <span className="text-[10px] font-mono font-bold text-[#ff7a29] tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
+                          {formatStoryCardRating(rating)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -447,24 +467,28 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
               )}
 
               {/* Bottom Footer */}
-              <div className="relative z-10 px-5 pb-5 pt-2 flex items-center justify-between border-t border-white/10 bg-black/40 backdrop-blur-md">
-                {showFooterBrand ? (
-                  <div className="flex items-center gap-1.5">
-                    <Film className="w-3 h-3 text-[#ff5500]" />
-                    <span className="text-[9px] font-inter text-zinc-400 tracking-wider uppercase font-medium">
-                      theretrotalks.com
-                    </span>
-                  </div>
-                ) : (
-                  <div />
-                )}
+              {hasFooterContent ? (
+                <div className="relative z-10 px-5 pb-5 pt-2 flex items-center justify-between border-t border-white/10 bg-black/40 backdrop-blur-md">
+                  {showFooterBrand ? (
+                    <div className="flex items-center gap-1.5">
+                      <Film className="w-3 h-3 text-[#ff5500]" />
+                      <span className="text-[9px] font-inter text-zinc-400 tracking-wider uppercase font-medium">
+                        theretrotalks.com
+                      </span>
+                    </div>
+                  ) : (
+                    <div />
+                  )}
 
-                {showGenres && review.genres && review.genres.length > 0 && (
-                  <span className="text-[9px] font-mono text-zinc-400">
-                    {review.genres.slice(0, 2).join(" · ")}
-                  </span>
-                )}
-              </div>
+                  {showGenres && review.genres && review.genres.length > 0 && (
+                    <span className="text-[9px] font-mono text-zinc-400">
+                      {review.genres.slice(0, 2).join(" · ")}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="pb-4" />
+              )}
             </div>
           </div>
 
@@ -524,7 +548,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                     Story Card Rating
                   </span>
                   <span className="text-[#ff7a29] font-mono font-bold">
-                    {formatRating(rating)} / 5
+                    {formatStoryCardNumber(rating)} / 5
                   </span>
                 </label>
                 <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
@@ -539,7 +563,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                           : "bg-white/[0.04] text-zinc-400 hover:text-white border-white/[0.06]"
                       }`}
                     >
-                      {formatRating(num)}★
+                      {formatStoryCardNumber(num)}★
                     </button>
                   ))}
                 </div>
