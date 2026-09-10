@@ -255,7 +255,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
           <img
             src={backdropUrl}
             alt={`${review.title} still`}
-            className="w-full h-full object-cover object-center filter contrast-[1.02] brightness-[0.98]"
+            className="w-full h-full object-cover object-top filter contrast-[1.02] brightness-[0.98]"
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center bg-[#0d1017] text-zinc-600">

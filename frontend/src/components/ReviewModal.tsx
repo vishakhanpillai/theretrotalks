@@ -53,7 +53,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             <img
               src={backdropUrl}
               alt={review.title}
-              className="w-full h-full object-cover filter contrast-110 brightness-75"
+              className="w-full h-full object-cover object-top filter contrast-110 brightness-75"
             />
           )}
 

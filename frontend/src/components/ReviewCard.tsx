@@ -65,7 +65,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       {/* Subtle Backdrop Tint dissolved in background */}
       {backdropUrl && (
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-[0.035] group-hover:opacity-[0.07] transition-opacity duration-700 pointer-events-none"
+          className="absolute inset-0 bg-cover bg-top opacity-[0.035] group-hover:opacity-[0.07] transition-opacity duration-700 pointer-events-none"
           style={{ backgroundImage: `url(${backdropUrl})` }}
         />
       )}

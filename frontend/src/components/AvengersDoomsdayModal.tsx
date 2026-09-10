@@ -113,7 +113,7 @@ export const AvengersDoomsdayModal: React.FC<AvengersDoomsdayModalProps> = ({
           <img
             src="/images/avengers-doomsday-backdrop.webp"
             alt="Avengers: Doomsday Backdrop"
-            className="w-full h-full object-cover filter contrast-125 brightness-90"
+            className="w-full h-full object-cover object-top filter contrast-125 brightness-90"
           />
 
           {/* Emerald & Noir Vignette Gradients */}

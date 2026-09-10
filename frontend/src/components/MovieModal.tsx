@@ -127,7 +127,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
             <img
               src={backdropUrl}
               alt={current.title}
-              className="w-full h-full object-cover filter contrast-110 brightness-75"
+              className="w-full h-full object-cover object-top filter contrast-110 brightness-75"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-r from-[#0d0f14] via-[#1a1f28] to-[#090b0e]" />

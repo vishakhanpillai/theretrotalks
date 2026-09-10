@@ -142,7 +142,7 @@ export const BackdropSelectorModal: React.FC<BackdropSelectorModalProps> = ({
                         src={b.url}
                         alt={`${movieTitle} backdrop ${index + 1}`}
                         loading="lazy"
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                       />
 
                       {/* Selected checkmark */}

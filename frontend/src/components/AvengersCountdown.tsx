@@ -66,7 +66,7 @@ export const AvengersCountdown: React.FC<AvengersCountdownProps> = ({ onClick })
         <img
           src="/images/avengers-doomsday-backdrop.webp"
           alt="Avengers: Doomsday artwork"
-          className="w-full h-full object-cover object-center opacity-25 group-hover:opacity-40 scale-100 group-hover:scale-108 transition-all duration-1000 ease-out filter contrast-125 saturate-120"
+          className="w-full h-full object-cover object-top opacity-25 group-hover:opacity-40 scale-100 group-hover:scale-108 transition-all duration-1000 ease-out filter contrast-125 saturate-120"
         />
         {/* Layered dark emerald & noir gradients */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#050b07] via-[#050b07]/80 to-[#050b07]/50" />
