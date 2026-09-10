@@ -833,7 +833,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
               )}
 
               {/* -------------------- CARD TOP HEADER -------------------- */}
-              <div className="relative z-10 px-5 pt-6 pb-2 flex items-center justify-between shrink-0">
+              <div className="relative z-10 px-5 pt-14 pb-2 flex items-center justify-between shrink-0">
                 {showWatermark ? (
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-[#ff5500] shadow-[0_0_8px_#ff5500]" />
