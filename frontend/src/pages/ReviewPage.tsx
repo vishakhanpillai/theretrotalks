@@ -725,6 +725,8 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
         isOpen={showStoryModal}
         onClose={() => setShowStoryModal(false)}
         review={review}
+        onUpdatePoster={onUpdatePoster}
+        onUpdateBackdrop={onUpdateBackdrop}
       />
 
     </div>

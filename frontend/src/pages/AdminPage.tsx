@@ -1107,6 +1107,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           isOpen={Boolean(storyStudioReview)}
           onClose={() => setStoryStudioReview(null)}
           review={storyStudioReview}
+          onUpdatePoster={onUpdatePoster}
+          onUpdateBackdrop={onUpdateBackdrop}
         />
       )}
 
