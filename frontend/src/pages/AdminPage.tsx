@@ -28,13 +28,15 @@ import {
   GripVertical,
   ChevronsLeft,
   ChevronsRight,
+  Crop,
 } from "lucide-react";
-import type { Review, Movie } from "../types";
+import type { Review, Movie, BackdropFraming } from "../types";
 import { getPosterUrl } from "../utils/images";
 import { MovieModal } from "../components/MovieModal";
-import { ReviewModal } from "../components/ReviewModal";
 import { PosterSelectorModal } from "../components/PosterSelectorModal";
 import { BackdropSelectorModal } from "../components/BackdropSelectorModal";
+import { BackdropFramingModal } from "../components/BackdropFramingModal";
+import { StoryCardBuilderModal } from "../components/StoryCardBuilderModal";
 import { EditReviewModal } from "../components/EditReviewModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 import { Footer } from "../components/Footer";
@@ -51,6 +53,7 @@ interface AdminPageProps {
   onReorderReviews?: (orderedIds: (string | number)[]) => Promise<void>;
   onUpdatePoster: (reviewId: string | number, newPosterUrl: string) => Promise<void>;
   onUpdateBackdrop?: (reviewId: string | number, newBackdropUrl: string) => Promise<void>;
+  onUpdateBackdropFraming?: (reviewId: string | number, framing: BackdropFraming) => Promise<void>;
   onNavigateHome: () => void;
   onNavigateToReview?: (id: string | number) => void;
 }
@@ -69,6 +72,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   onReorderReviews,
   onUpdatePoster,
   onUpdateBackdrop,
+  onUpdateBackdropFraming,
   onNavigateHome,
   onNavigateToReview,
 }) => {
@@ -134,6 +138,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [storyStudioReview, setStoryStudioReview] = useState<Review | null>(null);
   const [posterEditReview, setPosterEditReview] = useState<Review | null>(null);
   const [backdropEditReview, setBackdropEditReview] = useState<Review | null>(null);
+  const [framingEditReview, setFramingEditReview] = useState<Review | null>(null);
 
   // Feedback Toast notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -952,11 +957,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                         </div>
 
                         {/* Bottom Mini Toolbar */}
-                        <div className="grid grid-cols-4 gap-1.5 pt-2 border-t border-white/[0.1]">
+                        <div className="grid grid-cols-5 gap-1 pt-2 border-t border-white/[0.1]">
                           <button
                             type="button"
                             onClick={() => setPosterEditReview(rev)}
-                            className="p-2 rounded-lg bg-black/60 hover:bg-white/[0.1] text-zinc-300 hover:text-[#ff7a29] flex items-center justify-center transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg bg-black/60 hover:bg-white/[0.1] text-zinc-300 hover:text-[#ff7a29] flex items-center justify-center transition-colors cursor-pointer"
                             title="Change Poster Artwork"
                           >
                             <Film className="w-3.5 h-3.5" />
@@ -965,7 +970,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                           <button
                             type="button"
                             onClick={() => setBackdropEditReview(rev)}
-                            className="p-2 rounded-lg bg-black/60 hover:bg-white/[0.1] text-zinc-300 hover:text-[#ff7a29] flex items-center justify-center transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg bg-black/60 hover:bg-white/[0.1] text-zinc-300 hover:text-[#ff7a29] flex items-center justify-center transition-colors cursor-pointer"
                             title="Change Backdrop Artwork"
                           >
                             <ImageIcon className="w-3.5 h-3.5" />
@@ -973,8 +978,17 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
                           <button
                             type="button"
+                            onClick={() => setFramingEditReview(rev)}
+                            className="p-1.5 rounded-lg bg-black/60 hover:bg-white/[0.1] text-zinc-300 hover:text-[#ff7a29] flex items-center justify-center transition-colors cursor-pointer"
+                            title="Crop & Frame Backdrop (Adjust vertical position & height)"
+                          >
+                            <Crop className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
                             onClick={() => setStoryStudioReview(rev)}
-                            className="p-2 rounded-lg bg-black/60 hover:bg-white/[0.1] text-zinc-300 hover:text-[#ff7a29] flex items-center justify-center transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg bg-black/60 hover:bg-white/[0.1] text-zinc-300 hover:text-[#ff7a29] flex items-center justify-center transition-colors cursor-pointer"
                             title="Story Studio (Instagram 9:16)"
                           >
                             <Sparkles className="w-3.5 h-3.5" />
@@ -983,7 +997,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                           <button
                             type="button"
                             onClick={() => setDeleteReviewTarget(rev)}
-                            className="p-2 rounded-lg bg-black/60 hover:bg-red-500/30 text-zinc-300 hover:text-red-400 flex items-center justify-center transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg bg-black/60 hover:bg-red-500/30 text-zinc-300 hover:text-red-400 flex items-center justify-center transition-colors cursor-pointer"
                             title="Delete Review"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1086,13 +1100,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         onConfirmDelete={handleConfirmDelete}
       />
 
-      {/* MODAL 4: Review Story Studio Modal */}
+      {/* MODAL 4: Instagram Story Card Builder Studio */}
       {storyStudioReview && (
-        <ReviewModal
-          review={storyStudioReview}
+        <StoryCardBuilderModal
+          isOpen={Boolean(storyStudioReview)}
           onClose={() => setStoryStudioReview(null)}
-          onUpdatePoster={onUpdatePoster}
-          isAdmin={true}
+          review={storyStudioReview}
         />
       )}
 
@@ -1125,6 +1138,22 @@ export const AdminPage: React.FC<AdminPageProps> = ({
             showToast(`Backdrop artwork updated for "${backdropEditReview.title}"!`);
           }}
           onClose={() => setBackdropEditReview(null)}
+        />
+      )}
+
+      {/* MODAL 7: Backdrop Framing & Crop Modal */}
+      {framingEditReview && onUpdateBackdropFraming && (
+        <BackdropFramingModal
+          isOpen={Boolean(framingEditReview)}
+          onClose={() => setFramingEditReview(null)}
+          movieTitle={framingEditReview.title}
+          backdropUrl={framingEditReview.backdrop}
+          currentFraming={framingEditReview.backdropFraming}
+          onSaveFraming={async (newFraming) => {
+            await onUpdateBackdropFraming(framingEditReview.id, newFraming);
+            setFramingEditReview(null);
+            showToast(`Backdrop framing saved for "${framingEditReview.title}"!`);
+          }}
         />
       )}
 

@@ -13,6 +13,7 @@ router.put("/reorder", requireAdmin, reviewController.reorderReviews);
 router.put("/:id", requireAdmin, reviewController.updateReview);
 router.put("/:id/poster", requireAdmin, reviewController.updatePoster);
 router.put("/:id/backdrop", requireAdmin, reviewController.updateBackdrop);
+router.put("/:id/backdrop-framing", requireAdmin, reviewController.updateBackdropFraming);
 router.delete("/:id", requireAdmin, reviewController.deleteReview);
 
 module.exports = router;

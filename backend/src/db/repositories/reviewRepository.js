@@ -1,6 +1,20 @@
 const { db } = require("../connection");
 const { slugify } = require("../../utils/slugify");
 
+const parseBackdropFraming = (val) => {
+  if (!val) return { y: 0, height: 70, zoom: 100 };
+  try {
+    const parsed = typeof val === "string" ? JSON.parse(val) : val;
+    return {
+      y: typeof parsed.y === "number" ? Math.min(100, Math.max(0, parsed.y)) : 0,
+      height: typeof parsed.height === "number" ? Math.min(95, Math.max(40, parsed.height)) : 70,
+      zoom: typeof parsed.zoom === "number" ? Math.min(200, Math.max(100, parsed.zoom)) : 100,
+    };
+  } catch (e) {
+    return { y: 0, height: 70, zoom: 100 };
+  }
+};
+
 const getAllReviews = () => {
   const rows = db.prepare("SELECT * FROM reviews ORDER BY display_order ASC, created_at DESC").all();
   return rows.map((row) => ({
@@ -12,6 +26,7 @@ const getAllReviews = () => {
     year: row.year,
     poster: row.poster,
     backdrop: row.backdrop,
+    backdropFraming: parseBackdropFraming(row.backdrop_framing),
     director: row.director,
     genres: row.genres ? JSON.parse(row.genres) : [],
     rating: row.rating,
@@ -46,6 +61,7 @@ const getReviewById = (idOrSlug) => {
     year: row.year,
     poster: row.poster,
     backdrop: row.backdrop,
+    backdropFraming: parseBackdropFraming(row.backdrop_framing),
     director: row.director,
     genres: row.genres ? JSON.parse(row.genres) : [],
     rating: row.rating,
@@ -161,6 +177,17 @@ const updateReviewBackdrop = (id, newBackdropUrl) => {
   return getReviewById(id);
 };
 
+const updateReviewBackdropFraming = (id, framing) => {
+  const now = Date.now();
+  const cleanFraming = parseBackdropFraming(framing);
+  db.prepare("UPDATE reviews SET backdrop_framing = ?, updated_at = ? WHERE id = ?").run(
+    JSON.stringify(cleanFraming),
+    now,
+    String(id)
+  );
+  return getReviewById(id);
+};
+
 const updateReviewOverview = (id, overview) => {
   const now = Date.now();
   db.prepare("UPDATE reviews SET overview = ?, updated_at = ? WHERE id = ?").run(overview, now, String(id));
@@ -197,6 +224,7 @@ module.exports = {
   updateReviewCredits,
   updateReviewPoster,
   updateReviewBackdrop,
+  updateReviewBackdropFraming,
   updateReviewOverview,
   deleteReview,
   reorderReviews,

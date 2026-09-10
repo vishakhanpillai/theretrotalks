@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { Review } from "./types";
+import type { Review, BackdropFraming } from "./types";
 import { RetroTalksPage } from "./pages/RetroTalksPage";
 import { AdminPage } from "./pages/AdminPage";
 import { ReviewPage } from "./pages/ReviewPage";
@@ -282,6 +282,36 @@ function App() {
     }
   };
 
+  // Update review backdrop framing in SQLite (Admin Only)
+  const handleUpdateBackdropFraming = async (
+    reviewId: string | number,
+    framing: BackdropFraming
+  ) => {
+    if (!adminToken) return;
+
+    try {
+      const res = await fetch(`/api/reviews/${reviewId}/backdrop-framing`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ framing }),
+      });
+
+      if (res.ok) {
+        setReviews((prev) =>
+          prev.map((r) => (r.id === reviewId ? { ...r, backdropFraming: framing } : r))
+        );
+      }
+    } catch (err) {
+      console.error("Error updating backdrop framing in SQLite:", err);
+      setReviews((prev) =>
+        prev.map((r) => (r.id === reviewId ? { ...r, backdropFraming: framing } : r))
+      );
+    }
+  };
+
   // Update review details in SQLite (Admin Only)
   const handleUpdateReview = async (reviewId: string | number, updatedData: Partial<Review>) => {
     if (!adminToken) return;
@@ -354,6 +384,7 @@ function App() {
         onReorderReviews={handleReorderReviews}
         onUpdatePoster={handleUpdatePoster}
         onUpdateBackdrop={handleUpdateBackdrop}
+        onUpdateBackdropFraming={handleUpdateBackdropFraming}
         onNavigateHome={navigateToHome}
         onNavigateToReview={navigateToReview}
       />
@@ -376,6 +407,7 @@ function App() {
         onNavigateHome={navigateToHome}
         onUpdatePoster={handleUpdatePoster}
         onUpdateBackdrop={handleUpdateBackdrop}
+        onUpdateBackdropFraming={handleUpdateBackdropFraming}
       />
     );
   }

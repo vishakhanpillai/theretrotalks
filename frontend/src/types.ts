@@ -38,6 +38,12 @@ export interface Movie {
   trailer?: MovieTrailer | null;
 }
 
+export interface BackdropFraming {
+  y: number; // 0 (top) to 100 (bottom)
+  height: number; // in vh, e.g. 45 to 90
+  zoom: number; // in percentage, e.g. 100 to 150
+}
+
 export interface Review {
   id: string | number;
   tmdbId: number;
@@ -45,6 +51,7 @@ export interface Review {
   year: string;
   poster: string;
   backdrop: string;
+  backdropFraming?: BackdropFraming;
   director: string;
   genres: string[];
   rating: number; // 0.5 to 5.0

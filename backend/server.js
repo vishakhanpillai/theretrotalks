@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 
 const { PORT, FRONTEND_DIST } = require("./src/config/env");
+require("./src/db");
 const apiRoutes = require("./src/routes");
 const { enrichAllReviewsOnStartup } = require("./src/services/reviewEnrichmentService");
 

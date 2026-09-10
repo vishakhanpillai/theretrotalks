@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
-import { ArrowLeft, Heart, User, Film, Image as ImageIcon, AlignLeft } from "lucide-react";
-import type { Review } from "../types";
+import { ArrowLeft, Heart, User, Film, Image as ImageIcon, AlignLeft, Crop, Sparkles } from "lucide-react";
+import type { Review, BackdropFraming } from "../types";
 import { getBackdropUrl, getPosterUrl } from "../utils/images";
 import { StarRating } from "../components/StarRating";
 import { PosterSelectorModal } from "../components/PosterSelectorModal";
 import { BackdropSelectorModal } from "../components/BackdropSelectorModal";
+import { BackdropFramingModal } from "../components/BackdropFramingModal";
+import { StoryCardBuilderModal } from "../components/StoryCardBuilderModal";
 import { FormattedReviewText } from "../components/FormattedReviewText";
 import { Footer } from "../components/Footer";
 
@@ -15,6 +17,7 @@ interface ReviewPageProps {
   onNavigateHome: () => void;
   onUpdatePoster?: (reviewId: string | number, newPosterUrl: string) => Promise<void> | void;
   onUpdateBackdrop?: (reviewId: string | number, newBackdropUrl: string) => Promise<void> | void;
+  onUpdateBackdropFraming?: (reviewId: string | number, framing: BackdropFraming) => Promise<void> | void;
 }
 
 export const ReviewPage: React.FC<ReviewPageProps> = ({
@@ -24,6 +27,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
   onNavigateHome,
   onUpdatePoster,
   onUpdateBackdrop,
+  onUpdateBackdropFraming,
 }) => {
   const [review, setReview] = useState<Review | null>(initialReview || null);
   const [loading, setLoading] = useState<boolean>(!initialReview);
@@ -31,6 +35,8 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
   const [synopsisLoading, setSynopsisLoading] = useState<boolean>(false);
   const [showPosterModal, setShowPosterModal] = useState<boolean>(false);
   const [showBackdropModal, setShowBackdropModal] = useState<boolean>(false);
+  const [showFramingModal, setShowFramingModal] = useState<boolean>(false);
+  const [showStoryModal, setShowStoryModal] = useState<boolean>(false);
   const [posterError, setPosterError] = useState<boolean>(false);
   const [creditsTab, setCreditsTab] = useState<'cast' | 'crew'>('cast');
   const [headerOpacity, setHeaderOpacity] = useState<number>(0);
@@ -237,8 +243,18 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
             </button>
           </div>
 
-          {/* Right Action: Admin Indicator */}
-          <div className="flex items-center gap-3">
+          {/* Right Action: Story Card & Admin Indicator */}
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setShowStoryModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.05] hover:bg-[#ff5500] hover:text-black border border-white/10 hover:border-[#ff5500] text-xs font-inter text-zinc-300 transition-all cursor-pointer shadow-sm group"
+              title="Create 9:16 Instagram Story Card"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#ff5500] group-hover:text-black transition-colors" />
+              <span>Story Card</span>
+            </button>
+
             {isAdmin && (
               <span className="px-2.5 py-1 rounded-md bg-[#ff5500]/20 text-[#ff7a29] border border-[#ff5500]/35 text-[10px] font-inter uppercase tracking-wider backdrop-blur-md shadow-sm">
                 Admin Mode
@@ -249,13 +265,31 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
         </div>
       </header>
 
-      {/* Full-Bleed Film Backdrop Banner (Fills screen edge-to-edge, spacious & uncropped) */}
-      <section className="relative w-full h-[55vh] sm:h-[62vh] md:h-[70vh] lg:h-[74vh] min-h-[420px] sm:min-h-[480px] lg:min-h-[560px] max-h-[760px] overflow-hidden bg-[#07080a] mt-0">
+      {/* Full-Bleed Film Backdrop Banner (Fills screen edge-to-edge, spacious & custom framed) */}
+      <section
+        style={{
+          height: review.backdropFraming?.height ? `${review.backdropFraming.height}vh` : undefined,
+          minHeight: "420px",
+          maxHeight: review.backdropFraming?.height ? `${Math.round(review.backdropFraming.height * 11)}px` : undefined,
+        }}
+        className={`relative w-full ${
+          !review.backdropFraming?.height
+            ? "h-[55vh] sm:h-[62vh] md:h-[70vh] lg:h-[74vh] max-h-[760px]"
+            : ""
+        } overflow-hidden bg-[#07080a] mt-0 transition-[height] duration-300`}
+      >
         {backdropUrl ? (
           <img
             src={backdropUrl}
             alt={`${review.title} still`}
-            className="w-full h-full object-cover object-top filter contrast-[1.02] brightness-[0.98]"
+            style={{
+              objectPosition: `center ${review.backdropFraming?.y ?? 0}%`,
+              transform:
+                review.backdropFraming?.zoom && review.backdropFraming.zoom > 100
+                  ? `scale(${review.backdropFraming.zoom / 100})`
+                  : undefined,
+            }}
+            className="w-full h-full object-cover filter contrast-[1.02] brightness-[0.98] transition-[transform,object-position] duration-200"
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center bg-[#0d1017] text-zinc-600">
@@ -271,16 +305,41 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
         {/* Cinematic Bottom Fade Mask: Clean dissolve into content area */}
         <div className="absolute inset-x-0 bottom-0 h-40 sm:h-52 md:h-64 bg-gradient-to-t from-[#07080a] via-[#07080a]/65 to-transparent pointer-events-none" />
 
-        {/* Admin Change Backdrop Button */}
-        {isAdmin && review.tmdbId && (
-          <div className="absolute top-20 right-4 sm:right-6 lg:right-10 xl:right-14 z-20">
+        {/* Admin Action Buttons on Backdrop */}
+        {isAdmin && (
+          <div className="absolute top-20 right-4 sm:right-6 lg:right-10 xl:right-14 z-20 flex items-center gap-2">
+            {backdropUrl && (
+              <button
+                type="button"
+                onClick={() => setShowFramingModal(true)}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/80 hover:bg-[#ff5500] text-white hover:text-black border border-white/20 hover:border-[#ff5500] text-xs font-inter backdrop-blur-md transition-all shadow-xl cursor-pointer"
+                title="Adjust backdrop framing, vertical position, and banner height"
+              >
+                <Crop className="w-3.5 h-3.5" />
+                <span>Crop & Frame</span>
+              </button>
+            )}
+
+            {review.tmdbId && (
+              <button
+                type="button"
+                onClick={() => setShowBackdropModal(true)}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/80 hover:bg-[#ff5500] text-white hover:text-black border border-white/20 hover:border-[#ff5500] text-xs font-inter backdrop-blur-md transition-all shadow-xl cursor-pointer"
+                title="Change review backdrop artwork from TMDB"
+              >
+                <ImageIcon className="w-3.5 h-3.5" />
+                <span>Change Backdrop</span>
+              </button>
+            )}
+
             <button
-              onClick={() => setShowBackdropModal(true)}
+              type="button"
+              onClick={() => setShowStoryModal(true)}
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/80 hover:bg-[#ff5500] text-white hover:text-black border border-white/20 hover:border-[#ff5500] text-xs font-inter backdrop-blur-md transition-all shadow-xl cursor-pointer"
-              title="Change review backdrop artwork from TMDB"
+              title="Create Instagram Story Card (1080x1920)"
             >
-              <ImageIcon className="w-3.5 h-3.5" />
-              <span>Change Backdrop</span>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Story Studio</span>
             </button>
           </div>
         )}
@@ -632,6 +691,30 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
           onClose={() => setShowBackdropModal(false)}
         />
       )}
+
+      {/* Backdrop Framing & Crop Modal */}
+      {backdropUrl && (
+        <BackdropFramingModal
+          isOpen={showFramingModal}
+          onClose={() => setShowFramingModal(false)}
+          movieTitle={review.title}
+          backdropUrl={backdropUrl}
+          currentFraming={review.backdropFraming}
+          onSaveFraming={async (newFraming) => {
+            if (onUpdateBackdropFraming) {
+              await onUpdateBackdropFraming(review.id, newFraming);
+            }
+            setReview((prev) => (prev ? { ...prev, backdropFraming: newFraming } : null));
+          }}
+        />
+      )}
+
+      {/* Instagram Story Card Builder Studio */}
+      <StoryCardBuilderModal
+        isOpen={showStoryModal}
+        onClose={() => setShowStoryModal(false)}
+        review={review}
+      />
 
     </div>
   );

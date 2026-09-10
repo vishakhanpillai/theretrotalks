@@ -144,6 +144,23 @@ const reorderReviews = (req, res) => {
   }
 };
 
+const updateBackdropFraming = (req, res) => {
+  try {
+    const { framing } = req.body;
+    if (!framing || typeof framing !== "object") {
+      return res.status(400).json({ error: "framing object is required" });
+    }
+    const updatedReview = reviewRepository.updateReviewBackdropFraming(req.params.id, framing);
+    if (!updatedReview) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+    res.json({ success: true, message: "Backdrop framing updated successfully", review: updatedReview });
+  } catch (err) {
+    console.error("Error updating backdrop framing:", err);
+    res.status(500).json({ error: "Failed to update backdrop framing in database" });
+  }
+};
+
 module.exports = {
   getAllReviews,
   getReviewById,
@@ -151,6 +168,7 @@ module.exports = {
   updateReview,
   updatePoster,
   updateBackdrop,
+  updateBackdropFraming,
   deleteReview,
   reorderReviews,
 };
