@@ -29,6 +29,10 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Crop,
+  Download,
+  ChevronDown,
+  FileSpreadsheet,
+  FileJson,
 } from "lucide-react";
 import type { Review, Movie, BackdropFraming } from "../types";
 import { getPosterUrl } from "../utils/images";
@@ -161,6 +165,61 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // One-click Backup & Export State & Handlers
+  const [showBackupMenu, setShowBackupMenu] = useState<boolean>(false);
+  const [downloadingFormat, setDownloadingFormat] = useState<"sqlite" | "json" | "csv" | null>(null);
+  const backupMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutsideBackup(event: MouseEvent) {
+      if (backupMenuRef.current && !backupMenuRef.current.contains(event.target as Node)) {
+        setShowBackupMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutsideBackup);
+    return () => document.removeEventListener("mousedown", handleClickOutsideBackup);
+  }, []);
+
+  const handleDownloadBackup = async (format: "sqlite" | "json" | "csv") => {
+    try {
+      setDownloadingFormat(format);
+      const token = localStorage.getItem("the_retro_talks_admin_token");
+      const res = await fetch(`/api/admin/backup/${format}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to download ${format} backup`);
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition");
+      let filename = `retro_talks_${new Date().toISOString().slice(0, 10)}.${format === "sqlite" ? "sqlite" : format}`;
+      if (disposition && disposition.includes("filename=")) {
+        const match = disposition.match(/filename=["']?([^"';]+)["']?/);
+        if (match && match[1]) filename = match[1];
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      setShowBackupMenu(false);
+      showToast(`Exported ${format.toUpperCase()} (${filename})!`);
+    } catch (err: unknown) {
+      console.error("Backup download error:", err);
+      showToast(`Backup error: ${err instanceof Error ? err.message : "Download failed"}`);
+    } finally {
+      setDownloadingFormat(null);
+    }
+  };
 
   // TMDB Autosuggest debounce
   useEffect(() => {
@@ -440,6 +499,112 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
           {/* Right actions */}
           <div className="flex items-center gap-3">
+            {/* 1-Click Backup & Export Dropdown */}
+            <div className="relative" ref={backupMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowBackupMenu(!showBackupMenu)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.2] text-xs font-inter text-zinc-300 hover:text-white transition-all cursor-pointer"
+                title="Backup & Export Database"
+              >
+                {downloadingFormat ? (
+                  <Loader2 className="w-3.5 h-3.5 text-[#ff5500] animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5 text-[#ff5500]" />
+                )}
+                <span className="hidden sm:inline">Backup & Export</span>
+                <ChevronDown className={`w-3 h-3 text-zinc-500 transition-transform ${showBackupMenu ? "rotate-180" : ""}`} />
+              </button>
+
+              {showBackupMenu && (
+                <div className="absolute right-0 mt-2 w-72 bg-[#0e1118] border border-white/[0.12] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden z-50 p-2 space-y-1 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="px-3 py-1.5 border-b border-white/[0.06] mb-1">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-[#ff7a29] font-bold block">
+                      Database Backup
+                    </span>
+                    <span className="text-[11px] text-zinc-400 font-inter">
+                      1-click offline safekeeping & data portability
+                    </span>
+                  </div>
+
+                  {/* Option 1: SQLite DB */}
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadBackup("sqlite")}
+                    disabled={Boolean(downloadingFormat)}
+                    className="w-full text-left p-2.5 rounded-xl hover:bg-white/[0.05] transition-colors flex items-start gap-3 cursor-pointer group disabled:opacity-50"
+                  >
+                    <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black transition-colors flex-shrink-0">
+                      <Database className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold font-poppins text-white group-hover:text-[#ff7a29] transition-colors">
+                          Raw SQLite Database
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300">
+                          .sqlite
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 font-inter leading-tight mt-0.5">
+                        Full binary database with all tables, reviews, and schema.
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Option 2: JSON Export */}
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadBackup("json")}
+                    disabled={Boolean(downloadingFormat)}
+                    className="w-full text-left p-2.5 rounded-xl hover:bg-white/[0.05] transition-colors flex items-start gap-3 cursor-pointer group disabled:opacity-50"
+                  >
+                    <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 group-hover:bg-amber-500 group-hover:text-black transition-colors flex-shrink-0">
+                      <FileJson className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold font-poppins text-white group-hover:text-[#ff7a29] transition-colors">
+                          JSON Data Export
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300">
+                          .json
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 font-inter leading-tight mt-0.5">
+                        Complete structured backup with cast, crew, and framing metadata.
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Option 3: CSV Spreadsheet */}
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadBackup("csv")}
+                    disabled={Boolean(downloadingFormat)}
+                    className="w-full text-left p-2.5 rounded-xl hover:bg-white/[0.05] transition-colors flex items-start gap-3 cursor-pointer group disabled:opacity-50"
+                  >
+                    <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 group-hover:bg-blue-500 group-hover:text-black transition-colors flex-shrink-0">
+                      <FileSpreadsheet className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold font-poppins text-white group-hover:text-[#ff7a29] transition-colors">
+                          CSV Spreadsheet
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300">
+                          .csv
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 font-inter leading-tight mt-0.5">
+                        Import directly into Excel, Google Sheets, or Notion.
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button
               onClick={onNavigateHome}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.2] text-xs font-inter text-zinc-300 hover:text-white transition-all cursor-pointer"
@@ -491,18 +656,68 @@ export const AdminPage: React.FC<AdminPageProps> = ({
             <span className="text-[11px] font-inter text-zinc-400 mt-1 block">Highlighted on homepage</span>
           </div>
 
-          <div className="p-4 sm:p-5 rounded-2xl bg-[#090b0e] border border-white/[0.08] shadow-sm flex flex-col justify-between relative overflow-hidden">
-            <div>
-              <span className="text-[10px] font-inter uppercase tracking-wider text-zinc-500 block font-medium">Database Storage</span>
-              <span className="text-base font-bold font-poppins text-white mt-1.5 block flex items-center gap-2">
-                <Database className="w-4 h-4 text-emerald-400" />
-                <span>SQLite WAL Mode</span>
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#090b0e] border border-white/[0.08] shadow-sm flex flex-col justify-between relative overflow-hidden group">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-[10px] font-inter uppercase tracking-wider text-zinc-500 block font-medium">Database & Backups</span>
+                <span className="text-base font-bold font-poppins text-white mt-1.5 block flex items-center gap-2">
+                  <Database className="w-4 h-4 text-emerald-400" />
+                  <span>SQLite WAL Active</span>
+                </span>
+              </div>
+              <span className="text-[10px] font-inter text-emerald-400/90 font-medium flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Online</span>
               </span>
             </div>
-            <span className="text-[11px] font-inter text-emerald-400/90 font-medium flex items-center gap-1.5 mt-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>retro_talks.db Active</span>
-            </span>
+
+            {/* Quick 1-Click Export Buttons */}
+            <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => handleDownloadBackup("sqlite")}
+                disabled={Boolean(downloadingFormat)}
+                title="Download entire raw SQLite database file (retro_talks.sqlite)"
+                className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black border border-white/[0.08] hover:border-[#ff5500] text-[11px] font-inter font-medium flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {downloadingFormat === "sqlite" ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Database className="w-3 h-3 text-[#ff5500]" />
+                )}
+                <span>.sqlite</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDownloadBackup("json")}
+                disabled={Boolean(downloadingFormat)}
+                title="Export all reviews and metadata as structured JSON"
+                className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black border border-white/[0.08] hover:border-[#ff5500] text-[11px] font-inter font-medium flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {downloadingFormat === "json" ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <FileJson className="w-3 h-3 text-[#ff5500]" />
+                )}
+                <span>JSON</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDownloadBackup("csv")}
+                disabled={Boolean(downloadingFormat)}
+                title="Export reviews as CSV spreadsheet for Excel / Google Sheets"
+                className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black border border-white/[0.08] hover:border-[#ff5500] text-[11px] font-inter font-medium flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {downloadingFormat === "csv" ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="w-3 h-3 text-[#ff5500]" />
+                )}
+                <span>CSV</span>
+              </button>
+            </div>
           </div>
         </div>
 
