@@ -880,7 +880,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                         </h2>
                         <p className="text-[11px] font-inter text-zinc-300">
                           {review.year && <span>{review.year} · </span>}
-                          <span>Dir. {review.director}</span>
+                          <span>{review.mediaType === "tv" ? "Created by" : "Dir."} {review.director}</span>
                         </p>
                       </div>
 
@@ -968,7 +968,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                             {review.title}
                           </h2>
                           <p className="text-[10px] font-inter text-zinc-400">
-                            {review.year} · Dir. {review.director}
+                            {review.year} · {review.mediaType === "tv" ? "Created by" : "Dir."} {review.director}
                           </p>
                           <div className="flex flex-col items-start gap-1 mt-1.5">
                             <div className="flex items-center gap-1">
@@ -1011,7 +1011,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                         <span className="font-normal text-zinc-300">
                           {review.year && `${review.year}`}
                           {review.year && review.director && ` · `}
-                          {review.director && `Dir. ${review.director}`}
+                          {review.director && `${review.mediaType === "tv" ? "Created by" : "Dir."} ${review.director}`}
                         </span>
                       )}
 
@@ -1658,6 +1658,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
         <PosterSelectorModal
           movieId={review.tmdbId}
           movieTitle={review.title}
+          mediaType={review.mediaType}
           currentPosterUrl={currentPoster}
           isOpen={showPosterSelector}
           onClose={() => setShowPosterSelector(false)}
@@ -1670,6 +1671,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
         <BackdropSelectorModal
           movieId={review.tmdbId}
           movieTitle={review.title}
+          mediaType={review.mediaType}
           currentBackdropUrl={currentBackdrop}
           isOpen={showBackdropSelector}
           onClose={() => setShowBackdropSelector(false)}

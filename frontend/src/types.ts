@@ -22,6 +22,7 @@ export interface MovieTrailer {
 
 export interface Movie {
   id: number;
+  mediaType?: "movie" | "tv";
   title: string;
   year: string | null;
   poster: string | null;
@@ -48,6 +49,7 @@ export interface BackdropFraming {
 export interface Review {
   id: string | number;
   tmdbId: number;
+  mediaType?: "movie" | "tv";
   title: string;
   year: string;
   poster: string;

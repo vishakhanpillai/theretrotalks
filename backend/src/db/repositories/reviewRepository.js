@@ -23,6 +23,7 @@ const getAllReviews = () => {
     slug: row.slug || slugify(row.title),
     displayOrder: row.display_order ?? 0,
     tmdbId: row.tmdb_id,
+    mediaType: row.media_type || "movie",
     title: row.title,
     year: row.year,
     poster: row.poster,
@@ -58,6 +59,7 @@ const getReviewById = (idOrSlug) => {
     slug: row.slug || slugify(row.title),
     displayOrder: row.display_order ?? 0,
     tmdbId: row.tmdb_id,
+    mediaType: row.media_type || "movie",
     title: row.title,
     year: row.year,
     poster: row.poster,
@@ -80,6 +82,7 @@ const createReview = (reviewData) => {
   const id = reviewData.id || `rev-${Date.now()}`;
   const now = Date.now();
   const slug = reviewData.slug || slugify(reviewData.title);
+  const mediaType = reviewData.mediaType || reviewData.media_type || "movie";
   const genresStr = JSON.stringify(reviewData.genres || []);
   const castStr = JSON.stringify(reviewData.cast || []);
   const crewStr = JSON.stringify(reviewData.crew || []);
@@ -92,8 +95,8 @@ const createReview = (reviewData) => {
   }
 
   const stmt = db.prepare(`
-    INSERT INTO reviews (id, tmdb_id, title, year, poster, backdrop, director, genres, rating, review, watched_date, is_favorite, cast, crew, overview, slug, display_order, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO reviews (id, tmdb_id, title, year, poster, backdrop, director, genres, rating, review, watched_date, is_favorite, cast, crew, overview, slug, display_order, media_type, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   stmt.run(
@@ -114,6 +117,7 @@ const createReview = (reviewData) => {
     reviewData.overview || null,
     slug,
     0,
+    mediaType,
     now,
     now
   );
@@ -133,11 +137,12 @@ const updateReview = (id, updates) => {
   const title = updates.title !== undefined ? updates.title : current.title;
   const year = updates.year !== undefined ? updates.year : current.year;
   const director = updates.director !== undefined ? updates.director : current.director;
+  const mediaType = updates.mediaType !== undefined ? updates.mediaType : (current.mediaType || "movie");
   const slug = updates.slug || (updates.title ? slugify(updates.title) : current.slug);
 
   db.prepare(`
     UPDATE reviews 
-    SET title = ?, slug = ?, year = ?, director = ?, rating = ?, review = ?, watched_date = ?, is_favorite = ?, updated_at = ?
+    SET title = ?, slug = ?, year = ?, director = ?, rating = ?, review = ?, watched_date = ?, is_favorite = ?, media_type = ?, updated_at = ?
     WHERE id = ?
   `).run(
     title,
@@ -148,6 +153,7 @@ const updateReview = (id, updates) => {
     review,
     watchedDate,
     isFavorite,
+    mediaType,
     now,
     String(id)
   );

@@ -59,7 +59,7 @@ interface AdminPageProps {
   onNavigateToReview?: (id: string | number) => void;
 }
 
-type FilterTab = "all" | "favorites" | "5star" | "4star_plus";
+type FilterTab = "all" | "movie" | "tv" | "favorites" | "5star" | "4star_plus";
 type SortOption = "custom" | "newest" | "oldest" | "rating_desc" | "rating_asc" | "year_desc" | "title_asc";
 
 export const AdminPage: React.FC<AdminPageProps> = ({
@@ -243,6 +243,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const favoritesCount = reviews.filter((r) => r.isFavorite).length;
   const fiveStarCount = reviews.filter((r) => r.rating >= 5.0).length;
   const fourStarPlusCount = reviews.filter((r) => r.rating >= 4.0).length;
+  const tvCount = reviews.filter((r) => r.mediaType === "tv").length;
+  const movieCount = reviews.filter((r) => r.mediaType !== "tv").length;
 
   // Filter & Sort Logged Reviews
   const displayedReviews = useMemo(() => {
@@ -251,6 +253,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       .filter((r) => {
         if (isReorderMode) return true; // Show all reviews in reorder mode
         // Tab Filter
+        if (filterTab === "tv" && r.mediaType !== "tv") return false;
+        if (filterTab === "movie" && r.mediaType === "tv") return false;
         if (filterTab === "favorites" && !r.isFavorite) return false;
         if (filterTab === "5star" && r.rating < 5.0) return false;
         if (filterTab === "4star_plus" && r.rating < 4.0) return false;
@@ -502,16 +506,16 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           </div>
         </div>
 
-        {/* Section 1: TMDB Movie Search & Fast Review Logger */}
+        {/* Section 1: TMDB Movie & TV Search & Fast Review Logger */}
         <section className="p-6 sm:p-8 rounded-3xl bg-[#090b0e] border border-white/[0.08] space-y-4 shadow-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h2 className="text-lg font-bold font-poppins text-white flex items-center gap-2">
                 <Film className="w-5 h-5 text-[#ff5500]" />
-                <span>Log a New Film Review</span>
+                <span>Log a Film or TV Review</span>
               </h2>
               <p className="text-xs font-inter text-zinc-400 mt-0.5">
-                Search TMDB's global movie database to pull artwork, directors, cast, crew, and write your critique.
+                Search TMDB's global catalog of movies and TV shows to pull artwork, creators/directors, cast, crew, and write your critique.
               </p>
             </div>
             <span className="text-xs font-inter text-zinc-500">Live TMDB Sync</span>
@@ -527,7 +531,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                 onFocus={() => {
                   if (suggestions.length > 0) setShowDropdown(true);
                 }}
-                placeholder="Search TMDB by movie title (e.g. Oppenheimer, Dune, Pulp Fiction)..."
+                placeholder="Search TMDB for movies & TV shows (e.g. Breaking Bad, Dune, Succession)..."
                 className="w-full bg-[#0e1117] border border-white/[0.1] focus:border-[#ff5500] focus:ring-1 focus:ring-[#ff5500] rounded-2xl pl-12 pr-10 py-3.5 text-sm font-inter text-white placeholder-zinc-500 outline-none shadow-inner transition-all"
               />
               <Search className="w-5 h-5 text-zinc-500 absolute left-4 pointer-events-none" />
@@ -569,6 +573,15 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                           <h4 className="text-sm font-medium font-poppins text-white group-hover:text-[#ff7a29] transition-colors truncate">
                             {movie.title}
                           </h4>
+                          {movie.mediaType && (
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded tracking-wider uppercase flex-shrink-0 ${
+                              movie.mediaType === "tv"
+                                ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                                : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                            }`}>
+                              {movie.mediaType === "tv" ? "TV Series" : "Movie"}
+                            </span>
+                          )}
                           {movie.year && (
                             <span className="text-xs font-inter text-zinc-500">
                               ({movie.year})
@@ -577,7 +590,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                         </div>
                         {movie.director && (
                           <p className="text-xs text-zinc-400 font-inter mt-0.5">
-                            Dir. {movie.director}
+                            {movie.mediaType === "tv" ? "Created by" : "Dir."} {movie.director}
                           </p>
                         )}
                       </div>
@@ -628,6 +641,30 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                   }`}
                 >
                   All ({reviews.length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFilterTab("movie")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer ${
+                    filterTab === "movie"
+                      ? "bg-[#ff5500] text-black font-semibold shadow-sm"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  Movies ({movieCount})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFilterTab("tv")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer ${
+                    filterTab === "tv"
+                      ? "bg-[#ff5500] text-black font-semibold shadow-sm"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  TV ({tvCount})
                 </button>
 
                 <button
@@ -861,12 +898,19 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                           </div>
                         )}
 
-                        {/* Favorite Badge */}
-                        {!isReorderMode && rev.isFavorite && (
-                          <div className="p-1 rounded-lg bg-black/75 backdrop-blur-md border border-[#ff5500]/30 shadow-md">
-                            <Heart className="w-3.5 h-3.5 fill-[#ff5500] text-[#ff5500]" />
-                          </div>
-                        )}
+                        {/* Right Top Badges: TV indicator & Favorite */}
+                        <div className="flex items-center gap-1.5">
+                          {!isReorderMode && rev.mediaType === "tv" && (
+                            <div className="px-1.5 py-0.5 rounded-lg bg-purple-900/80 backdrop-blur-md border border-purple-500/40 text-[10px] font-inter font-bold text-purple-300 shadow-md">
+                              <span>TV</span>
+                            </div>
+                          )}
+                          {!isReorderMode && rev.isFavorite && (
+                            <div className="p-1 rounded-lg bg-black/75 backdrop-blur-md border border-[#ff5500]/30 shadow-md">
+                              <Heart className="w-3.5 h-3.5 fill-[#ff5500] text-[#ff5500]" />
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Reorder Direction Controls overlay */}
@@ -1021,7 +1065,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
                         <p className="text-xs font-inter text-zinc-400 truncate mt-0.5">
                           {rev.year && <span className="text-zinc-400 font-medium">{rev.year} · </span>}
-                          <span>Dir. {rev.director}</span>
+                          <span>{rev.mediaType === "tv" ? "Created by" : "Dir."} {rev.director}</span>
                         </p>
                       </div>
 
@@ -1123,6 +1167,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         <PosterSelectorModal
           movieId={posterEditReview.tmdbId || Number(posterEditReview.id)}
           movieTitle={posterEditReview.title}
+          mediaType={posterEditReview.mediaType}
           currentPosterUrl={posterEditReview.poster}
           isOpen={Boolean(posterEditReview)}
           onSelectPoster={async (newPosterUrl) => {
@@ -1139,6 +1184,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         <BackdropSelectorModal
           movieId={backdropEditReview.tmdbId || Number(backdropEditReview.id)}
           movieTitle={backdropEditReview.title}
+          mediaType={backdropEditReview.mediaType}
           currentBackdropUrl={backdropEditReview.backdrop}
           isOpen={Boolean(backdropEditReview)}
           onSelectBackdrop={async (newBackdropUrl) => {

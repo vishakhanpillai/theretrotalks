@@ -44,9 +44,6 @@ export const AvengersCountdown: React.FC<AvengersCountdownProps> = ({ onClick })
     return () => clearInterval(timer);
   }, []);
 
-  // Calculate seconds progress within the current minute (0% to 100%)
-  const secondsProgress = ((60 - timeLeft.seconds) / 60) * 100;
-
   return (
     <div
       onClick={onClick}
@@ -161,13 +158,6 @@ export const AvengersCountdown: React.FC<AvengersCountdownProps> = ({ onClick })
 
         </div>
 
-        {/* Dynamic Live Seconds Energy Progress Bar */}
-        <div className="w-full h-1 bg-emerald-950/80 rounded-full overflow-hidden p-[1px] border border-emerald-500/20">
-          <div
-            className="h-full bg-gradient-to-r from-emerald-600 via-emerald-400 to-emerald-300 rounded-full transition-all duration-1000 ease-linear shadow-[0_0_8px_#10b981]"
-            style={{ width: `${secondsProgress}%` }}
-          />
-        </div>
       </div>
 
     </div>

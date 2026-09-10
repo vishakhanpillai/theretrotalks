@@ -53,7 +53,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
     if (review?.tmdbId) {
       let isMounted = true;
       setSynopsisLoading(true);
-      fetch(`/api/movies/${review.tmdbId}`)
+      fetch(`/api/movies/${review.tmdbId}?mediaType=${review.mediaType || "movie"}`)
         .then((res) => {
           if (!res.ok) throw new Error("Failed to fetch movie details");
           return res.json();
@@ -437,7 +437,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
 
               {review.director && (
                 <div className="flex items-center justify-between pb-2.5 border-b border-white/[0.06]">
-                  <span className="text-zinc-500">Director</span>
+                  <span className="text-zinc-500">{review.mediaType === "tv" ? "Creator" : "Director"}</span>
                   <span className="text-white font-medium text-right truncate ml-2">
                     {review.director}
                   </span>
@@ -503,9 +503,10 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
                     )}
                   </div>
 
-                  {/* Directed by */}
+                  {/* Directed by / Created by */}
                   <p className="text-sm sm:text-base md:text-lg text-zinc-200 font-normal drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
-                    Directed by <strong className="text-white font-medium drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">{review.director}</strong>
+                    {review.mediaType === "tv" ? "Created by" : "Directed by"}{" "}
+                    <strong className="text-white font-medium drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">{review.director}</strong>
                   </p>
                 </div>
 
@@ -672,6 +673,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
         <PosterSelectorModal
           movieId={review.tmdbId}
           movieTitle={review.title}
+          mediaType={review.mediaType}
           currentPosterUrl={review.poster}
           isOpen={showPosterModal}
           onSelectPoster={async (newPosterUrl) => {
@@ -690,6 +692,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
         <BackdropSelectorModal
           movieId={review.tmdbId}
           movieTitle={review.title}
+          mediaType={review.mediaType}
           currentBackdropUrl={review.backdrop}
           isOpen={showBackdropModal}
           onSelectBackdrop={async (newBackdropUrl) => {

@@ -68,7 +68,7 @@ const extractTopCast = (castList, limit = 10) => {
 
 const searchMovies = async (query) => {
   const response = await fetchTMDB(
-    `${TMDB_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&include_adult=true`
+    `${TMDB_BASE_URL}/search/multi?query=${encodeURIComponent(query)}&include_adult=true`
   );
 
   if (!response.ok) {
@@ -81,20 +81,28 @@ const searchMovies = async (query) => {
 
   const data = await response.json();
 
-  const movies = (data.results || []).map((movie) => ({
-    id: movie.id,
-    title: movie.title,
-    year: movie.release_date ? movie.release_date.split("-")[0] : null,
-    poster: formatImageUrl(movie.poster_path, "w500"),
-    backdrop: formatImageUrl(movie.backdrop_path, "original"),
-    overview: movie.overview,
-    tmdbRating: movie.vote_average ? Number(movie.vote_average.toFixed(1)) : null,
-    voteCount: movie.vote_count,
-  }));
+  const results = (data.results || [])
+    .filter((item) => item.media_type === "movie" || item.media_type === "tv")
+    .map((item) => {
+      const isTv = item.media_type === "tv";
+      return {
+        id: item.id,
+        mediaType: isTv ? "tv" : "movie",
+        title: isTv ? (item.name || item.original_name) : (item.title || item.original_title),
+        year: isTv
+          ? (item.first_air_date ? item.first_air_date.split("-")[0] : null)
+          : (item.release_date ? item.release_date.split("-")[0] : null),
+        poster: formatImageUrl(item.poster_path, "w500"),
+        backdrop: formatImageUrl(item.backdrop_path, "original"),
+        overview: item.overview,
+        tmdbRating: item.vote_average ? Number(item.vote_average.toFixed(1)) : null,
+        voteCount: item.vote_count,
+      };
+    });
 
   return {
-    results: movies,
-    totalResults: data.total_results || movies.length,
+    results,
+    totalResults: data.total_results || results.length,
   };
 };
 
@@ -154,22 +162,65 @@ const getUpcomingMonthMovies = async () => {
   };
 };
 
-const getMovieDetails = async (movieId) => {
-  const response = await fetchTMDB(
-    `${TMDB_BASE_URL}/movie/${movieId}?append_to_response=credits,videos`
+const getMovieDetails = async (movieId, mediaType = "movie") => {
+  const isTv = mediaType === "tv";
+  const primaryEndpoint = isTv ? "tv" : "movie";
+
+  let response = await fetchTMDB(
+    `${TMDB_BASE_URL}/${primaryEndpoint}/${movieId}?append_to_response=credits,videos`
   );
+  let resolvedType = primaryEndpoint;
+
+  // Resilient fallback: If requested endpoint fails with 404, check the other endpoint
+  if (!response.ok && !isTv) {
+    try {
+      const tvResponse = await fetchTMDB(
+        `${TMDB_BASE_URL}/tv/${movieId}?append_to_response=credits,videos`
+      );
+      if (tvResponse.ok) {
+        response = tvResponse;
+        resolvedType = "tv";
+      }
+    } catch (e) {
+      // Keep original response error
+    }
+  } else if (!response.ok && isTv) {
+    try {
+      const movieResponse = await fetchTMDB(
+        `${TMDB_BASE_URL}/movie/${movieId}?append_to_response=credits,videos`
+      );
+      if (movieResponse.ok) {
+        response = movieResponse;
+        resolvedType = "movie";
+      }
+    } catch (e) {
+      // Keep original response error
+    }
+  }
 
   if (!response.ok) {
-    const error = new Error("Failed to fetch movie details from TMDB");
+    const error = new Error(`Failed to fetch media details from TMDB (${resolvedType})`);
     error.status = response.status;
     throw error;
   }
 
   const data = await response.json();
+  const isTvResolved = resolvedType === "tv";
 
-  const director = data.credits?.crew?.find(
-    (person) => person.job === "Director" && person.department === "Directing"
-  );
+  let director = null;
+  if (isTvResolved) {
+    const creator = Array.isArray(data.created_by) && data.created_by.length > 0
+      ? data.created_by.map((c) => c.name).join(", ")
+      : null;
+    director = creator || data.credits?.crew?.find(
+      (person) => person.job === "Director" || person.job === "Creator" || person.job === "Showrunner" || person.department === "Directing"
+    )?.name || null;
+  } else {
+    const dir = data.credits?.crew?.find(
+      (person) => person.job === "Director" && person.department === "Directing"
+    );
+    director = dir ? dir.name : null;
+  }
 
   const cast = extractTopCast(data.credits?.cast, 10);
   const crew = extractPrioritizedCrew(data.credits?.crew, 10);
@@ -193,15 +244,18 @@ const getMovieDetails = async (movieId) => {
 
   return {
     id: data.id,
-    title: data.title,
-    year: data.release_date ? data.release_date.split("-")[0] : null,
+    mediaType: isTvResolved ? "tv" : "movie",
+    title: isTvResolved ? (data.name || data.original_name) : data.title,
+    year: isTvResolved
+      ? (data.first_air_date ? data.first_air_date.split("-")[0] : null)
+      : (data.release_date ? data.release_date.split("-")[0] : null),
     poster: formatImageUrl(data.poster_path, "w500"),
     backdrop: formatImageUrl(data.backdrop_path, "original"),
     overview: data.overview,
     tmdbRating: data.vote_average ? Number(data.vote_average.toFixed(1)) : null,
-    runtime: data.runtime,
+    runtime: isTvResolved ? (data.episode_run_time?.[0] || null) : data.runtime,
     genres: Array.isArray(data.genres) ? data.genres.map((genre) => genre.name) : [],
-    director: director ? director.name : null,
+    director: director ? director : null,
     tagline: data.tagline || null,
     cast,
     crew,
@@ -209,11 +263,25 @@ const getMovieDetails = async (movieId) => {
   };
 };
 
-const getMoviePosters = async (movieId) => {
-  const response = await fetchTMDB(`${TMDB_BASE_URL}/movie/${movieId}/images`);
+const getMoviePosters = async (movieId, mediaType = "movie") => {
+  const isTv = mediaType === "tv";
+  const primaryEndpoint = isTv ? "tv" : "movie";
+
+  let response = await fetchTMDB(`${TMDB_BASE_URL}/${primaryEndpoint}/${movieId}/images`);
+  if (!response.ok && !isTv) {
+    try {
+      const tvResponse = await fetchTMDB(`${TMDB_BASE_URL}/tv/${movieId}/images`);
+      if (tvResponse.ok) response = tvResponse;
+    } catch (e) {}
+  } else if (!response.ok && isTv) {
+    try {
+      const movieResponse = await fetchTMDB(`${TMDB_BASE_URL}/movie/${movieId}/images`);
+      if (movieResponse.ok) response = movieResponse;
+    } catch (e) {}
+  }
 
   if (!response.ok) {
-    const error = new Error("Failed to fetch movie posters from TMDB");
+    const error = new Error("Failed to fetch posters from TMDB");
     error.status = response.status;
     throw error;
   }
@@ -241,11 +309,25 @@ const getMoviePosters = async (movieId) => {
   };
 };
 
-const getMovieBackdrops = async (movieId) => {
-  const response = await fetchTMDB(`${TMDB_BASE_URL}/movie/${movieId}/images`);
+const getMovieBackdrops = async (movieId, mediaType = "movie") => {
+  const isTv = mediaType === "tv";
+  const primaryEndpoint = isTv ? "tv" : "movie";
+
+  let response = await fetchTMDB(`${TMDB_BASE_URL}/${primaryEndpoint}/${movieId}/images`);
+  if (!response.ok && !isTv) {
+    try {
+      const tvResponse = await fetchTMDB(`${TMDB_BASE_URL}/tv/${movieId}/images`);
+      if (tvResponse.ok) response = tvResponse;
+    } catch (e) {}
+  } else if (!response.ok && isTv) {
+    try {
+      const movieResponse = await fetchTMDB(`${TMDB_BASE_URL}/movie/${movieId}/images`);
+      if (movieResponse.ok) response = movieResponse;
+    } catch (e) {}
+  }
 
   if (!response.ok) {
-    const error = new Error("Failed to fetch movie backdrops from TMDB");
+    const error = new Error("Failed to fetch backdrops from TMDB");
     error.status = response.status;
     throw error;
   }

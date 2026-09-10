@@ -38,9 +38,10 @@ const getUpcomingMonth = async (req, res) => {
 
 const getDetails = async (req, res) => {
   const movieId = req.params.id;
+  const mediaType = req.query.mediaType || "movie";
 
   try {
-    const movie = await tmdbService.getMovieDetails(movieId);
+    const movie = await tmdbService.getMovieDetails(movieId, mediaType);
     res.json(movie);
   } catch (error) {
     console.error("TMDB Details Error:", error);
@@ -57,9 +58,10 @@ const getDetails = async (req, res) => {
 
 const getPosters = async (req, res) => {
   const movieId = req.params.id;
+  const mediaType = req.query.mediaType || "movie";
 
   try {
-    const result = await tmdbService.getMoviePosters(movieId);
+    const result = await tmdbService.getMoviePosters(movieId, mediaType);
     res.json(result);
   } catch (error) {
     console.error("TMDB Posters Error:", error);
@@ -76,9 +78,10 @@ const getPosters = async (req, res) => {
 
 const getBackdrops = async (req, res) => {
   const movieId = req.params.id;
+  const mediaType = req.query.mediaType || "movie";
 
   try {
-    const result = await tmdbService.getMovieBackdrops(movieId);
+    const result = await tmdbService.getMovieBackdrops(movieId, mediaType);
     res.json(result);
   } catch (error) {
     console.error("TMDB Backdrops Error:", error);

@@ -15,6 +15,7 @@ export interface BackdropOption {
 interface BackdropSelectorModalProps {
   movieId: number;
   movieTitle: string;
+  mediaType?: "movie" | "tv";
   currentBackdropUrl?: string | null;
   isOpen: boolean;
   onClose: () => void;
@@ -24,6 +25,7 @@ interface BackdropSelectorModalProps {
 export const BackdropSelectorModal: React.FC<BackdropSelectorModalProps> = ({
   movieId,
   movieTitle,
+  mediaType = "movie",
   currentBackdropUrl,
   isOpen,
   onClose,
@@ -39,7 +41,7 @@ export const BackdropSelectorModal: React.FC<BackdropSelectorModalProps> = ({
     setLoading(true);
     setError(null);
 
-    fetch(`/api/movies/${movieId}/backdrops`)
+    fetch(`/api/movies/${movieId}/backdrops?mediaType=${mediaType || "movie"}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch alternate backdrops");
         return res.json();

@@ -73,9 +73,17 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           <div className="absolute bottom-6 left-6 right-6 flex flex-wrap items-end justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 text-xs font-inter text-[#ff7a29] uppercase tracking-wider mb-1">
+                {review.mediaType === "tv" && (
+                  <>
+                    <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                      TV Series
+                    </span>
+                    <span>•</span>
+                  </>
+                )}
                 <span>{review.year}</span>
                 <span>•</span>
-                <span>Dir. {review.director}</span>
+                <span>{review.mediaType === "tv" ? "Created by" : "Dir."} {review.director}</span>
               </div>
               <h2 className="text-2xl sm:text-4xl font-poppins font-medium text-white tracking-tight">
                 {review.title}
@@ -369,6 +377,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         <PosterSelectorModal
           movieId={review.tmdbId}
           movieTitle={review.title}
+          mediaType={review.mediaType}
           currentPosterUrl={review.poster}
           isOpen={showPosterModal}
           onClose={() => setShowPosterModal(false)}

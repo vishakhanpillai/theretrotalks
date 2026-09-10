@@ -68,6 +68,12 @@ const initSchema = (db) => {
     // Column already exists
   }
 
+  try {
+    db.exec("ALTER TABLE reviews ADD COLUMN media_type TEXT DEFAULT 'movie';");
+  } catch (e) {
+    // Column already exists
+  }
+
   // Populate empty slugs
   try {
     const unslugged = db.prepare("SELECT id, title FROM reviews WHERE slug IS NULL OR slug = ''").all();

@@ -55,7 +55,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
     setSelectedPoster(null);
 
     setLoading(true);
-    fetch(`/api/movies/${movie.id}`)
+    fetch(`/api/movies/${movie.id}?mediaType=${movie.mediaType || "movie"}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch details");
         return res.json();
@@ -91,6 +91,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
     const newReview: Review = {
       id: `rev-${Date.now()}`,
       tmdbId: current.id,
+      mediaType: current.mediaType || movie.mediaType || "movie",
       title: current.title,
       year: current.year || "N/A",
       poster: activePosterUrl || "",
@@ -257,6 +258,16 @@ export const MovieModal: React.FC<MovieModalProps> = ({
               
               {/* Meta pills */}
               <div className="flex flex-wrap items-center gap-2">
+                {current.mediaType && (
+                  <div className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-inter font-semibold uppercase tracking-wider ${
+                    current.mediaType === "tv"
+                      ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                      : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                  }`}>
+                    <span>{current.mediaType === "tv" ? "TV Series" : "Movie"}</span>
+                  </div>
+                )}
+
                 {current.year && (
                   <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.03] text-zinc-300 border border-white/[0.08] text-xs font-inter">
                     <Calendar className="w-3.5 h-3.5 text-zinc-400" />
@@ -267,14 +278,14 @@ export const MovieModal: React.FC<MovieModalProps> = ({
                 {current.runtime ? (
                   <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.03] text-zinc-300 border border-white/[0.08] text-xs font-inter">
                     <Clock className="w-3.5 h-3.5 text-zinc-400" />
-                    <span>{current.runtime} min</span>
+                    <span>{current.runtime} min{current.mediaType === "tv" ? " / ep" : ""}</span>
                   </div>
                 ) : null}
 
                 {current.director && (
                   <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.03] text-zinc-300 border border-white/[0.08] text-xs font-inter">
                     <User className="w-3.5 h-3.5 text-[#ff7a29]" />
-                    <span>Dir. <strong className="text-white font-medium">{current.director}</strong></span>
+                    <span>{current.mediaType === "tv" ? "Created by" : "Dir."} <strong className="text-white font-medium">{current.director}</strong></span>
                   </div>
                 )}
               </div>
@@ -482,6 +493,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
       <PosterSelectorModal
         movieId={current.id}
         movieTitle={current.title}
+        mediaType={current.mediaType || movie.mediaType || "movie"}
         currentPosterUrl={activePosterUrl}
         isOpen={showPosterModal}
         onClose={() => setShowPosterModal(false)}

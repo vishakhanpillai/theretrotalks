@@ -31,7 +31,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       return;
     }
     if (review.tmdbId) {
-      fetch(`/api/movies/${review.tmdbId}`)
+      fetch(`/api/movies/${review.tmdbId}?mediaType=${review.mediaType || "movie"}`)
         .then((res) => {
           if (!res.ok) throw new Error("Credits fetch failed");
           return res.json();
@@ -163,7 +163,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
               {review.title}
             </h3>
             <p className="text-xs sm:text-sm text-zinc-400 font-inter">
-              Directed by <strong className="text-zinc-200 font-medium">{review.director}</strong>
+              {review.mediaType === "tv" ? "Created by" : "Directed by"}{" "}
+              <strong className="text-zinc-200 font-medium">{review.director}</strong>
             </p>
           </div>
 

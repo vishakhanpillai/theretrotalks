@@ -42,9 +42,15 @@ const createReview = async (req, res) => {
 
     // Auto-fetch cast & crew from TMDB if not provided
     const tmdbId = reviewData.tmdbId || reviewData.tmdb_id;
+    const mediaType = reviewData.mediaType || reviewData.media_type || "movie";
     if ((!reviewData.cast || reviewData.cast.length === 0) && tmdbId) {
       try {
-        const response = await fetchTMDB(`${TMDB_BASE_URL}/movie/${tmdbId}?append_to_response=credits`);
+        const endpoint = mediaType === "tv" ? "tv" : "movie";
+        let response = await fetchTMDB(`${TMDB_BASE_URL}/${endpoint}/${tmdbId}?append_to_response=credits`);
+        if (!response.ok && endpoint === "movie") {
+          const tvRes = await fetchTMDB(`${TMDB_BASE_URL}/tv/${tmdbId}?append_to_response=credits`);
+          if (tvRes.ok) response = tvRes;
+        }
         if (response && response.ok) {
           const data = await response.json();
           reviewData.cast = extractTopCast(data.credits?.cast, 10);

@@ -14,6 +14,7 @@ export interface PosterOption {
 interface PosterSelectorModalProps {
   movieId: number;
   movieTitle: string;
+  mediaType?: "movie" | "tv";
   currentPosterUrl?: string | null;
   isOpen: boolean;
   onClose: () => void;
@@ -23,6 +24,7 @@ interface PosterSelectorModalProps {
 export const PosterSelectorModal: React.FC<PosterSelectorModalProps> = ({
   movieId,
   movieTitle,
+  mediaType = "movie",
   currentPosterUrl,
   isOpen,
   onClose,
@@ -38,7 +40,7 @@ export const PosterSelectorModal: React.FC<PosterSelectorModalProps> = ({
     setLoading(true);
     setError(null);
 
-    fetch(`/api/movies/${movieId}/posters`)
+    fetch(`/api/movies/${movieId}/posters?mediaType=${mediaType || "movie"}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch alternate posters");
         return res.json();

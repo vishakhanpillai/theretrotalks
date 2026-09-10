@@ -12,7 +12,12 @@ const enrichReviewIfCreditsMissing = async (review) => {
   if (!isEnrichmentNeeded) return review;
 
   try {
-    const response = await fetchTMDB(`${TMDB_BASE_URL}/movie/${review.tmdbId}?append_to_response=credits`);
+    const endpoint = review.mediaType === "tv" ? "tv" : "movie";
+    let response = await fetchTMDB(`${TMDB_BASE_URL}/${endpoint}/${review.tmdbId}?append_to_response=credits`);
+    if (!response.ok && endpoint === "movie") {
+      const tvRes = await fetchTMDB(`${TMDB_BASE_URL}/tv/${review.tmdbId}?append_to_response=credits`);
+      if (tvRes.ok) response = tvRes;
+    }
     if (response && response.ok) {
       const data = await response.json();
       const cast = extractTopCast(data.credits?.cast, 10);
@@ -42,9 +47,14 @@ const enrichAllReviewsOnStartup = async () => {
         (!review.cast || review.cast.length === 0 || !review.crew || review.crew.length < 10 || !review.overview)
       ) {
         try {
-          const response = await fetchTMDB(
-            `${TMDB_BASE_URL}/movie/${review.tmdbId}?append_to_response=credits`
+          const endpoint = review.mediaType === "tv" ? "tv" : "movie";
+          let response = await fetchTMDB(
+            `${TMDB_BASE_URL}/${endpoint}/${review.tmdbId}?append_to_response=credits`
           );
+          if (!response.ok && endpoint === "movie") {
+            const tvRes = await fetchTMDB(`${TMDB_BASE_URL}/tv/${review.tmdbId}?append_to_response=credits`);
+            if (tvRes.ok) response = tvRes;
+          }
           if (response && response.ok) {
             const data = await response.json();
             const cast = extractTopCast(data.credits?.cast, 10);
