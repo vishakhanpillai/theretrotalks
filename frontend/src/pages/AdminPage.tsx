@@ -1360,20 +1360,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         onConfirmDelete={handleConfirmDelete}
       />
 
-      {/* MODAL 4: Instagram Story Card Builder Studio */}
+      {/* MODAL 4: Instagram Story Card Builder Studio (Edits isolated to story studio) */}
       {storyStudioReview && (
         <StoryCardBuilderModal
           isOpen={Boolean(storyStudioReview)}
           onClose={() => setStoryStudioReview(null)}
           review={storyStudioReview}
-          onUpdatePoster={onUpdatePoster}
-          onUpdateBackdrop={onUpdateBackdrop}
-          onUpdateBackdropFraming={async (reviewId, newFraming) => {
-            if (onUpdateBackdropFraming) {
-              await onUpdateBackdropFraming(reviewId, newFraming);
-            }
-            setStoryStudioReview((prev) => (prev ? { ...prev, backdropFraming: newFraming } : null));
-          }}
         />
       )}
 

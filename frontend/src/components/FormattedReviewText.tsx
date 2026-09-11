@@ -6,6 +6,9 @@ interface FormattedReviewTextProps {
   variant?: "default" | "story";
   density?: "dense" | "standard" | "spacious";
   revealSpoilers?: boolean;
+  fontClassName?: string;
+  isItalic?: boolean;
+  textAlign?: "left" | "center" | "justify";
 }
 
 const SpoilerSpan: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -109,11 +112,23 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
   variant = "default",
   density = "dense",
   revealSpoilers = variant === "story",
+  fontClassName,
+  isItalic,
+  textAlign,
 }) => {
   if (!content) return null;
 
   const isStory = variant === "story";
   const len = content.length;
+
+  const activeFont = fontClassName || "font-poppins";
+  const activeItalic = isItalic ? "italic" : "";
+  const activeAlign =
+    textAlign === "left"
+      ? "text-left"
+      : textAlign === "center"
+      ? "text-center"
+      : "text-justify [text-align-last:left]";
 
   // Story density styling profiles with content-aware adaptive sizing:
   // Shorter content automatically expands with larger font & comfortable line-height so the card never looks empty!
@@ -130,28 +145,28 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
 
   const storyParagraphClass =
     density === "spacious"
-      ? "leading-[1.65] text-zinc-100 text-[13px] sm:text-[13.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]"
+      ? `leading-[1.65] text-zinc-100 text-[13px] sm:text-[13.5px] ${activeFont} ${activeItalic} ${activeAlign} drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]`
       : density === "standard"
-      ? "leading-[1.55] text-zinc-100 text-[12px] sm:text-[12.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]"
+      ? `leading-[1.55] text-zinc-100 text-[12px] sm:text-[12.5px] ${activeFont} ${activeItalic} ${activeAlign} drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]`
       : len < 600
-      ? "leading-[1.62] text-zinc-100 text-[13px] sm:text-[13.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]"
+      ? `leading-[1.62] text-zinc-100 text-[13px] sm:text-[13.5px] ${activeFont} ${activeItalic} ${activeAlign} drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]`
       : len < 1000
-      ? "leading-[1.52] text-zinc-100 text-[12px] sm:text-[12.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_7px_rgba(0,0,0,0.95)]"
-      : "leading-[1.44] text-zinc-100 text-[11px] sm:text-[11.5px] font-poppins text-justify [text-align-last:left] drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]";
+      ? `leading-[1.52] text-zinc-100 text-[12px] sm:text-[12.5px] ${activeFont} ${activeItalic} ${activeAlign} drop-shadow-[0_2px_7px_rgba(0,0,0,0.95)]`
+      : `leading-[1.44] text-zinc-100 text-[11px] sm:text-[11.5px] ${activeFont} ${activeItalic} ${activeAlign} drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]`;
 
   const storyQuoteClass =
     density === "spacious" || (density === "dense" && len < 650)
-      ? "my-2 pl-3 pr-2 py-1.5 border-l-2 border-[#ff5500] bg-black/40 text-zinc-100 italic rounded-r-lg leading-relaxed text-[12px] font-poppins text-justify [text-align-last:left]"
+      ? `my-2 pl-3 pr-2 py-1.5 border-l-2 border-[#ff5500] bg-black/40 text-zinc-100 italic rounded-r-lg leading-relaxed text-[12px] ${activeFont} ${activeAlign}`
       : density === "standard" || (density === "dense" && len < 1100)
-      ? "my-1.5 pl-2.5 pr-2 py-1 border-l-2 border-[#ff5500] bg-black/40 text-zinc-100 italic rounded-r-md leading-relaxed text-[11px] font-poppins text-justify [text-align-last:left]"
-      : "my-1.5 pl-2.5 pr-1.5 py-1 border-l-2 border-[#ff5500] bg-black/40 text-zinc-100 italic rounded-r-md leading-snug text-[10.5px] font-poppins text-justify [text-align-last:left]";
+      ? `my-1.5 pl-2.5 pr-2 py-1 border-l-2 border-[#ff5500] bg-black/40 text-zinc-100 italic rounded-r-md leading-relaxed text-[11px] ${activeFont} ${activeAlign}`
+      : `my-1.5 pl-2.5 pr-1.5 py-1 border-l-2 border-[#ff5500] bg-black/40 text-zinc-100 italic rounded-r-md leading-snug text-[10.5px] ${activeFont} ${activeAlign}`;
 
   const storyListClass =
     density === "spacious" || (density === "dense" && len < 650)
-      ? "my-2 space-y-1 list-disc list-inside text-zinc-100 text-[12.5px] font-poppins text-justify [text-align-last:left]"
+      ? `my-2 space-y-1 list-disc list-inside text-zinc-100 text-[12.5px] ${activeFont} ${activeAlign}`
       : density === "standard" || (density === "dense" && len < 1100)
-      ? "my-1.5 space-y-0.5 list-disc list-inside text-zinc-100 text-[11.5px] font-poppins text-justify [text-align-last:left]"
-      : "my-1 space-y-0.5 list-disc list-inside text-zinc-100 text-[11px] font-poppins text-justify [text-align-last:left]";
+      ? `my-1.5 space-y-0.5 list-disc list-inside text-zinc-100 text-[11.5px] ${activeFont} ${activeAlign}`
+      : `my-1 space-y-0.5 list-disc list-inside text-zinc-100 text-[11px] ${activeFont} ${activeAlign}`;
 
   // Split content by paragraphs (two or more newlines)
   const blocks = content.split(/\n{2,}/);

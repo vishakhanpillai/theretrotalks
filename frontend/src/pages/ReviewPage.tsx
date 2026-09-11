@@ -725,20 +725,12 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
         />
       )}
 
-      {/* Instagram Story Card Builder Studio (Admin Only) */}
+      {/* Instagram Story Card Builder Studio (Admin Only - Edits isolated to story studio) */}
       {isAdmin && (
         <StoryCardBuilderModal
           isOpen={showStoryModal}
           onClose={() => setShowStoryModal(false)}
           review={review}
-          onUpdatePoster={onUpdatePoster}
-          onUpdateBackdrop={onUpdateBackdrop}
-          onUpdateBackdropFraming={async (reviewId, newFraming) => {
-            if (onUpdateBackdropFraming) {
-              await onUpdateBackdropFraming(reviewId, newFraming);
-            }
-            setReview((prev) => (prev ? { ...prev, backdropFraming: newFraming } : null));
-          }}
         />
       )}
 
