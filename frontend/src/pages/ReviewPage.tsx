@@ -254,17 +254,19 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
             </button>
           </div>
 
-          {/* Right Action: Story Card & Admin Indicator */}
+          {/* Right Action: Story Card (Admin Only) & Admin Indicator */}
           <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setShowStoryModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.05] hover:bg-[#ff5500] hover:text-black border border-white/10 hover:border-[#ff5500] text-xs font-inter text-zinc-300 transition-all cursor-pointer shadow-sm group"
-              title="Create 9:16 Instagram Story Card"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#ff5500] group-hover:text-black transition-colors" />
-              <span>Story Card</span>
-            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setShowStoryModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.05] hover:bg-[#ff5500] hover:text-black border border-white/10 hover:border-[#ff5500] text-xs font-inter text-zinc-300 transition-all cursor-pointer shadow-sm group"
+                title="Create 9:16 Instagram Story Card"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#ff5500] group-hover:text-black transition-colors" />
+                <span>Story Card</span>
+              </button>
+            )}
 
             {isAdmin && (
               <span className="px-2.5 py-1 rounded-md bg-[#ff5500]/20 text-[#ff7a29] border border-[#ff5500]/35 text-[10px] font-inter uppercase tracking-wider backdrop-blur-md shadow-sm">
@@ -723,20 +725,22 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
         />
       )}
 
-      {/* Instagram Story Card Builder Studio */}
-      <StoryCardBuilderModal
-        isOpen={showStoryModal}
-        onClose={() => setShowStoryModal(false)}
-        review={review}
-        onUpdatePoster={onUpdatePoster}
-        onUpdateBackdrop={onUpdateBackdrop}
-        onUpdateBackdropFraming={async (reviewId, newFraming) => {
-          if (onUpdateBackdropFraming) {
-            await onUpdateBackdropFraming(reviewId, newFraming);
-          }
-          setReview((prev) => (prev ? { ...prev, backdropFraming: newFraming } : null));
-        }}
-      />
+      {/* Instagram Story Card Builder Studio (Admin Only) */}
+      {isAdmin && (
+        <StoryCardBuilderModal
+          isOpen={showStoryModal}
+          onClose={() => setShowStoryModal(false)}
+          review={review}
+          onUpdatePoster={onUpdatePoster}
+          onUpdateBackdrop={onUpdateBackdrop}
+          onUpdateBackdropFraming={async (reviewId, newFraming) => {
+            if (onUpdateBackdropFraming) {
+              await onUpdateBackdropFraming(reviewId, newFraming);
+            }
+            setReview((prev) => (prev ? { ...prev, backdropFraming: newFraming } : null));
+          }}
+        />
+      )}
 
     </div>
   );

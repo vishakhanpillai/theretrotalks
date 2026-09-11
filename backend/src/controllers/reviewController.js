@@ -2,6 +2,7 @@ const reviewRepository = require("../db/repositories/reviewRepository");
 const { TMDB_BASE_URL } = require("../config/env");
 const { fetchTMDB, extractTopCast, extractPrioritizedCrew } = require("../services/tmdbService");
 const { enrichReviewIfCreditsMissing } = require("../services/reviewEnrichmentService");
+const { broadcast } = require("../services/eventsService");
 
 const getAllReviews = (req, res) => {
   try {
@@ -62,6 +63,7 @@ const createReview = async (req, res) => {
     }
 
     const newReview = reviewRepository.createReview(reviewData);
+    broadcast("reviews_updated", { action: "create", id: newReview.id });
     res.status(201).json(newReview);
   } catch (err) {
     console.error("Error creating review:", err);
@@ -75,6 +77,7 @@ const updateReview = (req, res) => {
     if (!updated) {
       return res.status(404).json({ error: "Review not found" });
     }
+    broadcast("reviews_updated", { action: "update", id: updated.id });
     res.json(updated);
   } catch (err) {
     console.error("Error updating review:", err);
@@ -93,6 +96,7 @@ const updatePoster = (req, res) => {
     if (!updated) {
       return res.status(404).json({ error: "Review not found" });
     }
+    broadcast("reviews_updated", { action: "update_poster", id: req.params.id });
     res.json(updated);
   } catch (err) {
     console.error("Error updating poster:", err);
@@ -111,6 +115,7 @@ const updateBackdrop = (req, res) => {
     if (!updated) {
       return res.status(404).json({ error: "Review not found" });
     }
+    broadcast("reviews_updated", { action: "update_backdrop", id: req.params.id });
     res.json(updated);
   } catch (err) {
     console.error("Error updating backdrop:", err);
@@ -124,6 +129,7 @@ const deleteReview = (req, res) => {
     if (!success) {
       return res.status(404).json({ error: "Review not found" });
     }
+    broadcast("reviews_updated", { action: "delete", id: req.params.id });
     res.json({ success: true, message: "Review deleted successfully" });
   } catch (err) {
     console.error("Error deleting review:", err);
@@ -138,6 +144,7 @@ const reorderReviews = (req, res) => {
       return res.status(400).json({ error: "orderedIds array is required" });
     }
     const updatedReviews = reviewRepository.reorderReviews(orderedIds);
+    broadcast("reviews_updated", { action: "reorder" });
     res.json({
       success: true,
       message: "Reviews reordered successfully",
@@ -160,6 +167,7 @@ const updateBackdropFraming = (req, res) => {
     if (!updatedReview) {
       return res.status(404).json({ error: "Review not found" });
     }
+    broadcast("reviews_updated", { action: "update_framing", id: req.params.id });
     res.json({ success: true, message: "Backdrop framing updated successfully", review: updatedReview });
   } catch (err) {
     console.error("Error updating backdrop framing:", err);

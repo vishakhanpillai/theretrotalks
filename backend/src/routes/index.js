@@ -4,10 +4,14 @@ const router = express.Router();
 const authRoutes = require("./authRoutes");
 const reviewRoutes = require("./reviewRoutes");
 const movieRoutes = require("./movieRoutes");
+const { handleSseConnection } = require("../services/eventsService");
 
 router.use("/admin", authRoutes);
 router.use("/reviews", reviewRoutes);
 router.use("/movies", movieRoutes);
+
+// Real-time Server-Sent Events (SSE) live updates stream
+router.get("/events", handleSseConnection);
 
 // Image proxy for cross-origin safe canvas & story card image export
 router.get("/proxy-image", async (req, res) => {

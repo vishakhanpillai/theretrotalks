@@ -85,7 +85,7 @@ function App() {
       });
   }, [adminToken]);
 
-  // Fetch reviews from SQLite Database on mount
+  // Fetch reviews from SQLite Database
   const fetchReviewsFromDb = async () => {
     try {
       const res = await fetch("/api/reviews");
@@ -101,8 +101,60 @@ function App() {
     }
   };
 
+  // Real-time live synchronization via Server-Sent Events (SSE) + window focus/visibility
   useEffect(() => {
     fetchReviewsFromDb();
+
+    let eventSource: EventSource | null = null;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const connectSSE = () => {
+      try {
+        eventSource = new EventSource("/api/events");
+
+        eventSource.addEventListener("reviews_updated", () => {
+          fetchReviewsFromDb();
+        });
+
+        eventSource.onerror = () => {
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+          if (!reconnectTimeout) {
+            reconnectTimeout = setTimeout(() => {
+              reconnectTimeout = null;
+              connectSSE();
+            }, 5000);
+          }
+        };
+      } catch (e) {
+        console.warn("SSE connection error:", e);
+      }
+    };
+
+    connectSSE();
+
+    // Revalidate on visibility change or window focus
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible") {
+        fetchReviewsFromDb();
+      }
+    };
+
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+    };
   }, []);
 
   // Sync browser back/forward history navigation
@@ -130,6 +182,7 @@ function App() {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
+    fetchReviewsFromDb();
     setRoute({ page: "home", reviewId: null });
     window.history.pushState({}, "", "/");
   };
