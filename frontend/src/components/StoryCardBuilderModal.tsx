@@ -51,6 +51,8 @@ type StudioMode = "summary" | "full_set";
 type FooterHandleOption = "theretrotalks" | "personal" | "custom" | "hidden";
 type BodyFont = "inter" | "poppins" | "playfair" | "cinzel" | "jetbrains";
 type TitleFont = "poppins" | "cinzel" | "playfair" | "jetbrains" | "bebas";
+type TitleWeight = "normal" | "medium" | "semibold" | "bold" | "black";
+type TitleSize = "sm" | "base" | "lg" | "xl" | "2xl";
 type TextAlignment = "left" | "center" | "justify";
 type CardMaterialStyle = "obsidian" | "matte" | "ambient";
 type RatingDisplayFormat = "stars_metric" | "stars_minimal" | "director_index";
@@ -301,6 +303,8 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
   // Editorial Customization Suite
   const [bodyFont, setBodyFont] = useState<BodyFont>("inter");
   const [titleFont, setTitleFont] = useState<TitleFont>("poppins");
+  const [titleWeight, setTitleWeight] = useState<TitleWeight>("bold");
+  const [titleSize, setTitleSize] = useState<TitleSize>("lg");
   const [isReviewItalic, setIsReviewItalic] = useState<boolean>(true);
   const [quoteAlignment, setQuoteAlignment] = useState<TextAlignment>("left");
   const [materialStyle, setMaterialStyle] = useState<CardMaterialStyle>("obsidian");
@@ -459,6 +463,8 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
       setShowWatermark(true);
       setShowGenres(true);
       setTitleFont("poppins");
+      setTitleWeight("bold");
+      setTitleSize("lg");
       setBodyFont("inter");
       setIsReviewItalic(true);
       setQuoteAlignment("left");
@@ -634,6 +640,10 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
   const displayBackdrop = backdropDataUrl || getBackdropUrl(currentBackdrop, "original");
   const displayPoster = posterDataUrl || getPosterUrl(currentPoster, "w500");
   const hasFooterContent = Boolean(effectiveHandle) || (showGenres && Boolean(review.genres && review.genres.length > 0));
+  const hasReviewContent = Boolean(
+    (showStandoutQuote && standoutQuoteText.trim()) ||
+    (summaryReview && summaryReview.trim())
+  );
 
   // Story card numeric rating formatter (uses standard numbers e.g. 5/5 or 4.5/5)
   const formatStoryCardRating = (val: number): string => {
@@ -690,19 +700,53 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
     );
   };
 
+  const getTitleWeightClass = () => {
+    switch (titleWeight) {
+      case "normal":
+        return "font-normal";
+      case "medium":
+        return "font-medium";
+      case "semibold":
+        return "font-semibold";
+      case "black":
+        return "font-black";
+      case "bold":
+      default:
+        return "font-bold";
+    }
+  };
+
+  const getTitleSizeClass = () => {
+    switch (titleSize) {
+      case "sm":
+        return "text-sm sm:text-base";
+      case "base":
+        return "text-base sm:text-lg";
+      case "lg":
+        return "text-lg sm:text-xl";
+      case "xl":
+        return "text-xl sm:text-2xl";
+      case "2xl":
+        return "text-2xl sm:text-3xl";
+      default:
+        return "text-lg sm:text-xl";
+    }
+  };
+
   const getTitleFontClass = () => {
+    const weightClass = getTitleWeightClass();
     switch (titleFont) {
       case "cinzel":
-        return "font-cinzel tracking-wider uppercase";
+        return `font-cinzel tracking-wider uppercase ${weightClass}`;
       case "playfair":
-        return "font-playfair tracking-normal";
+        return `font-playfair tracking-normal ${weightClass}`;
       case "jetbrains":
-        return "font-jetbrains font-mono tracking-tight";
+        return `font-jetbrains font-mono tracking-tight ${weightClass}`;
       case "bebas":
-        return "font-bebas tracking-wider uppercase";
+        return `font-bebas tracking-wider uppercase ${weightClass}`;
       case "poppins":
       default:
-        return "font-poppins font-bold tracking-tight";
+        return `font-poppins tracking-tight ${weightClass}`;
     }
   };
 
@@ -783,7 +827,8 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
         </div>
         {ratingFormat === "stars_metric" && (
           <span
-            className={`${textClass} font-mono font-semibold tracking-wider text-zinc-300 drop-shadow-sm`}
+            className={`${textClass} font-poppins font-semibold tracking-wider drop-shadow-sm pt-0.5`}
+            style={{ color: activePalette.secondary }}
           >
             {formatStoryCardRating(rating)}
           </span>
@@ -1097,7 +1142,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                       }}
                     />
                     <span className="text-[9.5px] font-mono tracking-[0.28em] uppercase text-zinc-300 font-medium">
-                      THE RETRO TALKS · ARCHIVE
+                      THE RETRO TALKS
                     </span>
                   </div>
                 ) : (
@@ -1121,11 +1166,18 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
               {/* -------------------- MODE 1: QUICK STORY CARD -------------------- */}
               {studioMode === "summary" && (
                 <>
+                  {/* PRESET 1: The Cinematic Minimalist */}
                   {theme === "cinematic" && (
                     <div className="relative z-10 px-5 flex flex-col items-center text-center space-y-3 flex-1 justify-center min-h-0 overflow-hidden pb-2">
                       {/* Floating Poster */}
                       {showPoster && displayPoster && (
-                        <div className="relative w-28 aspect-[2/3] rounded-none overflow-hidden shadow-[0_15px_35px_rgba(0,0,0,0.9),0_0_20px_rgba(255,85,0,0.2)] border border-white/20">
+                        <div
+                          className={`relative aspect-[2/3] rounded-none overflow-hidden transition-all duration-300 ${
+                            hasReviewContent
+                              ? "w-28 shadow-[0_15px_35px_rgba(0,0,0,0.9),0_0_20px_rgba(255,85,0,0.2)] border border-white/20"
+                              : "w-32 sm:w-36 shadow-[0_20px_45px_rgba(0,0,0,0.95),0_0_25px_rgba(255,85,0,0.25)] border border-white/25 my-0.5"
+                          }`}
+                        >
                           <img
                             src={displayPoster}
                             alt={review.title}
@@ -1137,7 +1189,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
 
                       {/* Movie Title & Details */}
                       <div className="space-y-1">
-                        <h2 className={`text-xl font-bold text-white leading-tight drop-shadow-md ${getTitleFontClass()}`}>
+                        <h2 className={`text-white leading-tight drop-shadow-md ${getTitleSizeClass()} ${getTitleFontClass()}`}>
                           {review.title}
                         </h2>
                         <p className="text-[11px] font-inter text-zinc-300">
@@ -1147,49 +1199,62 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                       </div>
 
                       {/* Rating Display */}
-                      {renderCardRating("w-4 h-4", "text-[11px]", "center")}
+                      {renderCardRating(
+                        hasReviewContent ? "w-4 h-4" : "w-4.5 h-4.5",
+                        hasReviewContent ? "text-[11px]" : "text-xs",
+                        "center"
+                      )}
 
-                      {/* Summarized Review / Standout Quote */}
-                      <div className="w-full px-2 py-1 text-center relative flex flex-col items-center">
-                        {showStandoutQuote && standoutQuoteText.trim() ? (
-                          <div
-                            className={`w-full max-w-[310px] px-3.5 py-2.5 rounded-2xl ${getMaterialBoxClass()} border-l-[3px] text-left shadow-xl`}
-                            style={{ borderColor: activePalette.primary }}
-                          >
+                      {/* Summarized Review / Standout Quote (Only shown when review content exists) */}
+                      {hasReviewContent && (
+                        <div className="w-full px-2 py-1 text-center relative flex flex-col items-center">
+                          {showStandoutQuote && standoutQuoteText.trim() ? (
                             <div
-                              className="flex items-center gap-1.5 mb-1 text-[9px] font-mono uppercase tracking-wider font-bold"
-                              style={{ color: activePalette.secondary }}
+                              className={`w-full max-w-[310px] px-3.5 py-2.5 rounded-2xl ${getMaterialBoxClass()} border-l-[3px] text-left shadow-xl`}
+                              style={{ borderColor: activePalette.primary }}
                             >
-                              <Quote className="w-3 h-3 shrink-0" />
-                              <span>Standout Critique</span>
-                            </div>
-                            <p
-                              className={`text-[13px] font-bold italic text-white leading-snug drop-shadow-md ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
-                            >
-                              "{standoutQuoteText.trim()}"
-                            </p>
-                            {summaryReview && summaryReview !== standoutQuoteText && (
-                              <p className={`text-[11.5px] text-zinc-300 mt-2 pt-2 border-t border-white/10 line-clamp-3 leading-relaxed ${getQuoteFontClass()} ${getQuoteAlignClass()}`}>
-                                {summaryReview}
+                              <div
+                                className="flex items-center gap-1.5 mb-1 text-[9px] font-mono uppercase tracking-wider font-bold"
+                                style={{ color: activePalette.secondary }}
+                              >
+                                <Quote className="w-3 h-3 shrink-0" />
+                                <span>Standout Critique</span>
+                              </div>
+                              <p
+                                className={`text-[13px] font-bold italic text-white leading-snug drop-shadow-md ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
+                              >
+                                "{standoutQuoteText.trim()}"
                               </p>
-                            )}
-                          </div>
-                        ) : (
-                          <p
-                            className={`text-[13px] text-white/95 leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)] line-clamp-6 max-w-[310px] ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
-                          >
-                            {summaryReview ? `"${summaryReview}"` : "Write your summarized thoughts in the studio..."}
-                          </p>
-                        )}
-                      </div>
+                              {summaryReview && summaryReview !== standoutQuoteText && (
+                                <p className={`text-[11.5px] text-zinc-300 mt-2 pt-2 border-t border-white/10 line-clamp-3 leading-relaxed ${getQuoteFontClass()} ${getQuoteAlignClass()}`}>
+                                  {summaryReview}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <p
+                              className={`text-[13px] text-white/95 leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)] line-clamp-6 max-w-[310px] ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
+                            >
+                              "{summaryReview}"
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 
+                  {/* PRESET 2: Poster Hero */}
                   {theme === "poster_hero" && (
                     <div className="relative z-10 px-5 flex flex-col items-center text-center space-y-3 flex-1 justify-center min-h-0 overflow-hidden pb-2">
-                      {/* Larger Poster Hero */}
+                      {/* Poster Hero (Expanded in Rating-Only Mode) */}
                       {showPoster && displayPoster && (
-                        <div className="relative w-36 aspect-[2/3] rounded-none overflow-hidden shadow-[0_20px_45px_rgba(0,0,0,0.95),0_0_30px_rgba(255,85,0,0.3)] border-2 border-white/25">
+                        <div
+                          className={`relative aspect-[2/3] rounded-none overflow-hidden transition-all duration-300 ${
+                            hasReviewContent
+                              ? "w-36 shadow-[0_20px_45px_rgba(0,0,0,0.95),0_0_30px_rgba(255,85,0,0.3)] border-2 border-white/25"
+                              : "w-36 sm:w-40 shadow-[0_25px_50px_rgba(0,0,0,0.98),0_0_30px_rgba(255,85,0,0.3)] border-2 border-white/30 my-0.5"
+                          }`}
+                        >
                           <img
                             src={displayPoster}
                             alt={review.title}
@@ -1199,120 +1264,158 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                         </div>
                       )}
 
-                      <div>
-                        <h2 className={`text-lg font-bold text-white leading-tight drop-shadow-md ${getTitleFontClass()}`}>
+                      <div className="space-y-1">
+                        <h2 className={`text-white leading-tight drop-shadow-md ${getTitleSizeClass()} ${getTitleFontClass()}`}>
                           {review.title}
                         </h2>
-                        <div className="flex items-center justify-center gap-2 mt-1">
-                          <span className="text-[10px] font-inter text-zinc-300">
-                            {review.year} · {review.director}
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-[10px] sm:text-[11px] font-inter text-zinc-300">
+                            {review.year && `${review.year} · `}{review.director}
                           </span>
                         </div>
-                        <div className="mt-1.5">
-                          {renderCardRating("w-3 h-3", "text-[10px]", "center")}
+                        <div className="mt-1">
+                          {renderCardRating(
+                            hasReviewContent ? "w-3 h-3" : "w-4 h-4",
+                            hasReviewContent ? "text-[10px]" : "text-xs",
+                            "center"
+                          )}
                         </div>
                       </div>
 
-                      {/* Summarized Review / Standout Quote */}
-                      <div className="w-full px-3 py-1.5 text-center flex flex-col items-center">
-                        {showStandoutQuote && standoutQuoteText.trim() ? (
-                          <div
-                            className={`w-full max-w-[310px] px-3 py-2 rounded-2xl ${getMaterialBoxClass()} border-l-[3px] text-left shadow-xl`}
-                            style={{ borderColor: activePalette.primary }}
-                          >
+                      {/* Summarized Review / Standout Quote (Only shown when review content exists) */}
+                      {hasReviewContent && (
+                        <div className="w-full px-3 py-1.5 text-center flex flex-col items-center">
+                          {showStandoutQuote && standoutQuoteText.trim() ? (
                             <div
-                              className="flex items-center gap-1.5 mb-1 text-[9px] font-mono uppercase tracking-wider font-bold"
-                              style={{ color: activePalette.secondary }}
+                              className={`w-full max-w-[310px] px-3 py-2 rounded-2xl ${getMaterialBoxClass()} border-l-[3px] text-left shadow-xl`}
+                              style={{ borderColor: activePalette.primary }}
                             >
-                              <Quote className="w-3 h-3 shrink-0" />
-                              <span>Standout Critique</span>
-                            </div>
-                            <p
-                              className={`text-[12.5px] font-bold italic text-white leading-snug drop-shadow-md ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
-                            >
-                              "{standoutQuoteText.trim()}"
-                            </p>
-                            {summaryReview && summaryReview !== standoutQuoteText && (
-                              <p className={`text-[11px] text-zinc-300 mt-1.5 pt-1.5 border-t border-white/10 line-clamp-2 leading-relaxed ${getQuoteFontClass()} ${getQuoteAlignClass()}`}>
-                                {summaryReview}
+                              <div
+                                className="flex items-center gap-1.5 mb-1 text-[9px] font-mono uppercase tracking-wider font-bold"
+                                style={{ color: activePalette.secondary }}
+                              >
+                                <Quote className="w-3 h-3 shrink-0" />
+                                <span>Standout Critique</span>
+                              </div>
+                              <p
+                                className={`text-[12.5px] font-bold italic text-white leading-snug drop-shadow-md ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
+                              >
+                                "{standoutQuoteText.trim()}"
                               </p>
-                            )}
-                          </div>
-                        ) : (
-                          <p
-                            className={`text-xs text-zinc-100 leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.98)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)] line-clamp-5 max-w-[310px] ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
-                          >
-                            {summaryReview ? `“${summaryReview}”` : "Write your summarized thoughts in the studio..."}
-                          </p>
-                        )}
-                      </div>
+                              {summaryReview && summaryReview !== standoutQuoteText && (
+                                <p className={`text-[11px] text-zinc-300 mt-1.5 pt-1.5 border-t border-white/10 line-clamp-2 leading-relaxed ${getQuoteFontClass()} ${getQuoteAlignClass()}`}>
+                                  {summaryReview}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <p
+                              className={`text-xs text-zinc-100 leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.98)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)] line-clamp-5 max-w-[310px] ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
+                            >
+                              “{summaryReview}”
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 
+                  {/* PRESET 3: Editorial Monograph */}
                   {theme === "editorial" && (
                     <div className="relative z-10 px-5 flex flex-col space-y-3.5 flex-1 justify-center text-left min-h-0 overflow-hidden pb-2">
-                      {/* Top Poster + Info Row */}
-                      <div className={`flex items-center gap-3 p-2.5 rounded-2xl ${getMaterialBoxClass()}`}>
-                        {showPoster && displayPoster && (
-                          <div className="relative w-14 aspect-[2/3] rounded-none overflow-hidden flex-shrink-0 border border-white/20">
-                            <img
-                              src={displayPoster}
-                              alt={review.title}
-                              crossOrigin="anonymous"
-                              className="w-full h-full object-cover"
-                            />
+                      {hasReviewContent ? (
+                        <>
+                          {/* Top Poster + Info Row */}
+                          <div className={`flex items-center gap-3 p-2.5 rounded-2xl ${getMaterialBoxClass()}`}>
+                            {showPoster && displayPoster && (
+                              <div className="relative w-14 aspect-[2/3] rounded-none overflow-hidden flex-shrink-0 border border-white/20">
+                                <img
+                                  src={displayPoster}
+                                  alt={review.title}
+                                  crossOrigin="anonymous"
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
+                            <div className="flex-grow min-w-0">
+                              <h2 className={`text-white truncate ${getTitleSizeClass()} ${getTitleFontClass()}`}>
+                                {review.title}
+                              </h2>
+                              <p className="text-[10px] font-inter text-zinc-400">
+                                {review.year} · {review.mediaType === "tv" ? "Created by" : "Dir."} {review.director}
+                              </p>
+                              <div className="mt-1.5">
+                                {renderCardRating("w-3 h-3", "text-[10px]", "start")}
+                              </div>
+                            </div>
                           </div>
-                        )}
-                        <div className="flex-grow min-w-0">
-                          <h2 className={`text-base font-bold text-white truncate ${getTitleFontClass()}`}>
-                            {review.title}
-                          </h2>
-                          <p className="text-[10px] font-inter text-zinc-400">
-                            {review.year} · {review.mediaType === "tv" ? "Created by" : "Dir."} {review.director}
-                          </p>
-                          <div className="mt-1.5">
-                            {renderCardRating("w-3 h-3", "text-[10px]", "start")}
-                          </div>
-                        </div>
-                      </div>
 
-                      {/* Summarized Review / Standout Quote */}
-                      <div
-                        className="w-full pl-3.5 border-l-2 py-1 my-1"
-                        style={{ borderColor: activePalette.primary }}
-                      >
-                        <div
-                          className="text-[9px] font-mono uppercase tracking-widest mb-1.5 font-bold drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]"
-                          style={{ color: activePalette.secondary }}
-                        >
-                          {showStandoutQuote ? "Standout Critique" : "Editorial Review"}
-                        </div>
-                        {showStandoutQuote && standoutQuoteText.trim() ? (
-                          <div className="space-y-1.5">
-                            <p className={`text-[13.5px] font-bold italic text-white leading-snug drop-shadow-md ${getQuoteFontClass()}`}>
-                              "{standoutQuoteText.trim()}"
-                            </p>
-                            {summaryReview && summaryReview !== standoutQuoteText && (
-                              <p className="text-[11.5px] font-inter text-white/90 leading-relaxed italic line-clamp-3">
-                                {summaryReview}
+                          {/* Summarized Review / Standout Quote */}
+                          <div
+                            className="w-full pl-3.5 border-l-2 py-1 my-1"
+                            style={{ borderColor: activePalette.primary }}
+                          >
+                            <div
+                              className="text-[9px] font-mono uppercase tracking-widest mb-1.5 font-bold drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]"
+                              style={{ color: activePalette.secondary }}
+                            >
+                              {showStandoutQuote ? "Standout Critique" : "Editorial Review"}
+                            </div>
+                            {showStandoutQuote && standoutQuoteText.trim() ? (
+                              <div className="space-y-1.5">
+                                <p className={`text-[13.5px] font-bold italic text-white leading-snug drop-shadow-md ${getQuoteFontClass()}`}>
+                                  "{standoutQuoteText.trim()}"
+                                </p>
+                                {summaryReview && summaryReview !== standoutQuoteText && (
+                                  <p className="text-[11.5px] font-inter text-white/90 leading-relaxed italic line-clamp-3">
+                                    {summaryReview}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className={`text-[13px] text-white/95 leading-relaxed italic drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)] line-clamp-7 ${getQuoteFontClass()}`}>
+                                "{summaryReview}"
                               </p>
                             )}
                           </div>
-                        ) : (
-                          <p className={`text-[13px] text-white/95 leading-relaxed italic drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)] line-clamp-7 ${getQuoteFontClass()}`}>
-                            {summaryReview ? `"${summaryReview}"` : "Write your summarized thoughts in the studio..."}
-                          </p>
-                        )}
-                      </div>
+                        </>
+                      ) : (
+                        /* Rating-Only Responsive Editorial Showcase */
+                        <div className="flex flex-col items-center text-center space-y-3 my-auto">
+                          {showPoster && displayPoster && (
+                            <div className="relative w-32 sm:w-36 aspect-[2/3] rounded-none overflow-hidden shadow-2xl border border-white/20">
+                              <img
+                                src={displayPoster}
+                                alt={review.title}
+                                crossOrigin="anonymous"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="space-y-1">
+                            <h2 className={`text-white leading-tight drop-shadow-md ${getTitleSizeClass()} ${getTitleFontClass()}`}>
+                              {review.title}
+                            </h2>
+                            <p className="text-[11px] font-inter text-zinc-400">
+                              {review.year && `${review.year} · `}{review.mediaType === "tv" ? "Created by" : "Dir."} {review.director}
+                            </p>
+                          </div>
+                          {renderCardRating("w-4.5 h-4.5", "text-xs", "center")}
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {/* PRESET 4: The Auteur Monolith (Gallery-Grade Museum Monograph) */}
                   {theme === "monolith" && (
-                    <div className="relative z-10 px-6 flex flex-col items-center justify-between flex-1 min-h-0 overflow-hidden py-3 text-center">
+                    <div className="relative z-10 px-6 flex flex-col items-center justify-center flex-1 min-h-0 overflow-hidden py-3 text-center space-y-3">
                       {/* Floating Monolith Poster */}
                       {showPoster && displayPoster && (
-                        <div className="relative w-28 sm:w-32 aspect-[2/3] shrink-0 overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.95)] border border-white/20">
+                        <div
+                          className={`relative aspect-[2/3] shrink-0 overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.95)] border border-white/20 transition-all duration-300 ${
+                            hasReviewContent ? "w-28 sm:w-30" : "w-32 sm:w-36 shadow-[0_25px_50px_rgba(0,0,0,0.98)] border-white/25 my-0.5"
+                          }`}
+                        >
                           <img
                             src={displayPoster}
                             alt={review.title}
@@ -1323,55 +1426,61 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                       )}
 
                       {/* Film Metadata & Title */}
-                      <div className="space-y-1.5 my-1.5 max-w-[310px]">
-                        <div className="text-[9px] font-mono tracking-[0.25em] uppercase text-zinc-400">
+                      <div className="space-y-1 max-w-[310px] shrink-0">
+                        <div className="text-[9.5px] font-mono tracking-[0.25em] uppercase text-zinc-400">
                           {review.year && <span>{review.year} — </span>}
                           <span>{review.mediaType === "tv" ? "Created by" : "Dir."} {review.director}</span>
                         </div>
 
-                        <h2 className={`text-xl font-bold text-white leading-tight drop-shadow-md ${getTitleFontClass()}`}>
+                        <h2 className={`text-white leading-tight drop-shadow-md ${getTitleSizeClass()} ${getTitleFontClass()}`}>
                           {review.title}
                         </h2>
 
                         {showHairlineAccent && (
                           <div
-                            className="w-8 h-[1.5px] mx-auto my-1.5 opacity-80"
+                            className="w-8 h-[1.5px] mx-auto my-1 opacity-80"
                             style={{ backgroundColor: activePalette.primary }}
                           />
                         )}
 
-                        {renderCardRating("w-3.5 h-3.5", "text-[10px]", "center")}
-                      </div>
-
-                      {/* Monograph Critique Card */}
-                      <div className="w-full max-w-[315px] px-0.5">
-                        {showStandoutQuote && standoutQuoteText.trim() ? (
-                          <div
-                            className={`p-3.5 rounded-2xl ${getMaterialBoxClass()} ${getQuoteAlignClass()}`}
-                            style={{ borderTop: `2px solid ${activePalette.primary}` }}
-                          >
-                            <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-zinc-400 mb-1.5 font-semibold">
-                              CRITICAL REFLECTION
-                            </div>
-                            <p
-                              className={`text-[13px] font-semibold text-white leading-snug drop-shadow-md ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
-                            >
-                              "{standoutQuoteText.trim()}"
-                            </p>
-                            {summaryReview && summaryReview !== standoutQuoteText && (
-                              <p className={`text-[11px] text-zinc-300 mt-2 pt-2 border-t border-white/[0.08] line-clamp-3 leading-relaxed ${getQuoteFontClass()} ${getQuoteAlignClass()}`}>
-                                {summaryReview}
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <p
-                            className={`text-[12.5px] text-zinc-200 leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] line-clamp-5 ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
-                          >
-                            {summaryReview ? `"${summaryReview}"` : "Write your summarized thoughts in the studio..."}
-                          </p>
+                        {renderCardRating(
+                          hasReviewContent ? "w-3.5 h-3.5" : "w-4.5 h-4.5",
+                          hasReviewContent ? "text-[10px]" : "text-xs",
+                          "center"
                         )}
                       </div>
+
+                      {/* Monograph Critique Card (Only shown when review content exists) */}
+                      {hasReviewContent && (
+                        <div className="w-full max-w-[315px] px-0.5 shrink-0">
+                          {showStandoutQuote && standoutQuoteText.trim() ? (
+                            <div
+                              className={`p-3 rounded-2xl ${getMaterialBoxClass()} ${getQuoteAlignClass()}`}
+                              style={{ borderTop: `2px solid ${activePalette.primary}` }}
+                            >
+                              <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-zinc-400 mb-1 font-semibold">
+                                CRITICAL REFLECTION
+                              </div>
+                              <p
+                                className={`text-[13px] font-semibold text-white leading-snug drop-shadow-md ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
+                              >
+                                "{standoutQuoteText.trim()}"
+                              </p>
+                              {summaryReview && summaryReview !== standoutQuoteText && (
+                                <p className={`text-[11px] text-zinc-300 mt-2 pt-2 border-t border-white/[0.08] line-clamp-3 leading-relaxed ${getQuoteFontClass()} ${getQuoteAlignClass()}`}>
+                                  {summaryReview}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <p
+                              className={`text-[12.5px] text-zinc-200 leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] line-clamp-5 ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
+                            >
+                              "{summaryReview}"
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1379,7 +1488,11 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   {theme === "cinemascope" && (
                     <div className="relative z-10 px-5 flex flex-col justify-between flex-1 min-h-0 overflow-hidden py-3">
                       {/* Anamorphic Frame with Viewfinder Corner Reticles */}
-                      <div className="relative w-full aspect-[21/10] overflow-hidden rounded-xl border border-white/20 shadow-2xl bg-black shrink-0">
+                      <div
+                        className={`relative w-full overflow-hidden rounded-xl border border-white/20 shadow-2xl bg-black shrink-0 ${
+                          hasReviewContent ? "aspect-[21/10]" : "aspect-[16/10] sm:aspect-[16/9]"
+                        }`}
+                      >
                         <img
                           src={(displayBackdrop || displayPoster) ?? undefined}
                           alt={review.title}
@@ -1403,7 +1516,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                             <span className="text-[8.5px] font-mono tracking-[0.2em] uppercase text-zinc-300 block">
                               CINEMASCOPE · 2.39:1
                             </span>
-                            <h2 className={`text-base font-bold text-white leading-tight truncate drop-shadow-lg ${getTitleFontClass()}`}>
+                            <h2 className={`text-white leading-tight truncate drop-shadow-lg ${getTitleSizeClass()} ${getTitleFontClass()}`}>
                               {review.title}
                             </h2>
                           </div>
@@ -1423,41 +1536,53 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                         <span className="shrink-0">{review.genres?.[0]?.toUpperCase() || "FEATURE"}</span>
                       </div>
 
-                      {/* Director's Critique Deck */}
-                      <div className={`p-3.5 rounded-2xl ${getMaterialBoxClass()} space-y-1.5`}>
-                        <div className="flex items-center justify-between">
+                      {/* Director's Critique Deck OR Dedicated Rating Presentation */}
+                      {hasReviewContent ? (
+                        <div className={`p-3.5 rounded-2xl ${getMaterialBoxClass()} space-y-1.5`}>
+                          <div className="flex items-center justify-between">
+                            <div
+                              className="text-[9px] font-mono uppercase tracking-[0.2em] font-semibold flex items-center gap-1.5"
+                              style={{ color: activePalette.secondary }}
+                            >
+                              <span>AUTEUR CRITIQUE</span>
+                            </div>
+                            <div className="shrink-0">
+                              {renderCardRating("w-3 h-3", "text-[10px]", "end")}
+                            </div>
+                          </div>
+
+                          {showStandoutQuote && standoutQuoteText.trim() ? (
+                            <div className="space-y-1.5 pt-0.5">
+                              <p
+                                className={`text-[13px] font-semibold text-white leading-snug drop-shadow-md ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
+                              >
+                                "{standoutQuoteText.trim()}"
+                              </p>
+                              {summaryReview && summaryReview !== standoutQuoteText && (
+                                <p className={`text-[11px] text-zinc-300 pt-1.5 border-t border-white/[0.07] line-clamp-3 leading-relaxed ${getQuoteFontClass()} ${getQuoteAlignClass()}`}>
+                                  {summaryReview}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <p
+                              className={`text-[12.5px] text-zinc-200 leading-relaxed line-clamp-5 ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
+                            >
+                              "{summaryReview}"
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className={`p-3.5 rounded-2xl ${getMaterialBoxClass()} flex flex-col items-center justify-center space-y-1.5 shadow-xl my-auto`}>
                           <div
-                            className="text-[9px] font-mono uppercase tracking-[0.2em] font-semibold flex items-center gap-1.5"
+                            className="text-[9px] font-mono uppercase tracking-[0.25em] font-semibold"
                             style={{ color: activePalette.secondary }}
                           >
-                            <span>AUTEUR CRITIQUE</span>
+                            AUTEUR VERDICT
                           </div>
-                          <div className="shrink-0">
-                            {renderCardRating("w-3 h-3", "text-[10px]", "end")}
-                          </div>
+                          {renderCardRating("w-4.5 h-4.5", "text-xs", "center")}
                         </div>
-
-                        {showStandoutQuote && standoutQuoteText.trim() ? (
-                          <div className="space-y-1.5 pt-0.5">
-                            <p
-                              className={`text-[13px] font-semibold text-white leading-snug drop-shadow-md ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
-                            >
-                              "{standoutQuoteText.trim()}"
-                            </p>
-                            {summaryReview && summaryReview !== standoutQuoteText && (
-                              <p className={`text-[11px] text-zinc-300 pt-1.5 border-t border-white/[0.07] line-clamp-3 leading-relaxed ${getQuoteFontClass()} ${getQuoteAlignClass()}`}>
-                                {summaryReview}
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <p
-                            className={`text-[12.5px] text-zinc-200 leading-relaxed line-clamp-5 ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
-                          >
-                            {summaryReview ? `"${summaryReview}"` : "Write your summarized thoughts in the studio..."}
-                          </p>
-                        )}
-                      </div>
+                      )}
 
                       {/* Bottom Master Reel Stamp */}
                       <div className="flex items-center justify-between text-[9px] font-mono text-zinc-400 pt-0.5">
@@ -1477,7 +1602,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                           <span>ARCHIVE · {review.year || "2026"}</span>
                         </div>
 
-                        <h2 className={`text-lg sm:text-xl font-bold text-white leading-tight tracking-tight ${getTitleFontClass()}`}>
+                        <h2 className={`text-white leading-tight tracking-tight ${getTitleSizeClass()} ${getTitleFontClass()}`}>
                           {review.title}
                         </h2>
 
@@ -1490,48 +1615,74 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                         </div>
                       </div>
 
-                      {/* Middle Deck: Poster & Key Verdict */}
-                      <div className="flex items-center gap-3 my-1.5">
-                        {showPoster && displayPoster && (
-                          <div className="relative w-18 aspect-[2/3] shrink-0 overflow-hidden shadow-2xl border border-white/20">
-                            <img
-                              src={displayPoster}
-                              alt={review.title}
-                              crossOrigin="anonymous"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
+                      {/* Middle Deck: Poster & Key Verdict (or Centered Hero if no review) */}
+                      {hasReviewContent ? (
+                        <>
+                          <div className="flex items-center gap-3 my-1.5">
+                            {showPoster && displayPoster && (
+                              <div className="relative w-18 aspect-[2/3] shrink-0 overflow-hidden shadow-2xl border border-white/20">
+                                <img
+                                  src={displayPoster}
+                                  alt={review.title}
+                                  crossOrigin="anonymous"
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
 
-                        <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div
+                                className="text-[9px] font-mono uppercase tracking-widest font-semibold mb-1"
+                                style={{ color: activePalette.secondary }}
+                              >
+                                THE VERDICT
+                              </div>
+                              <p
+                                className={`text-[12.5px] font-semibold text-white leading-snug drop-shadow-md line-clamp-4 ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
+                              >
+                                "{showStandoutQuote && standoutQuoteText.trim()
+                                  ? standoutQuoteText.trim()
+                                  : summaryReview}"
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Lower Broadsheet Analysis Box */}
                           <div
-                            className="text-[9px] font-mono uppercase tracking-widest font-semibold mb-1"
-                            style={{ color: activePalette.secondary }}
+                            className={`p-3 rounded-2xl ${getMaterialBoxClass()} border-l-2`}
+                            style={{ borderLeftColor: activePalette.primary }}
                           >
-                            THE VERDICT
+                            <div className="text-[9px] font-mono uppercase tracking-widest text-zinc-400 mb-1 font-semibold">
+                              CRITIQUE EXCERPT
+                            </div>
+                            <p className={`text-[11.5px] text-zinc-200 leading-relaxed line-clamp-4 ${getQuoteFontClass()} ${getQuoteAlignClass()}`}>
+                              {summaryReview}
+                            </p>
                           </div>
-                          <p
-                            className={`text-[12.5px] font-semibold text-white leading-snug drop-shadow-md line-clamp-4 ${getQuoteFontClass()} ${getQuoteAlignClass()}`}
-                          >
-                            "{showStandoutQuote && standoutQuoteText.trim()
-                              ? standoutQuoteText.trim()
-                              : (summaryReview || "Write your summarized thoughts in the studio...")}"
-                          </p>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center my-auto space-y-3">
+                          {showPoster && displayPoster && (
+                            <div className="relative w-32 sm:w-36 aspect-[2/3] shrink-0 overflow-hidden shadow-2xl border border-white/20">
+                              <img
+                                src={displayPoster}
+                                alt={review.title}
+                                crossOrigin="anonymous"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="text-center space-y-1">
+                            <div
+                              className="text-[9px] font-mono uppercase tracking-[0.25em] font-semibold"
+                              style={{ color: activePalette.secondary }}
+                            >
+                              OFFICIAL RATING
+                            </div>
+                            {renderCardRating("w-4.5 h-4.5", "text-xs", "center")}
+                          </div>
                         </div>
-                      </div>
-
-                      {/* Lower Broadsheet Analysis Box */}
-                      <div
-                        className={`p-3 rounded-2xl ${getMaterialBoxClass()} border-l-2`}
-                        style={{ borderLeftColor: activePalette.primary }}
-                      >
-                        <div className="text-[9px] font-mono uppercase tracking-widest text-zinc-400 mb-1 font-semibold">
-                          CRITIQUE EXCERPT
-                        </div>
-                        <p className={`text-[11.5px] text-zinc-200 leading-relaxed line-clamp-4 ${getQuoteFontClass()} ${getQuoteAlignClass()}`}>
-                          {summaryReview || "No extended review logged."}
-                        </p>
-                      </div>
+                      )}
 
                       {/* Bottom Masthead Stamp */}
                       <div className="flex items-center justify-between text-[9px] font-mono text-zinc-400 pt-1 border-t border-white/[0.08]">
@@ -1548,7 +1699,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                 <div className="relative z-10 px-4 flex flex-col flex-1 min-h-0 overflow-hidden pt-1 pb-2">
                   {/* Slide Top Left-Aligned Header: Title, Year, Director & Star Rating */}
                   <div className="text-left space-y-1 pb-2 border-b border-white/[0.1] shrink-0">
-                    <h2 className={`text-base sm:text-lg font-bold text-white leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] ${getTitleFontClass()}`}>
+                    <h2 className={`text-white leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] ${getTitleSizeClass()} ${getTitleFontClass()}`}>
                       {review.title}
                     </h2>
 
@@ -2223,6 +2374,68 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                     >
                       <div className={`text-xs text-white truncate ${titleF.fontCls}`}>{titleF.label}</div>
                       <div className="text-[9px] font-mono text-zinc-400 mt-0.5 leading-tight">{titleF.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Title Font Weight / Style Selector */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-inter text-zinc-300 font-medium">Film Title Weight</label>
+                  <span className="text-[9px] font-mono text-zinc-400 capitalize">{titleWeight}</span>
+                </div>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {[
+                    { id: "normal", label: "400", sub: "Regular", weightCls: "font-normal" },
+                    { id: "medium", label: "500", sub: "Medium", weightCls: "font-medium" },
+                    { id: "semibold", label: "600", sub: "Semi", weightCls: "font-semibold" },
+                    { id: "bold", label: "700", sub: "Bold", weightCls: "font-bold" },
+                    { id: "black", label: "900", sub: "Black", weightCls: "font-black" },
+                  ].map((w) => (
+                    <button
+                      key={w.id}
+                      type="button"
+                      onClick={() => setTitleWeight(w.id as TitleWeight)}
+                      className={`py-1.5 px-1 rounded-lg text-center border transition-all cursor-pointer ${
+                        titleWeight === w.id
+                          ? "bg-[#ff5500] text-black border-[#ff5500] font-bold shadow-sm"
+                          : "bg-white/[0.02] border-white/[0.07] text-zinc-300 hover:text-white hover:border-white/20"
+                      }`}
+                    >
+                      <div className={`text-xs ${w.weightCls}`}>{w.label}</div>
+                      <div className="text-[8.5px] font-inter opacity-75">{w.sub}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Title Font Size Selector */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-inter text-zinc-300 font-medium">Film Title Size</label>
+                  <span className="text-[9px] font-mono text-zinc-400 uppercase">{titleSize}</span>
+                </div>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {[
+                    { id: "sm", label: "S", sub: "Small" },
+                    { id: "base", label: "M", sub: "Regular" },
+                    { id: "lg", label: "L", sub: "Medium" },
+                    { id: "xl", label: "XL", sub: "Large" },
+                    { id: "2xl", label: "2XL", sub: "Display" },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setTitleSize(s.id as TitleSize)}
+                      className={`py-1.5 px-1 rounded-lg text-center border transition-all cursor-pointer ${
+                        titleSize === s.id
+                          ? "bg-[#ff5500] text-black border-[#ff5500] font-bold shadow-sm"
+                          : "bg-white/[0.02] border-white/[0.07] text-zinc-300 hover:text-white hover:border-white/20"
+                      }`}
+                    >
+                      <div className="text-xs font-mono font-bold">{s.label}</div>
+                      <div className="text-[8.5px] font-inter opacity-75">{s.sub}</div>
                     </button>
                   ))}
                 </div>
