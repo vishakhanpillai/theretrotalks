@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { Film } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Film, Search, ArrowUpDown, X, LayoutList, LayoutGrid } from "lucide-react";
 import type { Movie, Review, UpcomingMovie } from "../types";
 import { ReviewCard } from "../components/ReviewCard";
+import { ReviewPosterCard } from "../components/ReviewPosterCard";
 import { MovieModal } from "../components/MovieModal";
 import { AboutModal } from "../components/AboutModal";
 import { UpcomingMoviesSidebar } from "../components/UpcomingMoviesSidebar";
@@ -24,6 +25,30 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
 
   const [navSolidProgress, setNavSolidProgress] = useState<number>(0);
 
+  // Filter and Sorting state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<
+    "latest" | "highest_rated" | "lowest_rated" | "year_newest" | "year_oldest" | "title_az"
+  >("latest");
+
+  // View Mode (Magazine vs Poster Grid)
+  const [viewMode, setViewMode] = useState<"magazine" | "grid">(() => {
+    try {
+      const saved = localStorage.getItem("retro_talks_view_mode");
+      if (saved === "grid" || saved === "magazine") return saved;
+    } catch {}
+    return "magazine";
+  });
+
+  const [visibleCount, setVisibleCount] = useState<number>(() => (viewMode === "grid" ? 9 : 6));
+
+  const handleToggleViewMode = (mode: "magazine" | "grid") => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem("retro_talks_view_mode", mode);
+    } catch {}
+  };
+
   // Scroll to top on mount and track scroll position for header solid transition
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -39,6 +64,63 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Filter and Sort Reviews
+  const filteredAndSortedReviews = useMemo(() => {
+    let list = [...reviews];
+
+    // 1. Live Search (Movie Title Only)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter((r) => r.title?.toLowerCase().includes(q));
+    }
+
+    // 2. Sorting
+    switch (sortBy) {
+      case "highest_rated":
+        list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        break;
+      case "lowest_rated":
+        list.sort((a, b) => (a.rating || 0) - (b.rating || 0));
+        break;
+      case "year_newest":
+        list.sort((a, b) => {
+          const yA = parseInt(a.year || "0", 10) || 0;
+          const yB = parseInt(b.year || "0", 10) || 0;
+          return yB - yA;
+        });
+        break;
+      case "year_oldest":
+        list.sort((a, b) => {
+          const yA = parseInt(a.year || "0", 10) || 0;
+          const yB = parseInt(b.year || "0", 10) || 0;
+          return yA - yB;
+        });
+        break;
+      case "title_az":
+        list.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "latest":
+      default:
+        // Respect default chronological / pinned display order
+        break;
+    }
+
+    return list;
+  }, [reviews, searchQuery, sortBy]);
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setSortBy("latest");
+  };
+
+  // Reset pagination when search, sort, or view mode changes
+  useEffect(() => {
+    setVisibleCount(viewMode === "grid" ? 9 : 6);
+  }, [searchQuery, sortBy, viewMode]);
+
+  const visibleReviews = filteredAndSortedReviews.slice(0, visibleCount);
+  const hasMore = visibleReviews.length < filteredAndSortedReviews.length;
 
   return (
     <div className="min-h-screen bg-[#07080a] text-[#ededed] flex flex-col font-poppins selection:bg-[#ff5500] selection:text-black relative overflow-x-hidden">
@@ -121,35 +203,152 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
           {/* Left Column: Widened Reviews List */}
           <div className="flex-grow min-w-0 w-full space-y-6">
             
-            {/* Reviews Section Header */}
-            <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xs font-inter uppercase tracking-wider text-zinc-400">
-                  Reviews
-                </h2>
-                <span className="text-xs font-inter text-zinc-600">({reviews.length})</span>
+            {/* Reviews Section Header & Controls */}
+            <div className="space-y-3 pb-3 border-b border-white/[0.06]">
+              {/* Top Row: Section Title & High-Width Search + Sort + View Mode Controls */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5">
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <h2 className="text-xs font-inter uppercase tracking-[0.2em] font-semibold text-zinc-300">
+                    Reviews
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-[11px] font-mono text-zinc-400">
+                    {filteredAndSortedReviews.length}
+                    {filteredAndSortedReviews.length !== reviews.length && ` / ${reviews.length}`}
+                  </span>
+                </div>
+
+                {/* High-Width Search & Sort Controls */}
+                <div className="flex items-center gap-2.5 flex-grow sm:max-w-2xl justify-end flex-wrap sm:flex-nowrap">
+                  {/* Higher Width Live Search Input (Title Only) */}
+                  <div className="relative flex-1 min-w-[220px]">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search reviews by movie title..."
+                      className="w-full pl-9.5 pr-8 py-2 rounded-xl bg-[#0b0e14] border border-white/[0.08] focus:border-[#ff5500]/50 text-xs sm:text-sm font-inter text-white placeholder-zinc-500 outline-none transition-all shadow-inner focus:shadow-[0_0_15px_rgba(255,85,0,0.15)]"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:text-white cursor-pointer"
+                        title="Clear search"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Sort Dropdown */}
+                  <div className="relative shrink-0">
+                    <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0b0e14] border border-white/[0.08] text-xs font-inter text-zinc-300 hover:border-white/20 transition-colors">
+                      <ArrowUpDown className="w-3.5 h-3.5 text-[#ff5500] shrink-0" />
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as any)}
+                        className="bg-transparent text-xs text-zinc-300 focus:text-white outline-none cursor-pointer pr-1 font-medium"
+                      >
+                        <option value="latest" className="bg-[#0b0e14] text-white">Latest Logged</option>
+                        <option value="highest_rated" className="bg-[#0b0e14] text-white">Highest Rated (5★ → 1★)</option>
+                        <option value="lowest_rated" className="bg-[#0b0e14] text-white">Lowest Rated (1★ → 5★)</option>
+                        <option value="year_newest" className="bg-[#0b0e14] text-white">Year (Newest First)</option>
+                        <option value="year_oldest" className="bg-[#0b0e14] text-white">Year (Oldest First)</option>
+                        <option value="title_az" className="bg-[#0b0e14] text-white">Title (A – Z)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* View Mode Toggle: Magazine (List) vs Poster Grid */}
+                  <div className="flex items-center p-1 rounded-xl bg-[#0b0e14] border border-white/[0.08] shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleViewMode("magazine")}
+                      className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                        viewMode === "magazine"
+                          ? "bg-white/[0.14] text-white shadow-sm"
+                          : "text-zinc-500 hover:text-zinc-300"
+                      }`}
+                      title="Editorial Magazine View"
+                    >
+                      <LayoutList className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleViewMode("grid")}
+                      className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                        viewMode === "grid"
+                          ? "bg-white/[0.14] text-white shadow-sm"
+                          : "text-zinc-500 hover:text-zinc-300"
+                      }`}
+                      title="Compact Poster Grid View"
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Widened Reviews Card List */}
-            {reviews.length > 0 ? (
-              <div className="space-y-6 sm:space-y-8">
-                {reviews.map((rev) => (
-                  <ReviewCard
-                    key={rev.id}
-                    review={rev}
-                    onOpenReview={() => onOpenReview(rev)}
-                    isAdmin={false}
-                  />
-                ))}
+            {/* Reviews Display Area */}
+            {filteredAndSortedReviews.length > 0 ? (
+              <div className="space-y-8">
+                {viewMode === "magazine" ? (
+                  <div className="space-y-6 sm:space-y-8">
+                    {visibleReviews.map((rev) => (
+                      <ReviewCard
+                        key={rev.id}
+                        review={rev}
+                        onOpenReview={() => onOpenReview(rev)}
+                        isAdmin={false}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
+                    {visibleReviews.map((rev) => (
+                      <ReviewPosterCard
+                        key={rev.id}
+                        review={rev}
+                        onOpenReview={() => onOpenReview(rev)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Load More Button */}
+                {hasMore && (
+                  <div className="pt-4 pb-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setVisibleCount((prev) => prev + (viewMode === "grid" ? 6 : 4))}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0b0e14] hover:bg-[#121620] border border-white/10 hover:border-[#ff5500]/50 text-xs font-inter font-medium text-zinc-300 hover:text-white transition-all cursor-pointer shadow-lg hover:shadow-[0_0_20px_rgba(255,85,0,0.15)] group"
+                    >
+                      <span>Load More Films</span>
+                      <span className="text-[10.5px] font-mono text-zinc-500 group-hover:text-zinc-400">
+                        ({visibleReviews.length} of {filteredAndSortedReviews.length})
+                      </span>
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="text-center py-20 bg-[#090b0e] border border-white/[0.06] rounded-3xl p-8 max-w-md mx-auto">
-                <Film className="w-6 h-6 text-zinc-600 mx-auto mb-3" />
-                <h3 className="text-base font-poppins font-bold text-white">No reviews published yet</h3>
+              <div className="text-center py-16 bg-[#090b0e] border border-white/[0.06] rounded-3xl p-8 max-w-md mx-auto">
+                <Film className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
+                <h3 className="text-base font-poppins font-bold text-white">No reviews found</h3>
                 <p className="text-xs text-zinc-400 mt-1">
-                  Check back soon for new reflections.
+                  {searchQuery.trim()
+                    ? `No films found with title matching "${searchQuery}".`
+                    : `No reviews found.`}
                 </p>
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="mt-4 px-4 py-2 rounded-xl bg-[#ff5500] text-black font-semibold text-xs hover:bg-[#ff6a1f] transition-all cursor-pointer shadow-lg"
+                >
+                  Clear Search
+                </button>
               </div>
             )}
 
