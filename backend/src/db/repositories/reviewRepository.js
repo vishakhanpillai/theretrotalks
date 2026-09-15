@@ -223,6 +223,140 @@ const reorderReviews = (orderedIds) => {
   return getAllReviews();
 };
 
+const importReviewsBatch = (rawReviews, mode = "replace") => {
+  if (!Array.isArray(rawReviews) || rawReviews.length === 0) {
+    return { count: 0, total: getAllReviews().length };
+  }
+
+  const now = Date.now();
+  const insertStmt = db.prepare(`
+    INSERT OR REPLACE INTO reviews (
+      id, tmdb_id, title, year, poster, backdrop, backdrop_framing, director, genres,
+      rating, review, watched_date, is_favorite, cast, crew, overview, slug,
+      display_order, media_type, created_at, updated_at
+    ) VALUES (
+      ?, ?, ?, ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?
+    )
+  `);
+
+  db.exec("BEGIN TRANSACTION;");
+  try {
+    if (mode === "replace") {
+      db.exec("DELETE FROM reviews;");
+    }
+
+    let inserted = 0;
+    rawReviews.forEach((item, index) => {
+      if (!item || (!item.title && !item.Title)) return;
+
+      const title = String(item.title || item.Title || "Untitled").trim();
+      const id = String(item.id || item.ID || `rev-${now}-${index}-${Math.random().toString(36).substring(2, 6)}`);
+      const tmdbId = item.tmdbId ?? item.tmdb_id ?? item.TMDB_ID;
+      const parsedTmdbId = tmdbId !== undefined && tmdbId !== null && tmdbId !== "" ? Number(tmdbId) : null;
+      const year = String(item.year ?? item.Year ?? "").trim();
+      const poster = String(item.poster ?? item.Poster_URL ?? item.poster_url ?? "");
+      const backdrop = String(item.backdrop ?? item.Backdrop_URL ?? item.backdrop_url ?? "");
+      
+      let framingVal = item.backdropFraming ?? item.backdrop_framing;
+      if (framingVal && typeof framingVal === "object") {
+        framingVal = JSON.stringify(framingVal);
+      } else if (typeof framingVal !== "string") {
+        framingVal = null;
+      }
+
+      const director = String(item.director ?? item.Director ?? "Unknown Director").trim();
+
+      let genresVal = item.genres ?? item.Genres;
+      let genresStr = "[]";
+      if (Array.isArray(genresVal)) {
+        genresStr = JSON.stringify(genresVal);
+      } else if (typeof genresVal === "string") {
+        const trimmed = genresVal.trim();
+        if (trimmed.startsWith("[")) {
+          genresStr = trimmed;
+        } else {
+          genresStr = JSON.stringify(trimmed.split(",").map((s) => s.trim()).filter(Boolean));
+        }
+      }
+
+      const rating = Number(item.rating ?? item.Rating ?? 0) || 0;
+      const reviewText = String(item.review ?? item.Review ?? "").trim();
+      const watchedDate = String(
+        item.watchedDate ?? item.watched_date ?? item.Watched_Date ?? new Date(now).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+      ).trim();
+
+      const favVal = item.isFavorite ?? item.is_favorite ?? item.Favorite;
+      const isFavorite = favVal === 1 || favVal === true || favVal === "Yes" || favVal === "true" ? 1 : 0;
+
+      let castVal = item.cast ?? item.Cast;
+      let castStr = "[]";
+      if (Array.isArray(castVal)) {
+        castStr = JSON.stringify(castVal);
+      } else if (typeof castVal === "string" && castVal.trim().startsWith("[")) {
+        castStr = castVal.trim();
+      }
+
+      let crewVal = item.crew ?? item.Crew;
+      let crewStr = "[]";
+      if (Array.isArray(crewVal)) {
+        crewStr = JSON.stringify(crewVal);
+      } else if (typeof crewVal === "string" && crewVal.trim().startsWith("[")) {
+        crewStr = crewVal.trim();
+      }
+
+      const overview = item.overview ?? item.Overview ?? null;
+      const slug = item.slug ?? item.Slug ?? slugify(title);
+      const displayOrder = typeof (item.displayOrder ?? item.display_order ?? item.Display_Order) === "number"
+        ? (item.displayOrder ?? item.display_order ?? item.Display_Order)
+        : index;
+      const mediaType = String(item.mediaType ?? item.media_type ?? item.Type ?? "movie").toLowerCase() === "tv" ? "tv" : "movie";
+
+      let createdAt = Number(item.createdAt ?? item.created_at);
+      if (!createdAt || isNaN(createdAt)) {
+        if (item.Created_At) {
+          const parsedDate = new Date(item.Created_At).getTime();
+          createdAt = !isNaN(parsedDate) ? parsedDate : now - index * 1000;
+        } else {
+          createdAt = now - index * 1000;
+        }
+      }
+
+      insertStmt.run(
+        id,
+        parsedTmdbId,
+        title,
+        year,
+        poster,
+        backdrop,
+        framingVal,
+        director,
+        genresStr,
+        rating,
+        reviewText,
+        watchedDate,
+        isFavorite,
+        castStr,
+        crewStr,
+        overview,
+        slug,
+        displayOrder,
+        mediaType,
+        createdAt,
+        now
+      );
+      inserted++;
+    });
+
+    db.exec("COMMIT;");
+    return { count: inserted, total: getAllReviews().length };
+  } catch (err) {
+    db.exec("ROLLBACK;");
+    throw err;
+  }
+};
+
 module.exports = {
   getAllReviews,
   getReviewById,
@@ -235,4 +369,5 @@ module.exports = {
   updateReviewOverview,
   deleteReview,
   reorderReviews,
+  importReviewsBatch,
 };

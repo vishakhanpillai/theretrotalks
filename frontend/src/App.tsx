@@ -91,7 +91,7 @@ function App() {
       const res = await fetch("/api/reviews");
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data.reviews) && data.reviews.length > 0) {
+        if (Array.isArray(data.reviews)) {
           setReviews(data.reviews);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(data.reviews));
         }
@@ -446,6 +446,7 @@ function App() {
         isAdmin={isAdmin}
         onLoginSuccess={handleLoginSuccess}
         onLogout={handleLogout}
+        onRefreshReviews={fetchReviewsFromDb}
         onSaveReview={handleSaveNewReview}
         onUpdateReview={handleUpdateReview}
         onDeleteReview={handleDeleteReview}

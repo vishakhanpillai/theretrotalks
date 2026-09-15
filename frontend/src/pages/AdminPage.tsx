@@ -33,6 +33,7 @@ import {
   ChevronDown,
   FileSpreadsheet,
   FileJson,
+  Upload,
 } from "lucide-react";
 import type { Review, Movie, BackdropFraming } from "../types";
 import { getPosterUrl } from "../utils/images";
@@ -43,6 +44,7 @@ import { BackdropFramingModal } from "../components/BackdropFramingModal";
 import { StoryCardBuilderModal } from "../components/StoryCardBuilderModal";
 import { EditReviewModal } from "../components/EditReviewModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
+import { DatabaseImportModal } from "../components/DatabaseImportModal";
 import { Footer } from "../components/Footer";
 import { slugify } from "../utils/slugify";
 import { formatRating } from "../utils/formatRating";
@@ -52,6 +54,7 @@ interface AdminPageProps {
   isAdmin: boolean;
   onLoginSuccess: (token: string) => void;
   onLogout: () => void;
+  onRefreshReviews?: () => Promise<void> | void;
   onSaveReview: (review: Review) => Promise<void>;
   onUpdateReview?: (reviewId: string | number, updatedData: Partial<Review>) => Promise<void>;
   onDeleteReview: (id: string | number) => Promise<void>;
@@ -71,6 +74,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   isAdmin,
   onLoginSuccess,
   onLogout,
+  onRefreshReviews,
   onSaveReview,
   onUpdateReview,
   onDeleteReview,
@@ -169,6 +173,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   // One-click Backup & Export State & Handlers
   const [showBackupMenu, setShowBackupMenu] = useState<boolean>(false);
   const [downloadingFormat, setDownloadingFormat] = useState<"sqlite" | "json" | "csv" | null>(null);
+  const [showImportModal, setShowImportModal] = useState<boolean>(false);
   const backupMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -601,6 +606,35 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                       </p>
                     </div>
                   </button>
+
+                  {/* Import Database Option */}
+                  <div className="border-t border-white/[0.08] my-1 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowBackupMenu(false);
+                        setShowImportModal(true);
+                      }}
+                      className="w-full text-left p-2.5 rounded-xl bg-[#ff5500]/10 hover:bg-[#ff5500] text-[#ff7a29] hover:text-black transition-all flex items-start gap-3 cursor-pointer group"
+                    >
+                      <div className="p-2 rounded-lg bg-[#ff5500]/20 text-[#ff7a29] group-hover:bg-black/20 group-hover:text-black transition-colors flex-shrink-0">
+                        <Upload className="w-4 h-4 stroke-[2.3]" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold font-poppins text-white group-hover:text-black transition-colors">
+                            Import / Restore Database
+                          </span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#ff5500]/20 text-[#ff7a29] group-hover:bg-black/20 group-hover:text-black font-semibold">
+                            Upload
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-zinc-400 group-hover:text-black/80 font-inter leading-tight mt-0.5">
+                          Restore or merge reviews from .sqlite, .json, or .csv.
+                        </p>
+                      </div>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -716,6 +750,16 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                   <FileSpreadsheet className="w-3 h-3 text-[#ff5500]" />
                 )}
                 <span>CSV</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowImportModal(true)}
+                title="Import reviews from .sqlite, .json, or .csv"
+                className="px-2.5 py-1 rounded-lg bg-[#ff5500]/15 hover:bg-[#ff5500] text-[#ff7a29] hover:text-black border border-[#ff5500]/30 hover:border-[#ff5500] text-[11px] font-inter font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm ml-auto"
+              >
+                <Upload className="w-3 h-3 stroke-[2.5]" />
+                <span>Import</span>
               </button>
             </div>
           </div>
@@ -1475,6 +1519,16 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           }}
         />
       )}
+
+      {/* MODAL 8: Database & Backup Import Modal */}
+      <DatabaseImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onSuccess={() => {
+          onRefreshReviews?.();
+        }}
+        showToast={showToast}
+      />
 
     </div>
   );
