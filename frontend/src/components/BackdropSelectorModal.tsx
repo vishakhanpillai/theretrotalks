@@ -61,35 +61,35 @@ export const BackdropSelectorModal: React.FC<BackdropSelectorModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
       {/* Click outside backdrop */}
       <div className="fixed inset-0" onClick={onClose} />
 
       {/* Modal Card */}
-      <div className="relative w-full max-w-5xl bg-[#0a0c10] border border-white/[0.12] rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.9),0_0_50px_rgba(255,85,0,0.15)] z-10 max-h-[88vh] flex flex-col font-poppins">
+      <div className="relative w-full max-w-5xl bg-[#0a0c10] border border-white/[0.12] rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.9),0_0_50px_rgba(255,85,0,0.15)] z-10 max-h-[92vh] flex flex-col font-poppins">
         
         {/* Header */}
-        <div className="p-6 bg-[#0e1117] border-b border-white/[0.08] flex items-center justify-between">
+        <div className="p-4 sm:p-6 bg-[#0e1117] border-b border-white/[0.08] flex items-center justify-between">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-inter uppercase tracking-wider text-[#ff7a29]">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-inter uppercase tracking-wider text-[#ff7a29]">
               <Sparkles className="w-3.5 h-3.5 text-[#ff5500]" />
               <span>Official TMDB Film Stills & Backdrops</span>
             </div>
-            <h3 className="text-xl font-bold text-white tracking-tight">
+            <h3 className="text-base sm:text-xl font-bold text-white tracking-tight">
               Choose Backdrop for <span className="text-[#ff7a29]">"{movieTitle}"</span>
             </h3>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-full bg-white/[0.04] hover:bg-[#ff5500] text-zinc-400 hover:text-black border border-white/[0.08] hover:border-[#ff5500] transition-all cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-full bg-white/[0.04] hover:bg-[#ff5500] text-zinc-400 hover:text-black border border-white/[0.08] hover:border-[#ff5500] transition-all cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content Body: Backdrop Grid */}
-        <div className="p-6 overflow-y-auto flex-grow">
+        <div className="p-3 sm:p-6 overflow-y-auto flex-grow">
           
           {loading && (
             <div className="py-24 flex flex-col items-center justify-center text-center space-y-3">

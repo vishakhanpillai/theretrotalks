@@ -218,9 +218,9 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
                 </div>
 
                 {/* High-Width Search & Sort Controls */}
-                <div className="flex items-center gap-2.5 flex-grow sm:max-w-2xl justify-end flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-2.5 flex-grow sm:max-w-2xl justify-end flex-wrap sm:flex-nowrap w-full md:w-auto">
                   {/* Higher Width Live Search Input (Title Only) */}
-                  <div className="relative flex-1 min-w-[220px]">
+                  <div className="relative w-full sm:flex-1 sm:min-w-[220px]">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
                     <input
                       type="text"
@@ -241,51 +241,54 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
                     )}
                   </div>
 
-                  {/* Sort Dropdown */}
-                  <div className="relative shrink-0">
-                    <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0b0e14] border border-white/[0.08] text-xs font-inter text-zinc-300 hover:border-white/20 transition-colors">
-                      <ArrowUpDown className="w-3.5 h-3.5 text-[#ff5500] shrink-0" />
-                      <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as any)}
-                        className="bg-transparent text-xs text-zinc-300 focus:text-white outline-none cursor-pointer pr-1 font-medium"
-                      >
-                        <option value="latest" className="bg-[#0b0e14] text-white">Latest Logged</option>
-                        <option value="highest_rated" className="bg-[#0b0e14] text-white">Highest Rated (5★ → 1★)</option>
-                        <option value="lowest_rated" className="bg-[#0b0e14] text-white">Lowest Rated (1★ → 5★)</option>
-                        <option value="year_newest" className="bg-[#0b0e14] text-white">Year (Newest First)</option>
-                        <option value="year_oldest" className="bg-[#0b0e14] text-white">Year (Oldest First)</option>
-                        <option value="title_az" className="bg-[#0b0e14] text-white">Title (A – Z)</option>
-                      </select>
+                  {/* Secondary Controls Row on Mobile */}
+                  <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto">
+                    {/* Sort Dropdown */}
+                    <div className="relative flex-1 sm:flex-initial">
+                      <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0b0e14] border border-white/[0.08] text-xs font-inter text-zinc-300 hover:border-white/20 transition-colors w-full">
+                        <ArrowUpDown className="w-3.5 h-3.5 text-[#ff5500] shrink-0" />
+                        <select
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value as any)}
+                          className="bg-transparent text-xs text-zinc-300 focus:text-white outline-none cursor-pointer pr-1 font-medium w-full"
+                        >
+                          <option value="latest" className="bg-[#0b0e14] text-white">Latest Logged</option>
+                          <option value="highest_rated" className="bg-[#0b0e14] text-white">Highest Rated (5★ → 1★)</option>
+                          <option value="lowest_rated" className="bg-[#0b0e14] text-white">Lowest Rated (1★ → 5★)</option>
+                          <option value="year_newest" className="bg-[#0b0e14] text-white">Year (Newest First)</option>
+                          <option value="year_oldest" className="bg-[#0b0e14] text-white">Year (Oldest First)</option>
+                          <option value="title_az" className="bg-[#0b0e14] text-white">Title (A – Z)</option>
+                        </select>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* View Mode Toggle: Magazine (List) vs Poster Grid */}
-                  <div className="flex items-center p-1 rounded-xl bg-[#0b0e14] border border-white/[0.08] shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleToggleViewMode("magazine")}
-                      className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                        viewMode === "magazine"
-                          ? "bg-white/[0.14] text-white shadow-sm"
-                          : "text-zinc-500 hover:text-zinc-300"
-                      }`}
-                      title="Editorial Magazine View"
-                    >
-                      <LayoutList className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleToggleViewMode("grid")}
-                      className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                        viewMode === "grid"
-                          ? "bg-white/[0.14] text-white shadow-sm"
-                          : "text-zinc-500 hover:text-zinc-300"
-                      }`}
-                      title="Compact Poster Grid View"
-                    >
-                      <LayoutGrid className="w-4 h-4" />
-                    </button>
+                    {/* View Mode Toggle: Magazine (List) vs Poster Grid */}
+                    <div className="flex items-center p-1 rounded-xl bg-[#0b0e14] border border-white/[0.08] shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleViewMode("magazine")}
+                        className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                          viewMode === "magazine"
+                            ? "bg-white/[0.14] text-white shadow-sm"
+                            : "text-zinc-500 hover:text-zinc-300"
+                        }`}
+                        title="Editorial Magazine View"
+                      >
+                        <LayoutList className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleViewMode("grid")}
+                        className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                          viewMode === "grid"
+                            ? "bg-white/[0.14] text-white shadow-sm"
+                            : "text-zinc-500 hover:text-zinc-300"
+                        }`}
+                        title="Compact Poster Grid View"
+                      >
+                        <LayoutGrid className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -363,6 +366,7 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
                   id: upcoming.id,
                   title: upcoming.title,
                   year: upcoming.releaseDate ? upcoming.releaseDate.split("-")[0] : null,
+                  releaseDate: upcoming.releaseDate,
                   poster: upcoming.poster,
                   backdrop: upcoming.backdrop || null,
                   overview: upcoming.overview,

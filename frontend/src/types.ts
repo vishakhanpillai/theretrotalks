@@ -25,6 +25,7 @@ export interface Movie {
   mediaType?: "movie" | "tv";
   title: string;
   year: string | null;
+  releaseDate?: string | null;
   poster: string | null;
   backdrop?: string | null;
   overview: string;

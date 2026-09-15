@@ -71,15 +71,15 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         />
       )}
 
-      {/* Left Column: Film Poster (Strict 2:3 ratio, height matches card) */}
-      <div className="relative w-full md:w-64 lg:w-72 xl:w-80 flex-shrink-0 aspect-[2/3] bg-[#07090e] overflow-hidden flex items-center justify-center">
+      {/* Left Column: Film Poster (Cinema banner crop on mobile, strict 2:3 ratio on tablet/desktop) */}
+      <div className="relative w-full h-64 sm:h-72 md:h-auto md:w-64 lg:w-72 xl:w-80 md:aspect-[2/3] flex-shrink-0 bg-[#07090e] overflow-hidden flex items-center justify-center">
         {posterUrl && !imageError ? (
           <img
             src={posterUrl}
             alt={review.title}
             loading="lazy"
             onError={() => setImageError(true)}
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            className="w-full h-full object-cover object-center md:object-top transition-transform duration-700 ease-out group-hover:scale-105"
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-[#101318]">
@@ -94,7 +94,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/80 md:from-transparent via-transparent to-transparent pointer-events-none opacity-80 group-hover:opacity-50 transition-opacity" />
 
         {/* Floating Poster Badges */}
-        <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between pointer-events-none z-10">
+        <div className="absolute top-3 left-3 right-3 sm:top-3.5 sm:left-3.5 sm:right-3.5 flex items-center justify-between pointer-events-none z-10">
           {/* Star Rating Badge */}
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/80 backdrop-blur-md border border-white/[0.12] text-xs font-inter font-bold text-[#ff7a29] shadow-lg">
             <Star className="w-3.5 h-3.5 fill-[#ff5500] text-[#ff5500]" />
@@ -118,7 +118,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       </div>
 
       {/* Right Column: Review Details & Information Body */}
-      <div className="p-5 sm:p-6 lg:p-7 flex flex-col justify-between flex-grow space-y-3.5 min-w-0 relative z-10">
+      <div className="p-4 sm:p-6 lg:p-7 flex flex-col justify-between flex-grow space-y-3.5 min-w-0 relative z-10">
         
         <div className="space-y-3 sm:space-y-3.5">
           

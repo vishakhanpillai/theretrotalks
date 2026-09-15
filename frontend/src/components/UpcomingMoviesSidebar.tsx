@@ -6,6 +6,20 @@ interface UpcomingMoviesSidebarProps {
   onSelectUpcoming?: (movie: UpcomingMovie) => void;
 }
 
+const formatDisplayDate = (dateStr?: string | null, fallback?: string) => {
+  if (!dateStr) return fallback || "TBA";
+  const parts = dateStr.split("-");
+  if (parts.length < 3) return fallback || dateStr;
+  const [y, m, d] = parts;
+  const date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+  if (isNaN(date.getTime())) return fallback || dateStr;
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
 export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
   onSelectUpcoming,
 }) => {
@@ -45,10 +59,10 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
   }, []);
 
   return (
-    <aside className="w-full bg-[#0b0d12] border border-white/[0.08] rounded-3xl p-5 sm:p-6 flex flex-col space-y-5 shadow-[0_15px_40px_rgba(0,0,0,0.6)]">
+    <aside className="w-full bg-[#0b0d12] border border-white/[0.08] rounded-3xl p-4 sm:p-6 flex flex-col space-y-4 sm:space-y-5 shadow-[0_15px_40px_rgba(0,0,0,0.6)]">
       
       {/* Sidebar Header */}
-      <div className="flex items-center gap-2.5 border-b border-white/[0.06] pb-4">
+      <div className="flex items-center gap-2.5 border-b border-white/[0.06] pb-3 sm:pb-4">
         <Calendar className="w-4 h-4 text-[#ff5500] flex-shrink-0" />
         <h3 className="text-base sm:text-lg font-poppins font-normal font-[400] text-white">
           Upcoming {monthName || new Date().toLocaleString("en-US", { month: "long" })} Releases
@@ -100,11 +114,12 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
               {/* Info */}
               <div className="flex-grow min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-inter text-zinc-500">
+                  <span className="text-[10px] font-mono text-zinc-500">
                     #{index + 1}
                   </span>
-                  <span className="text-[10px] font-inter px-2 py-0.2 rounded-md bg-[#ff5500]/15 text-[#ff7a29] border border-[#ff5500]/20">
-                    {movie.formattedDate}
+                  <span className="inline-flex items-center gap-1 text-[10px] font-inter px-2 py-0.5 rounded-md bg-[#ff5500]/15 text-[#ff7a29] border border-[#ff5500]/25 font-medium">
+                    <Calendar className="w-2.5 h-2.5 text-[#ff5500]" />
+                    <span>{formatDisplayDate(movie.releaseDate, movie.formattedDate)}</span>
                   </span>
                 </div>
 

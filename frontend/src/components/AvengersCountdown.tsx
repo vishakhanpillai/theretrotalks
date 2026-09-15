@@ -105,53 +105,53 @@ export const AvengersCountdown: React.FC<AvengersCountdownProps> = ({ onClick })
 
       {/* Live Countdown Clock Grid */}
       <div className="relative z-10 space-y-2">
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
           
           {/* Days */}
-          <div className="relative overflow-hidden flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-500/30 group-hover:border-emerald-400/40 shadow-inner transition-colors">
+          <div className="relative overflow-hidden flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-500/30 group-hover:border-emerald-400/40 shadow-inner transition-colors">
             <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
-            <span className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]">
+            <span className="text-xl sm:text-2xl md:text-3xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]">
               {timeLeft.days}
             </span>
-            <span className="text-[9px] uppercase font-mono tracking-widest text-emerald-400/80 font-bold mt-1">
+            <span className="text-[8.5px] sm:text-[9px] uppercase font-mono tracking-widest text-emerald-400/80 font-bold mt-1">
               Days
             </span>
           </div>
 
           {/* Hours */}
-          <div className="relative overflow-hidden flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-500/30 group-hover:border-emerald-400/40 shadow-inner transition-colors">
+          <div className="relative overflow-hidden flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-500/30 group-hover:border-emerald-400/40 shadow-inner transition-colors">
             <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
-            <span className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]">
+            <span className="text-xl sm:text-2xl md:text-3xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]">
               {String(timeLeft.hours).padStart(2, "0")}
             </span>
-            <span className="text-[9px] uppercase font-mono tracking-widest text-emerald-400/80 font-bold mt-1">
+            <span className="text-[8.5px] sm:text-[9px] uppercase font-mono tracking-widest text-emerald-400/80 font-bold mt-1">
               Hours
             </span>
           </div>
 
           {/* Minutes */}
-          <div className="relative overflow-hidden flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-500/30 group-hover:border-emerald-400/40 shadow-inner transition-colors">
+          <div className="relative overflow-hidden flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-500/30 group-hover:border-emerald-400/40 shadow-inner transition-colors">
             <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
-            <span className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]">
+            <span className="text-xl sm:text-2xl md:text-3xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]">
               {String(timeLeft.minutes).padStart(2, "0")}
             </span>
-            <span className="text-[9px] uppercase font-mono tracking-widest text-emerald-400/80 font-bold mt-1">
+            <span className="text-[8.5px] sm:text-[9px] uppercase font-mono tracking-widest text-emerald-400/80 font-bold mt-1">
               Mins
             </span>
           </div>
 
           {/* Seconds (Animated Live Pulse) */}
-          <div className="relative overflow-hidden flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-400/50 shadow-inner transition-colors">
+          <div className="relative overflow-hidden flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-400/50 shadow-inner transition-colors">
             <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
             <span
               key={timeLeft.seconds}
-              className={`text-2xl sm:text-3xl font-black font-mono tracking-tight text-emerald-400 transition-transform duration-200 drop-shadow-[0_0_14px_rgba(16,185,129,0.7)] ${
+              className={`text-xl sm:text-2xl md:text-3xl font-black font-mono tracking-tight text-emerald-400 transition-transform duration-200 drop-shadow-[0_0_14px_rgba(16,185,129,0.7)] ${
                 isTick ? "scale-105" : "scale-100"
               }`}
             >
               {String(timeLeft.seconds).padStart(2, "0")}
             </span>
-            <span className="text-[9px] uppercase font-mono tracking-widest text-emerald-300 font-bold mt-1">
+            <span className="text-[8.5px] sm:text-[9px] uppercase font-mono tracking-widest text-emerald-300 font-bold mt-1">
               Secs
             </span>
           </div>

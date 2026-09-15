@@ -145,7 +145,7 @@ const getUpcomingMonthMovies = async () => {
     title: movie.title,
     releaseDate: movie.release_date || null,
     formattedDate: movie.release_date
-      ? new Date(movie.release_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      ? new Date(movie.release_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
       : "TBA",
     poster: formatImageUrl(movie.poster_path, "w342"),
     backdrop: formatImageUrl(movie.backdrop_path, "original"),
@@ -249,6 +249,7 @@ const getMovieDetails = async (movieId, mediaType = "movie") => {
     year: isTvResolved
       ? (data.first_air_date ? data.first_air_date.split("-")[0] : null)
       : (data.release_date ? data.release_date.split("-")[0] : null),
+    releaseDate: isTvResolved ? (data.first_air_date || null) : (data.release_date || null),
     poster: formatImageUrl(data.poster_path, "w500"),
     backdrop: formatImageUrl(data.backdrop_path, "original"),
     overview: data.overview,

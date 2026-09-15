@@ -121,17 +121,17 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
       <div className="fixed inset-0" onClick={onClose} />
 
       {/* Large Studio Window Container - Expansive Full Height */}
-      <div className="relative w-[98vw] max-w-7xl h-[96vh] max-h-[1200px] bg-[#090b10] border border-white/[0.12] rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_60px_rgba(255,85,0,0.12)] overflow-hidden z-10 flex flex-col">
+      <div className="relative w-[98vw] max-w-7xl h-[96vh] max-h-[1200px] bg-[#090b10] border border-white/[0.12] rounded-2xl sm:rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_60px_rgba(255,85,0,0.12)] overflow-hidden z-10 flex flex-col">
         
         {/* Header Bar */}
-        <div className="flex items-center justify-between px-6 py-3.5 border-b border-white/[0.08] bg-[#0c0f16]/95 backdrop-blur-md flex-shrink-0">
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="w-10 h-14 rounded-xl overflow-hidden bg-[#181c24] flex-shrink-0 border border-white/[0.1] shadow-md">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5 border-b border-white/[0.08] bg-[#0c0f16]/95 backdrop-blur-md flex-shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div className="w-9 sm:w-10 h-12 sm:h-14 rounded-xl overflow-hidden bg-[#181c24] flex-shrink-0 border border-white/[0.1] shadow-md">
               {posterUrl ? (
                 <img src={posterUrl} alt={review.title} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-zinc-600">
-                  <Film className="w-5 h-5" />
+                  <Film className="w-4 sm:w-5 h-4 sm:h-5" />
                 </div>
               )}
             </div>
@@ -146,7 +146,7 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
                   Full Critique Editor
                 </span>
               </div>
-              <h3 className="text-lg sm:text-xl font-bold font-poppins text-white truncate">
+              <h3 className="text-base sm:text-xl font-bold font-poppins text-white truncate">
                 {review.title} {review.year && <span className="text-zinc-400 font-normal">({review.year})</span>}
               </h3>
             </div>
@@ -155,7 +155,7 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-2.5 rounded-2xl text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+            className="p-2 sm:p-2.5 rounded-2xl text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
             title="Close Editor"
           >
             <X className="w-5 h-5" />
@@ -163,7 +163,7 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
         </div>
 
         {/* Studio Form Body */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 flex-grow flex flex-col overflow-hidden gap-3.5">
+        <form onSubmit={handleSubmit} className="p-3 sm:p-6 flex-grow flex flex-col overflow-y-auto gap-3.5">
           {errorMessage && (
             <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs font-inter text-red-400 flex-shrink-0">
               {errorMessage}
@@ -260,7 +260,7 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
               placeholder="Write your cinema critique, reflections on cinematography, pacing, performances, or personal connection..."
               minRows={20}
               className="h-full flex-grow"
-              textareaClassName="h-full min-h-[460px] sm:min-h-[560px] lg:min-h-[640px]"
+              textareaClassName="h-full min-h-[220px] sm:min-h-[460px] lg:min-h-[580px]"
             />
           </div>
 

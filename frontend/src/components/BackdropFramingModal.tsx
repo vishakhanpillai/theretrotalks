@@ -120,35 +120,35 @@ export const BackdropFramingModal: React.FC<BackdropFramingModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200 select-none">
-      <div className="relative w-full max-w-5xl bg-[#090b0e] border border-white/[0.12] rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.95),0_0_50px_rgba(255,85,0,0.15)] flex flex-col max-h-[95vh]">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-2 sm:p-5 md:p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200 select-none">
+      <div className="relative w-full max-w-5xl bg-[#090b0e] border border-white/[0.12] rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.95),0_0_50px_rgba(255,85,0,0.15)] flex flex-col max-h-[96vh]">
         
         {/* Header Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-[#0c0f16]/90 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#ff5500]/15 text-[#ff5500] border border-[#ff5500]/30">
-              <Crop className="w-5 h-5" />
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/[0.08] bg-[#0c0f16]/90 backdrop-blur-md">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="p-1.5 sm:p-2 rounded-xl bg-[#ff5500]/15 text-[#ff5500] border border-[#ff5500]/30 flex-shrink-0">
+              <Crop className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold font-poppins text-white">
-                  Frame & Crop Backdrop
+                <h3 className="text-sm sm:text-base font-bold font-poppins text-white truncate">
+                  Frame Backdrop
                 </h3>
-                <span className="px-2 py-0.5 rounded-full bg-[#ff5500]/15 text-[#ff7a29] text-[10px] font-mono font-semibold uppercase">
+                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-[#ff5500]/15 text-[#ff7a29] text-[10px] font-mono font-semibold uppercase">
                   Live Visual Framer
                 </span>
               </div>
-              <p className="text-xs font-inter text-zinc-400 truncate max-w-md">
-                {movieTitle} — decide what and how much of the backdrop to display
+              <p className="text-[11px] sm:text-xs font-inter text-zinc-400 truncate max-w-[200px] sm:max-w-md">
+                {movieTitle}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <button
               type="button"
               onClick={() => setShowGuides(!showGuides)}
-              className={`p-2 rounded-xl border text-xs font-inter transition-colors cursor-pointer ${
+              className={`p-1.5 sm:p-2 rounded-xl border text-xs font-inter transition-colors cursor-pointer ${
                 showGuides
                   ? "bg-[#ff5500]/20 border-[#ff5500]/40 text-[#ff7a29]"
                   : "bg-white/[0.05] border-white/10 text-zinc-400 hover:text-white"
@@ -160,7 +160,7 @@ export const BackdropFramingModal: React.FC<BackdropFramingModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl bg-white/[0.05] hover:bg-[#ff5500] hover:text-black border border-white/10 text-zinc-400 transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl bg-white/[0.05] hover:bg-[#ff5500] hover:text-black border border-white/10 text-zinc-400 transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -168,7 +168,7 @@ export const BackdropFramingModal: React.FC<BackdropFramingModalProps> = ({
         </div>
 
         {/* Modal Body: Two sections (Preview Canvas + Controls) */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-grow">
+        <div className="p-3 sm:p-5 md:p-6 overflow-y-auto space-y-4 sm:space-y-6 flex-grow">
           
           {/* 1. Interactive Framing Preview Canvas */}
           <div className="space-y-2">

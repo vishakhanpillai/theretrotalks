@@ -876,22 +876,22 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
       <div className="relative w-full max-w-6xl bg-[#090b0e] border border-white/[0.12] rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.95),0_0_50px_rgba(255,85,0,0.15)] flex flex-col max-h-[96vh]">
         
         {/* Modal Top Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-[#0c0f16]/90 backdrop-blur-md flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#ff5500]/15 text-[#ff5500] border border-[#ff5500]/30">
-              <Sparkles className="w-5 h-5" />
+        <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-white/[0.08] bg-[#0c0f16]/90 backdrop-blur-md flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="p-1.5 sm:p-2 rounded-xl bg-[#ff5500]/15 text-[#ff5500] border border-[#ff5500]/30 flex-shrink-0">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold font-poppins text-white">
-                  Instagram Story Studio
+                <h3 className="text-sm sm:text-base font-bold font-poppins text-white truncate">
+                  Story Studio
                 </h3>
-                <span className="px-2 py-0.5 rounded-full bg-[#ff5500]/15 text-[#ff7a29] text-[10px] font-mono font-semibold uppercase">
+                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-[#ff5500]/15 text-[#ff7a29] text-[10px] font-mono font-semibold uppercase">
                   9:16 · 1080×1920
                 </span>
               </div>
-              <p className="text-xs font-inter text-zinc-400 truncate max-w-sm sm:max-w-md">
-                Create story cards and multi-part review slides for {review.title}
+              <p className="text-[11px] sm:text-xs font-inter text-zinc-400 truncate max-w-[160px] sm:max-w-md">
+                Create story cards and review slides for {review.title}
               </p>
             </div>
           </div>
@@ -939,19 +939,19 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             {studioMode === "full_set" ? (
               <>
                 <button
                   type="button"
                   onClick={handleDownloadZip}
                   disabled={isExporting || reviewSlides.length === 0}
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-inter font-bold text-xs shadow-[0_0_20px_rgba(255,85,0,0.4)] transition-all cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-inter font-bold text-xs shadow-[0_0_20px_rgba(255,85,0,0.4)] transition-all cursor-pointer disabled:opacity-50"
                   title="Download all generated story slides zipped together"
                 >
                   <Archive className="w-4 h-4" />
                   <span>
-                    {isExporting ? exportProgress || "Generating ZIP..." : `Download All (${reviewSlides.length} ZIP)`}
+                    {isExporting ? exportProgress || "ZIP..." : `ZIP (${reviewSlides.length})`}
                   </span>
                 </button>
 
@@ -971,17 +971,17 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                 type="button"
                 onClick={handleDownloadSingle}
                 disabled={isExporting}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-inter font-bold text-xs shadow-[0_0_20px_rgba(255,85,0,0.4)] transition-all cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-inter font-bold text-xs shadow-[0_0_20px_rgba(255,85,0,0.4)] transition-all cursor-pointer disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
-                <span>{isExporting ? exportProgress || "Exporting..." : "Download Story PNG"}</span>
+                <span>{isExporting ? exportProgress || "Exporting..." : "Download PNG"}</span>
               </button>
             )}
 
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl bg-white/[0.05] hover:bg-[#ff5500] hover:text-black border border-white/10 text-zinc-400 transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl bg-white/[0.05] hover:bg-[#ff5500] hover:text-black border border-white/10 text-zinc-400 transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1033,14 +1033,14 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
         </div>
 
         {/* Modal Content: Dual Column Workspace */}
-        <div className="flex flex-col lg:flex-row flex-grow overflow-hidden">
+        <div className="flex flex-col lg:flex-row flex-grow overflow-y-auto lg:overflow-hidden">
           
           {/* Left Column: Live 9:16 Story Card Viewport */}
-          <div className="lg:w-[460px] xl:w-[500px] flex-shrink-0 bg-[#050608] p-4 sm:p-6 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-white/[0.08] relative overflow-hidden">
+          <div className="w-full lg:w-[460px] xl:w-[500px] flex-shrink-0 bg-[#050608] p-3 sm:p-6 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-white/[0.08] relative">
             
             {/* Top Preview Controls / Slide Navigator */}
             {studioMode === "full_set" ? (
-              <div className="flex items-center justify-between w-[360px] mb-2 px-1">
+              <div className="flex items-center justify-between w-full max-w-[360px] mb-2 px-1">
                 <button
                   type="button"
                   disabled={activeSlideIndex === 0}
@@ -1086,19 +1086,21 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
             )}
 
             {/* THE INSTAGRAM STORY CANVAS (Strict 9:16 Aspect Ratio: 360 x 640 displayed, exports at 3x: 1080 x 1920) */}
-            <div
-              ref={cardRef}
-              style={{ width: "360px", height: "640px" }}
-              onMouseDown={handleBackdropMouseDown}
-              onTouchStart={handleBackdropTouchStart}
-              onTouchMove={handleBackdropTouchMove}
-              onTouchEnd={handleBackdropTouchEnd}
-              className={`relative rounded-none overflow-hidden bg-[#07080a] shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(255,85,0,0.15)] border flex flex-col justify-between select-none ${
-                isCroppingBackdrop
-                  ? "cursor-move border-[#ff5500] ring-2 ring-[#ff5500]/50"
-                  : "border-white/[0.12]"
-              }`}
-            >
+            <div className="w-full flex items-center justify-center overflow-hidden py-1">
+              <div className="transform scale-[0.78] sm:scale-100 origin-top flex-shrink-0 -mb-[140px] sm:mb-0">
+                <div
+                  ref={cardRef}
+                  style={{ width: "360px", height: "640px" }}
+                  onMouseDown={handleBackdropMouseDown}
+                  onTouchStart={handleBackdropTouchStart}
+                  onTouchMove={handleBackdropTouchMove}
+                  onTouchEnd={handleBackdropTouchEnd}
+                  className={`relative rounded-none overflow-hidden bg-[#07080a] shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(255,85,0,0.15)] border flex flex-col justify-between select-none ${
+                    isCroppingBackdrop
+                      ? "cursor-move border-[#ff5500] ring-2 ring-[#ff5500]/50"
+                      : "border-white/[0.12]"
+                  }`}
+                >
               {/* Full Bleed Backdrop Image Background */}
               {displayBackdrop && (() => {
                 const z = Math.max(30, backdropZoom) / 100;
@@ -2053,14 +2055,16 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                     )}
                   </div>
                 ) : (
-                  <div className={studioMode === "full_set" ? "pb-3 shrink-0" : "pb-6 shrink-0"} />
+                    <div className={studioMode === "full_set" ? "pb-3 shrink-0" : "pb-6 shrink-0"} />
                 )
               )}
+            </div>
+              </div>
             </div>
           </div>
 
           {/* Right Column: Customization Controls Panel */}
-          <div className="flex-grow p-6 overflow-y-auto space-y-6">
+          <div className="flex-grow p-4 sm:p-6 overflow-y-auto space-y-5 sm:space-y-6">
             
             {/* 1. Artwork & Imagery Switchers (Change Poster & Backdrop) */}
             <div className="p-4 rounded-2xl bg-[#0c0f16] border border-white/[0.07] space-y-3">

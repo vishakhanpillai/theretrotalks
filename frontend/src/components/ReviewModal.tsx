@@ -40,16 +40,16 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
       <div className="fixed inset-0" onClick={onClose} />
 
       <div
         className={`relative w-full ${
           isAdmin ? "max-w-5xl" : "max-w-3xl"
-        } bg-[#090b0e] border border-white/[0.09] rounded-3xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.9),0_0_50px_rgba(255,85,0,0.12)] z-10 max-h-[92vh] flex flex-col`}
+        } bg-[#090b0e] border border-white/[0.09] rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.9),0_0_50px_rgba(255,85,0,0.12)] z-10 max-h-[94vh] flex flex-col`}
       >
         {/* Backdrop Banner Header */}
-        <div className="relative h-48 sm:h-60 w-full bg-[#101318] overflow-hidden flex-shrink-0">
+        <div className="relative h-44 sm:h-60 w-full bg-[#101318] overflow-hidden flex-shrink-0">
           {backdropUrl && (
             <img
               src={backdropUrl}
@@ -64,15 +64,15 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 p-2.5 rounded-full bg-black/60 hover:bg-[#ff5500] text-zinc-300 hover:text-black border border-white/10 hover:border-[#ff5500] transition-all duration-200 shadow-xl cursor-pointer"
+            className="absolute top-3 right-3 sm:top-5 sm:right-5 p-2 sm:p-2.5 rounded-full bg-black/60 hover:bg-[#ff5500] text-zinc-300 hover:text-black border border-white/10 hover:border-[#ff5500] transition-all duration-200 shadow-xl cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
 
           {/* Title and stats overlay */}
-          <div className="absolute bottom-6 left-6 right-6 flex flex-wrap items-end justify-between gap-4">
+          <div className="absolute bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-6 flex flex-wrap items-end justify-between gap-2 sm:gap-4">
             <div>
-              <div className="flex items-center gap-2 text-xs font-inter text-[#ff7a29] uppercase tracking-wider mb-1">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-inter text-[#ff7a29] uppercase tracking-wider mb-1">
                 {review.mediaType === "tv" && (
                   <>
                     <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-1.5 py-0.5 rounded text-[10px] font-semibold">
@@ -85,20 +85,20 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                 <span>•</span>
                 <span>{review.mediaType === "tv" ? "Created by" : "Dir."} {review.director}</span>
               </div>
-              <h2 className="text-2xl sm:text-4xl font-poppins font-medium text-white tracking-tight">
+              <h2 className="text-xl sm:text-3xl md:text-4xl font-poppins font-medium text-white tracking-tight leading-tight">
                 {review.title}
               </h2>
             </div>
 
             {/* Rating */}
-            <div className="flex items-center bg-[#07080a]/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/[0.1] shadow-xl">
-              <StarRating rating={review.rating} readonly size="md" />
+            <div className="flex items-center bg-[#07080a]/90 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl border border-white/[0.1] shadow-xl">
+              <StarRating rating={review.rating} readonly size="sm" />
             </div>
           </div>
         </div>
 
         {/* Content Body */}
-        <div className="p-6 sm:p-8 overflow-y-auto space-y-6 flex-grow">
+        <div className="p-4 sm:p-6 md:p-8 overflow-y-auto space-y-5 sm:space-y-6 flex-grow">
           <div className={isAdmin ? "grid grid-cols-1 lg:grid-cols-12 gap-8" : "space-y-6"}>
             
             {/* Left Column: Review Content & Meta */}

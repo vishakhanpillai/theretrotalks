@@ -498,13 +498,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           </div>
 
           {/* Right actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* 1-Click Backup & Export Dropdown */}
             <div className="relative" ref={backupMenuRef}>
               <button
                 type="button"
                 onClick={() => setShowBackupMenu(!showBackupMenu)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.2] text-xs font-inter text-zinc-300 hover:text-white transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.2] text-xs font-inter text-zinc-300 hover:text-white transition-all cursor-pointer"
                 title="Backup & Export Database"
               >
                 {downloadingFormat ? (
@@ -607,7 +607,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
             <button
               onClick={onNavigateHome}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.2] text-xs font-inter text-zinc-300 hover:text-white transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.2] text-xs font-inter text-zinc-300 hover:text-white transition-all cursor-pointer"
               title="View Public Site"
             >
               <ExternalLink className="w-3.5 h-3.5 text-[#ff5500]" />
@@ -616,7 +616,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
             <button
               onClick={onLogout}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs font-inter text-red-400 hover:text-red-300 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs font-inter text-red-400 hover:text-red-300 transition-all cursor-pointer"
               title="Exit Admin Mode"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -628,35 +628,35 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       </header>
 
       {/* Main Container */}
-      <main className="flex-grow w-full px-4 sm:px-6 lg:px-10 xl:px-14 py-8 space-y-8">
+      <main className="flex-grow w-full px-4 sm:px-6 lg:px-10 xl:px-14 py-6 sm:py-8 space-y-6 sm:space-y-8">
         
         {/* Metric Cards Strip */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="p-4 sm:p-5 rounded-2xl bg-[#090b0e] border border-white/[0.08] shadow-sm relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-[#ff5500]/5 rounded-full blur-2xl group-hover:bg-[#ff5500]/10 transition-all pointer-events-none" />
             <span className="text-[10px] font-inter uppercase tracking-wider text-zinc-500 block font-medium">Total Reviews</span>
-            <span className="text-3xl font-black font-poppins text-white mt-1.5 block">{totalReviews}</span>
+            <span className="text-2xl sm:text-3xl font-black font-poppins text-white mt-1.5 block">{totalReviews}</span>
             <span className="text-[11px] font-inter text-zinc-400 mt-1 block">Logged cinema entries</span>
           </div>
 
           <div className="p-4 sm:p-5 rounded-2xl bg-[#090b0e] border border-white/[0.08] shadow-sm relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-[#ff5500]/5 rounded-full blur-2xl group-hover:bg-[#ff5500]/10 transition-all pointer-events-none" />
             <span className="text-[10px] font-inter uppercase tracking-wider text-zinc-500 block font-medium">Average Rating</span>
-            <span className="text-3xl font-black font-poppins text-[#ff5500] mt-1.5 block">★ {avgRating}</span>
+            <span className="text-2xl sm:text-3xl font-black font-poppins text-[#ff5500] mt-1.5 block">★ {avgRating}</span>
             <span className="text-[11px] font-inter text-zinc-400 mt-1 block">Out of 5.0 scale</span>
           </div>
 
           <div className="p-4 sm:p-5 rounded-2xl bg-[#090b0e] border border-white/[0.08] shadow-sm relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-[#ff5500]/5 rounded-full blur-2xl group-hover:bg-[#ff5500]/10 transition-all pointer-events-none" />
             <span className="text-[10px] font-inter uppercase tracking-wider text-zinc-500 block font-medium">Curated Favorites</span>
-            <span className="text-3xl font-black font-poppins text-white mt-1.5 block flex items-center gap-2">
+            <span className="text-2xl sm:text-3xl font-black font-poppins text-white mt-1.5 block flex items-center gap-2">
               <span>{favoritesCount}</span>
-              <Heart className="w-5 h-5 text-[#ff5500] fill-[#ff5500] inline" />
+              <Heart className="w-4 sm:w-5 h-4 sm:h-5 text-[#ff5500] fill-[#ff5500] inline" />
             </span>
             <span className="text-[11px] font-inter text-zinc-400 mt-1 block">Highlighted on homepage</span>
           </div>
 
-          <div className="p-4 sm:p-5 rounded-2xl bg-[#090b0e] border border-white/[0.08] shadow-sm flex flex-col justify-between relative overflow-hidden group">
+          <div className="col-span-2 sm:col-span-2 lg:col-span-1 p-4 sm:p-5 rounded-2xl bg-[#090b0e] border border-white/[0.08] shadow-sm flex flex-col justify-between relative overflow-hidden group">
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-[10px] font-inter uppercase tracking-wider text-zinc-500 block font-medium">Database & Backups</span>
@@ -722,18 +722,18 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         </div>
 
         {/* Section 1: TMDB Movie & TV Search & Fast Review Logger */}
-        <section className="p-6 sm:p-8 rounded-3xl bg-[#090b0e] border border-white/[0.08] space-y-4 shadow-xl">
+        <section className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl bg-[#090b0e] border border-white/[0.08] space-y-4 shadow-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 className="text-lg font-bold font-poppins text-white flex items-center gap-2">
-                <Film className="w-5 h-5 text-[#ff5500]" />
+              <h2 className="text-base sm:text-lg font-bold font-poppins text-white flex items-center gap-2">
+                <Film className="w-4 sm:w-5 h-4 sm:h-5 text-[#ff5500]" />
                 <span>Log a Film or TV Review</span>
               </h2>
               <p className="text-xs font-inter text-zinc-400 mt-0.5">
-                Search TMDB's global catalog of movies and TV shows to pull artwork, creators/directors, cast, crew, and write your critique.
+                Search TMDB's global catalog to pull artwork, cast, crew, and write your critique.
               </p>
             </div>
-            <span className="text-xs font-inter text-zinc-500">Live TMDB Sync</span>
+            <span className="text-xs font-inter text-zinc-500 hidden sm:inline">Live TMDB Sync</span>
           </div>
 
           {/* Search Input with Autosuggest Dropdown */}
@@ -746,10 +746,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                 onFocus={() => {
                   if (suggestions.length > 0) setShowDropdown(true);
                 }}
-                placeholder="Search TMDB for movies & TV shows (e.g. Breaking Bad, Dune, Succession)..."
-                className="w-full bg-[#0e1117] border border-white/[0.1] focus:border-[#ff5500] focus:ring-1 focus:ring-[#ff5500] rounded-2xl pl-12 pr-10 py-3.5 text-sm font-inter text-white placeholder-zinc-500 outline-none shadow-inner transition-all"
+                placeholder="Search TMDB for movies & TV shows..."
+                className="w-full bg-[#0e1117] border border-white/[0.1] focus:border-[#ff5500] focus:ring-1 focus:ring-[#ff5500] rounded-2xl pl-10 sm:pl-12 pr-10 py-3 sm:py-3.5 text-xs sm:text-sm font-inter text-white placeholder-zinc-500 outline-none shadow-inner transition-all"
               />
-              <Search className="w-5 h-5 text-zinc-500 absolute left-4 pointer-events-none" />
+              <Search className="w-4 sm:w-5 h-4 sm:h-5 text-zinc-500 absolute left-3.5 sm:left-4 pointer-events-none" />
 
               {isSearching && (
                 <div className="absolute right-4">
@@ -760,7 +760,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
             {/* Autosuggest Dropdown */}
             {showDropdown && suggestions.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-2 bg-[#0d1016] border border-white/[0.12] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden z-50 divide-y divide-white/[0.06] animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="absolute left-0 right-0 top-full mt-2 bg-[#0d1016] border border-white/[0.12] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden z-50 divide-y divide-white/[0.06] animate-in fade-in slide-in-from-top-2 duration-150 max-h-80 overflow-y-auto">
                 {suggestions.map((movie) => {
                   const poster = getPosterUrl(movie.poster, "w342");
                   return (
@@ -771,7 +771,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                         setShowDropdown(false);
                         setSearchQuery("");
                       }}
-                      className="p-3 flex items-center gap-3.5 hover:bg-white/[0.04] transition-colors cursor-pointer group"
+                      className="p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3.5 hover:bg-white/[0.04] transition-colors cursor-pointer group"
                     >
                       <div className="w-10 aspect-[2/3] rounded-lg overflow-hidden bg-[#181c24] flex-shrink-0 border border-white/[0.06]">
                         {poster ? (
@@ -784,34 +784,34 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                       </div>
 
                       <div className="min-w-0 flex-grow">
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-medium font-poppins text-white group-hover:text-[#ff7a29] transition-colors truncate">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <h4 className="text-xs sm:text-sm font-medium font-poppins text-white group-hover:text-[#ff7a29] transition-colors truncate">
                             {movie.title}
                           </h4>
                           {movie.mediaType && (
-                            <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded tracking-wider uppercase flex-shrink-0 ${
+                            <span className={`text-[9px] sm:text-[10px] font-semibold px-1.5 py-0.2 rounded tracking-wider uppercase flex-shrink-0 ${
                               movie.mediaType === "tv"
                                 ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
                                 : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
                             }`}>
-                              {movie.mediaType === "tv" ? "TV Series" : "Movie"}
+                              {movie.mediaType === "tv" ? "TV" : "Movie"}
                             </span>
                           )}
                           {movie.year && (
-                            <span className="text-xs font-inter text-zinc-500">
+                            <span className="text-[11px] sm:text-xs font-inter text-zinc-500">
                               ({movie.year})
                             </span>
                           )}
                         </div>
                         {movie.director && (
-                          <p className="text-xs text-zinc-400 font-inter mt-0.5">
+                          <p className="text-[11px] sm:text-xs text-zinc-400 font-inter mt-0.5 truncate">
                             {movie.mediaType === "tv" ? "Created by" : "Dir."} {movie.director}
                           </p>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1.5 text-xs font-inter text-[#ff7a29] group-hover:translate-x-1 transition-transform pr-2 font-medium">
-                        <span>Write Review</span>
+                      <div className="flex items-center gap-1 text-xs font-inter text-[#ff7a29] group-hover:translate-x-0.5 transition-transform pr-1 font-medium flex-shrink-0">
+                        <span className="hidden sm:inline">Write Review</span>
                         <Plus className="w-4 h-4 stroke-[2.5]" />
                       </div>
                     </div>
@@ -826,11 +826,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         <section className="space-y-6">
           
           {/* Header & Controls Bar */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 sm:p-6 rounded-3xl bg-[#090b0e] border border-white/[0.08]">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#090b0e] border border-white/[0.08]">
             <div>
               <div className="flex items-center gap-3">
-                <h2 className="text-lg sm:text-xl font-bold font-poppins text-white flex items-center gap-2">
-                  <Database className="w-5 h-5 text-[#ff5500]" />
+                <h2 className="text-base sm:text-xl font-bold font-poppins text-white flex items-center gap-2">
+                  <Database className="w-4 sm:w-5 h-4 sm:h-5 text-[#ff5500]" />
                   <span>Logged Movies Collection</span>
                 </h2>
                 <span className="px-2.5 py-0.5 rounded-full bg-[#ff5500]/15 text-[#ff7a29] border border-[#ff5500]/30 text-xs font-inter font-semibold">
@@ -843,13 +843,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({
             </div>
 
             {/* Filter Pills, Search & Sort */}
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Filter Tabs */}
-              <div className="flex items-center gap-1 p-1 rounded-xl bg-[#0e1118] border border-white/[0.08]">
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full lg:w-auto">
+              {/* Filter Tabs - Horizontal Swipe on Mobile */}
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-[#0e1118] border border-white/[0.08] overflow-x-auto no-scrollbar max-w-full flex-nowrap w-full sm:w-auto shrink-0">
                 <button
                   type="button"
                   onClick={() => setFilterTab("all")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
                     filterTab === "all"
                       ? "bg-[#ff5500] text-black font-semibold shadow-sm"
                       : "text-zinc-400 hover:text-white"
@@ -861,7 +861,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setFilterTab("movie")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
                     filterTab === "movie"
                       ? "bg-[#ff5500] text-black font-semibold shadow-sm"
                       : "text-zinc-400 hover:text-white"
@@ -873,7 +873,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setFilterTab("tv")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
                     filterTab === "tv"
                       ? "bg-[#ff5500] text-black font-semibold shadow-sm"
                       : "text-zinc-400 hover:text-white"
@@ -885,7 +885,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setFilterTab("favorites")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
                     filterTab === "favorites"
                       ? "bg-[#ff5500] text-black font-semibold shadow-sm"
                       : "text-zinc-400 hover:text-white"
@@ -898,7 +898,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setFilterTab("5star")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
                     filterTab === "5star"
                       ? "bg-[#ff5500] text-black font-semibold shadow-sm"
                       : "text-zinc-400 hover:text-white"
@@ -911,7 +911,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setFilterTab("4star_plus")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
                     filterTab === "4star_plus"
                       ? "bg-[#ff5500] text-black font-semibold shadow-sm"
                       : "text-zinc-400 hover:text-white"
@@ -921,69 +921,72 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                 </button>
               </div>
 
-              {/* Quick Search */}
-              <div className="relative w-full sm:w-56">
-                <input
-                  type="text"
-                  value={gridSearch}
-                  onChange={(e) => setGridSearch(e.target.value)}
-                  placeholder="Filter by title, dir..."
-                  className="w-full bg-[#0e1118] border border-white/[0.08] focus:border-[#ff5500] rounded-xl pl-8 pr-7 py-1.5 text-xs font-inter text-white placeholder-zinc-500 outline-none"
-                />
-                <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                {gridSearch && (
+              {/* Sub-row of search, sort, and rearrange */}
+              <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                {/* Quick Search */}
+                <div className="relative flex-1 sm:w-56 sm:flex-initial min-w-[140px]">
+                  <input
+                    type="text"
+                    value={gridSearch}
+                    onChange={(e) => setGridSearch(e.target.value)}
+                    placeholder="Filter title, dir..."
+                    className="w-full bg-[#0e1118] border border-white/[0.08] focus:border-[#ff5500] rounded-xl pl-8 pr-7 py-1.5 text-xs font-inter text-white placeholder-zinc-500 outline-none"
+                  />
+                  <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  {gridSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setGridSearch("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Sort By Dropdown */}
+                <div className="flex items-center gap-1.5 bg-[#0e1118] border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-xs font-inter text-zinc-300 flex-1 sm:flex-initial">
+                  <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortOption)}
+                    className="bg-transparent text-white outline-none cursor-pointer text-xs font-inter pr-1 w-full"
+                  >
+                    <option value="custom" className="bg-[#0e1118] text-[#ff7a29]">Site Display Order (Default)</option>
+                    <option value="newest" className="bg-[#0e1118] text-white">Date Added (Newest)</option>
+                    <option value="oldest" className="bg-[#0e1118] text-white">Date Added (Oldest)</option>
+                    <option value="rating_desc" className="bg-[#0e1118] text-white">Rating (Highest)</option>
+                    <option value="rating_asc" className="bg-[#0e1118] text-white">Rating (Lowest)</option>
+                    <option value="year_desc" className="bg-[#0e1118] text-white">Release Year (Newest)</option>
+                    <option value="title_asc" className="bg-[#0e1118] text-white">Title (A to Z)</option>
+                  </select>
+                </div>
+
+                {/* Rearrange Order Mode Toggle */}
+                {onReorderReviews && (
                   <button
                     type="button"
-                    onClick={() => setGridSearch("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white cursor-pointer"
+                    onClick={() => {
+                      const nextMode = !isReorderMode;
+                      setIsReorderMode(nextMode);
+                      if (nextMode) {
+                        setSortBy("custom");
+                        setGridSearch("");
+                        setFilterTab("all");
+                      }
+                    }}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-inter font-medium transition-all cursor-pointer w-full sm:w-auto ${
+                      isReorderMode
+                        ? "bg-[#ff5500] text-black border-[#ff5500] shadow-[0_0_15px_rgba(255,85,0,0.35)] font-bold"
+                        : "bg-[#0e1118] border-white/[0.08] text-zinc-300 hover:text-white hover:border-white/20"
+                    }`}
+                    title="Rearrange order of reviews on homepage and reviews page"
                   >
-                    <X className="w-3 h-3" />
+                    <Move className="w-3.5 h-3.5" />
+                    <span>{isReorderMode ? "Exit Rearrange" : "Rearrange Order"}</span>
                   </button>
                 )}
               </div>
-
-              {/* Sort By Dropdown */}
-              <div className="flex items-center gap-1.5 bg-[#0e1118] border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-xs font-inter text-zinc-300">
-                <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500" />
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="bg-transparent text-white outline-none cursor-pointer text-xs font-inter pr-1"
-                >
-                  <option value="custom" className="bg-[#0e1118] text-[#ff7a29]">Site Display Order (Default)</option>
-                  <option value="newest" className="bg-[#0e1118] text-white">Date Added (Newest)</option>
-                  <option value="oldest" className="bg-[#0e1118] text-white">Date Added (Oldest)</option>
-                  <option value="rating_desc" className="bg-[#0e1118] text-white">Rating (Highest)</option>
-                  <option value="rating_asc" className="bg-[#0e1118] text-white">Rating (Lowest)</option>
-                  <option value="year_desc" className="bg-[#0e1118] text-white">Release Year (Newest)</option>
-                  <option value="title_asc" className="bg-[#0e1118] text-white">Title (A to Z)</option>
-                </select>
-              </div>
-
-              {/* Rearrange Order Mode Toggle */}
-              {onReorderReviews && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const nextMode = !isReorderMode;
-                    setIsReorderMode(nextMode);
-                    if (nextMode) {
-                      setSortBy("custom");
-                      setGridSearch("");
-                      setFilterTab("all");
-                    }
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-inter font-medium transition-all cursor-pointer ${
-                    isReorderMode
-                      ? "bg-[#ff5500] text-black border-[#ff5500] shadow-[0_0_15px_rgba(255,85,0,0.35)] font-bold"
-                      : "bg-[#0e1118] border-white/[0.08] text-zinc-300 hover:text-white hover:border-white/20"
-                  }`}
-                  title="Rearrange order of reviews on homepage and reviews page"
-                >
-                  <Move className="w-3.5 h-3.5" />
-                  <span>{isReorderMode ? "Exit Rearrange" : "Rearrange Order"}</span>
-                </button>
-              )}
             </div>
           </div>
 
@@ -1299,6 +1302,60 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                           Edit
                         </button>
                       </div>
+
+                      {/* Mobile Quick Actions Toolbar (Instant touch access on mobile/tablet without needing hover) */}
+                      {!isReorderMode && (
+                        <div className="flex lg:hidden items-center justify-between gap-1 pt-2 border-t border-white/[0.06]">
+                          <button
+                            type="button"
+                            onClick={() => setEditReviewTarget(rev)}
+                            className="p-1.5 rounded-lg bg-white/[0.04] active:bg-[#ff5500] text-[#ff7a29] active:text-black transition-colors"
+                            title="Edit Review"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPosterEditReview(rev)}
+                            className="p-1.5 rounded-lg bg-white/[0.04] active:bg-[#ff5500] text-zinc-300 active:text-black transition-colors"
+                            title="Change Poster"
+                          >
+                            <Film className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setBackdropEditReview(rev)}
+                            className="p-1.5 rounded-lg bg-white/[0.04] active:bg-[#ff5500] text-zinc-300 active:text-black transition-colors"
+                            title="Change Backdrop"
+                          >
+                            <ImageIcon className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFramingEditReview(rev)}
+                            className="p-1.5 rounded-lg bg-white/[0.04] active:bg-[#ff5500] text-zinc-300 active:text-black transition-colors"
+                            title="Crop & Frame Backdrop"
+                          >
+                            <Crop className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setStoryStudioReview(rev)}
+                            className="p-1.5 rounded-lg bg-white/[0.04] active:bg-[#ff5500] text-zinc-300 active:text-black transition-colors"
+                            title="Instagram Story Studio"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteReviewTarget(rev)}
+                            className="p-1.5 rounded-lg bg-white/[0.04] active:bg-red-500 text-zinc-400 active:text-white transition-colors"
+                            title="Delete Review"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-red-400 active:text-white" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

@@ -320,16 +320,16 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
 
         {/* Admin Action Buttons on Backdrop */}
         {isAdmin && (
-          <div className="absolute top-20 right-4 sm:right-6 lg:right-10 xl:right-14 z-20 flex items-center gap-2">
+          <div className="absolute top-16 sm:top-20 right-4 sm:right-6 lg:right-10 xl:right-14 z-20 flex flex-wrap justify-end items-center gap-1.5 sm:gap-2">
             {backdropUrl && (
               <button
                 type="button"
                 onClick={() => setShowFramingModal(true)}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/80 hover:bg-[#ff5500] text-white hover:text-black border border-white/20 hover:border-[#ff5500] text-xs font-inter backdrop-blur-md transition-all shadow-xl cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-black/80 hover:bg-[#ff5500] text-white hover:text-black border border-white/20 hover:border-[#ff5500] text-xs font-inter backdrop-blur-md transition-all shadow-xl cursor-pointer"
                 title="Adjust backdrop framing, vertical position, and banner height"
               >
                 <Crop className="w-3.5 h-3.5" />
-                <span>Crop & Frame</span>
+                <span><span className="hidden sm:inline">Crop & </span>Frame</span>
               </button>
             )}
 
@@ -337,18 +337,18 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
               <button
                 type="button"
                 onClick={() => setShowBackdropModal(true)}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/80 hover:bg-[#ff5500] text-white hover:text-black border border-white/20 hover:border-[#ff5500] text-xs font-inter backdrop-blur-md transition-all shadow-xl cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-black/80 hover:bg-[#ff5500] text-white hover:text-black border border-white/20 hover:border-[#ff5500] text-xs font-inter backdrop-blur-md transition-all shadow-xl cursor-pointer"
                 title="Change review backdrop artwork from TMDB"
               >
                 <ImageIcon className="w-3.5 h-3.5" />
-                <span>Change Backdrop</span>
+                <span><span className="hidden sm:inline">Change </span>Backdrop</span>
               </button>
             )}
 
             <button
               type="button"
               onClick={() => setShowStoryModal(true)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/80 hover:bg-[#ff5500] text-white hover:text-black border border-white/20 hover:border-[#ff5500] text-xs font-inter backdrop-blur-md transition-all shadow-xl cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-black/80 hover:bg-[#ff5500] text-white hover:text-black border border-white/20 hover:border-[#ff5500] text-xs font-inter backdrop-blur-md transition-all shadow-xl cursor-pointer"
               title="Create Instagram Story Card (1080x1920)"
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -359,7 +359,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
       </section>
 
       {/* Main Content Area: Shifted upwards so the entire poster is visible immediately on load */}
-      <main className="relative z-10 w-full px-4 sm:px-6 lg:px-10 xl:px-14 -mt-28 sm:-mt-36 md:-mt-48 lg:-mt-52 xl:-mt-60 pb-20 flex-grow">
+      <main className="relative z-10 w-full px-4 sm:px-6 lg:px-10 xl:px-14 -mt-24 sm:-mt-36 md:-mt-48 lg:-mt-52 xl:-mt-60 pb-20 flex-grow">
         
         {/* Full-width Responsive 3-Column Layout */}
         <div className="flex flex-col lg:flex-row gap-8 xl:gap-10 items-start">
@@ -370,7 +370,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
           <div className="w-full lg:w-64 xl:w-72 flex-shrink-0 space-y-5 lg:sticky lg:top-20">
             
             {/* The Poster */}
-            <div className="relative group">
+            <div className="relative group max-w-[220px] sm:max-w-[260px] lg:max-w-none mx-auto lg:mx-0">
               <div className="aspect-[2/3] rounded-lg overflow-hidden border border-white/[0.12] shadow-[0_25px_60px_rgba(0,0,0,0.85)] bg-[#12151c]">
                 {posterUrl && !posterError ? (
                   <img
@@ -495,11 +495,11 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
                 {/* Movie Title & Year */}
                 <div className="space-y-1">
                   <div className="flex items-baseline gap-3 flex-wrap">
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium font-poppins text-white tracking-tight leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                    <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-medium font-poppins text-white tracking-tight leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                       {review.title}
                     </h1>
                     {review.year && (
-                      <span className="text-xl sm:text-2xl md:text-3xl font-inter text-zinc-300 font-normal drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+                      <span className="text-lg sm:text-2xl md:text-3xl font-inter text-zinc-300 font-normal drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
                         {review.year}
                       </span>
                     )}
@@ -551,7 +551,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
           {/* RIGHT SIDEBAR: Cast & Crew Single Box with Filter Tabs   */}
           {/* ======================================================== */}
           {(castList.length > 0 || crewList.length > 0) && (
-            <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 lg:sticky lg:top-20 mt-28 sm:mt-36 md:mt-48 lg:mt-52 xl:mt-60">
+            <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 lg:sticky lg:top-20 mt-0 lg:mt-52 xl:mt-60">
               <div className="p-4 sm:p-5 rounded-2xl bg-[#0b0d12] border border-white/[0.06] space-y-4 font-poppins shadow-xl">
                 
                 {/* Editorial Hairline Tabs: Cast / Crew */}
