@@ -4,22 +4,22 @@ const { fetchTMDB, extractTopCast, extractPrioritizedCrew } = require("../servic
 const { enrichReviewIfCreditsMissing } = require("../services/reviewEnrichmentService");
 const { broadcast } = require("../services/eventsService");
 
-const getAllReviews = (req, res) => {
+const getAllReviews = async (req, res) => {
   try {
-    const reviews = reviewRepository.getAllReviews();
+    const reviews = await reviewRepository.getAllReviews();
     res.json({
       count: reviews.length,
       reviews,
     });
   } catch (err) {
-    console.error("Error fetching reviews from SQLite:", err);
+    console.error("Error fetching reviews from database:", err);
     res.status(500).json({ error: "Failed to load reviews" });
   }
 };
 
 const getReviewById = async (req, res) => {
   try {
-    let review = reviewRepository.getReviewById(req.params.id);
+    let review = await reviewRepository.getReviewById(req.params.id);
     if (!review) {
       return res.status(404).json({ error: "Review not found" });
     }
@@ -62,7 +62,7 @@ const createReview = async (req, res) => {
       }
     }
 
-    const newReview = reviewRepository.createReview(reviewData);
+    const newReview = await reviewRepository.createReview(reviewData);
     broadcast("reviews_updated", { action: "create", id: newReview.id });
     res.status(201).json(newReview);
   } catch (err) {
@@ -71,9 +71,9 @@ const createReview = async (req, res) => {
   }
 };
 
-const updateReview = (req, res) => {
+const updateReview = async (req, res) => {
   try {
-    const updated = reviewRepository.updateReview(req.params.id, req.body);
+    const updated = await reviewRepository.updateReview(req.params.id, req.body);
     if (!updated) {
       return res.status(404).json({ error: "Review not found" });
     }
@@ -85,14 +85,14 @@ const updateReview = (req, res) => {
   }
 };
 
-const updatePoster = (req, res) => {
+const updatePoster = async (req, res) => {
   try {
     const { posterUrl } = req.body;
     if (!posterUrl) {
       return res.status(400).json({ error: "posterUrl is required" });
     }
 
-    const updated = reviewRepository.updateReviewPoster(req.params.id, posterUrl);
+    const updated = await reviewRepository.updateReviewPoster(req.params.id, posterUrl);
     if (!updated) {
       return res.status(404).json({ error: "Review not found" });
     }
@@ -104,14 +104,14 @@ const updatePoster = (req, res) => {
   }
 };
 
-const updateBackdrop = (req, res) => {
+const updateBackdrop = async (req, res) => {
   try {
     const { backdropUrl } = req.body;
     if (!backdropUrl) {
       return res.status(400).json({ error: "backdropUrl is required" });
     }
 
-    const updated = reviewRepository.updateReviewBackdrop(req.params.id, backdropUrl);
+    const updated = await reviewRepository.updateReviewBackdrop(req.params.id, backdropUrl);
     if (!updated) {
       return res.status(404).json({ error: "Review not found" });
     }
@@ -123,9 +123,9 @@ const updateBackdrop = (req, res) => {
   }
 };
 
-const deleteReview = (req, res) => {
+const deleteReview = async (req, res) => {
   try {
-    const success = reviewRepository.deleteReview(req.params.id);
+    const success = await reviewRepository.deleteReview(req.params.id);
     if (!success) {
       return res.status(404).json({ error: "Review not found" });
     }
@@ -137,13 +137,13 @@ const deleteReview = (req, res) => {
   }
 };
 
-const reorderReviews = (req, res) => {
+const reorderReviews = async (req, res) => {
   try {
     const { orderedIds } = req.body;
     if (!Array.isArray(orderedIds)) {
       return res.status(400).json({ error: "orderedIds array is required" });
     }
-    const updatedReviews = reviewRepository.reorderReviews(orderedIds);
+    const updatedReviews = await reviewRepository.reorderReviews(orderedIds);
     broadcast("reviews_updated", { action: "reorder" });
     res.json({
       success: true,
@@ -157,13 +157,13 @@ const reorderReviews = (req, res) => {
   }
 };
 
-const updateBackdropFraming = (req, res) => {
+const updateBackdropFraming = async (req, res) => {
   try {
     const { framing } = req.body;
     if (!framing || typeof framing !== "object") {
       return res.status(400).json({ error: "framing object is required" });
     }
-    const updatedReview = reviewRepository.updateReviewBackdropFraming(req.params.id, framing);
+    const updatedReview = await reviewRepository.updateReviewBackdropFraming(req.params.id, framing);
     if (!updatedReview) {
       return res.status(404).json({ error: "Review not found" });
     }

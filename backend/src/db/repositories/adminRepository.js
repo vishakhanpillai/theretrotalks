@@ -10,7 +10,7 @@ const getAdminPassword = () => {
   return ADMIN_PASSWORD;
 };
 
-const verifyPasswordAndCreateSession = (password) => {
+const verifyPasswordAndCreateSession = async (password) => {
   const expectedPassword = getAdminPassword();
   if (!expectedPassword || typeof password !== "string") {
     return null;
@@ -31,19 +31,28 @@ const verifyPasswordAndCreateSession = (password) => {
 
   const token = crypto.randomBytes(32).toString("hex");
   const now = Date.now();
-  db.prepare("INSERT INTO admin_sessions (token, created_at) VALUES (?, ?)").run(token, now);
+  await db.execute({
+    sql: "INSERT INTO admin_sessions (token, created_at) VALUES (?, ?)",
+    args: [token, now],
+  });
   return token;
 };
 
-const validateSessionToken = (token) => {
+const validateSessionToken = async (token) => {
   if (!token) return false;
-  const session = db.prepare("SELECT * FROM admin_sessions WHERE token = ?").get(token);
-  return Boolean(session);
+  const res = await db.execute({
+    sql: "SELECT * FROM admin_sessions WHERE token = ?",
+    args: [token],
+  });
+  return res.rows.length > 0;
 };
 
-const revokeSession = (token) => {
+const revokeSession = async (token) => {
   if (!token) return;
-  db.prepare("DELETE FROM admin_sessions WHERE token = ?").run(token);
+  await db.execute({
+    sql: "DELETE FROM admin_sessions WHERE token = ?",
+    args: [token],
+  });
 };
 
 module.exports = {

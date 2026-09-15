@@ -1,21 +1,25 @@
 const path = require("path");
 const fs = require("fs");
-const { DatabaseSync } = require("node:sqlite");
-const { DB_PATH } = require("../config/env");
+const { createClient } = require("@libsql/client");
+const { TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, DB_PATH } = require("../config/env");
 
-// Ensure target directory exists for container volumes / custom paths
-const dbDir = path.dirname(DB_PATH);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+const isTurso = Boolean(TURSO_DATABASE_URL);
+
+// Ensure target directory exists for local file fallback
+if (!isTurso) {
+  const dbDir = path.dirname(DB_PATH);
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
 }
 
-// Initialize Database connection
-const db = new DatabaseSync(DB_PATH);
-
-// Enable WAL mode for high concurrency and resilience
-db.exec("PRAGMA journal_mode = WAL;");
-db.exec("PRAGMA foreign_keys = ON;");
+// Initialize @libsql/client (connects to Turso cloud or local file)
+const db = createClient({
+  url: isTurso ? TURSO_DATABASE_URL : `file:${DB_PATH}`,
+  authToken: isTurso ? TURSO_AUTH_TOKEN : undefined,
+});
 
 module.exports = {
   db,
+  isTurso,
 };

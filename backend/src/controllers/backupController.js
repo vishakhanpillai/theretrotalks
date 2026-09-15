@@ -2,60 +2,141 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { DatabaseSync } = require('node:sqlite');
-const { db } = require('../db/connection');
+const { db, isTurso } = require('../db/connection');
 const { DB_PATH } = require('../config/env');
 const reviewRepository = require('../db/repositories/reviewRepository');
 const adminRepository = require('../db/repositories/adminRepository');
 const { broadcast } = require('../services/eventsService');
 
-const verifyAdmin = (req, res) => {
+const verifyAdmin = async (req, res) => {
   const authHeader = req.headers.authorization;
   const token =
     (authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null) ||
     req.headers['x-admin-token'] ||
     req.query.token;
 
-  if (!token || !adminRepository.validateSessionToken(token)) {
+  const isValid = await adminRepository.validateSessionToken(token);
+  if (!token || !isValid) {
     res.status(401).json({ error: 'Unauthorized. Valid admin session token required.' });
     return false;
   }
   return true;
 };
 
-const downloadSqlite = (req, res) => {
-  if (!verifyAdmin(req, res)) return;
+const downloadSqlite = async (req, res) => {
+  if (!(await verifyAdmin(req, res))) return;
 
   try {
-    // Flush WAL writes so retro_talks.db is completely consolidated and clean
-    try {
-      db.exec('PRAGMA wal_checkpoint(TRUNCATE);');
-    } catch (e) {
-      console.warn('WAL checkpoint warning:', e.message);
-    }
-
-    if (!fs.existsSync(DB_PATH)) {
-      return res.status(404).json({ error: 'Database file not found on server' });
-    }
-
     const dateStr = new Date().toISOString().slice(0, 10);
     const filename = `retro_talks_${dateStr}.sqlite`;
 
     res.setHeader('Content-Type', 'application/x-sqlite3');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 
-    const fileStream = fs.createReadStream(DB_PATH);
+    if (!isTurso && fs.existsSync(DB_PATH)) {
+      const fileStream = fs.createReadStream(DB_PATH);
+      fileStream.pipe(res);
+      return;
+    }
+
+    // If Turso Cloud (or local file missing): generate consolidated SQLite file on-the-fly from reviews
+    const reviews = await reviewRepository.getAllReviews();
+    const tempExportPath = path.join(
+      os.tmpdir(),
+      `export_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.sqlite`
+    );
+
+    const tempDb = new DatabaseSync(tempExportPath);
+    try {
+      tempDb.exec(`
+        CREATE TABLE reviews (
+          id TEXT PRIMARY KEY,
+          tmdb_id INTEGER,
+          title TEXT NOT NULL,
+          year TEXT,
+          poster TEXT NOT NULL,
+          backdrop TEXT,
+          backdrop_framing TEXT,
+          director TEXT,
+          genres TEXT,
+          rating REAL NOT NULL,
+          review TEXT NOT NULL,
+          watched_date TEXT,
+          is_favorite INTEGER DEFAULT 0,
+          cast TEXT,
+          crew TEXT,
+          overview TEXT,
+          slug TEXT,
+          display_order INTEGER DEFAULT 0,
+          media_type TEXT DEFAULT 'movie',
+          created_at INTEGER,
+          updated_at INTEGER
+        );
+      `);
+
+      const insertStmt = tempDb.prepare(`
+        INSERT INTO reviews (
+          id, tmdb_id, title, year, poster, backdrop, backdrop_framing, director, genres,
+          rating, review, watched_date, is_favorite, cast, crew, overview, slug,
+          display_order, media_type, created_at, updated_at
+        ) VALUES (
+          ?, ?, ?, ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?
+        )
+      `);
+
+      for (const r of reviews) {
+        insertStmt.run(
+          r.id,
+          r.tmdbId ?? null,
+          r.title,
+          r.year ?? '',
+          r.poster,
+          r.backdrop ?? '',
+          r.backdropFraming ? JSON.stringify(r.backdropFraming) : null,
+          r.director ?? 'Unknown Director',
+          JSON.stringify(r.genres || []),
+          Number(r.rating) || 0,
+          r.review,
+          r.watchedDate ?? '',
+          r.isFavorite ? 1 : 0,
+          JSON.stringify(r.cast || []),
+          JSON.stringify(r.crew || []),
+          r.overview ?? null,
+          r.slug ?? '',
+          r.displayOrder ?? 0,
+          r.mediaType ?? 'movie',
+          Number(r.createdAt) || Date.now(),
+          Date.now()
+        );
+      }
+    } finally {
+      tempDb.close();
+    }
+
+    const fileStream = fs.createReadStream(tempExportPath);
     fileStream.pipe(res);
+    fileStream.on('close', () => {
+      if (fs.existsSync(tempExportPath)) {
+        try {
+          fs.unlinkSync(tempExportPath);
+        } catch (e) {
+          // ignore
+        }
+      }
+    });
   } catch (err) {
     console.error('Download SQLite error:', err);
     res.status(500).json({ error: 'Failed to download database backup' });
   }
 };
 
-const exportJson = (req, res) => {
-  if (!verifyAdmin(req, res)) return;
+const exportJson = async (req, res) => {
+  if (!(await verifyAdmin(req, res))) return;
 
   try {
-    const reviews = reviewRepository.getAllReviews();
+    const reviews = await reviewRepository.getAllReviews();
     const dateStr = new Date().toISOString().slice(0, 10);
     const filename = `theretrotalks_backup_${dateStr}.json`;
 
@@ -84,11 +165,11 @@ const escapeCSV = (val) => {
   return `"${str.replace(/"/g, '""')}"`;
 };
 
-const exportCsv = (req, res) => {
-  if (!verifyAdmin(req, res)) return;
+const exportCsv = async (req, res) => {
+  if (!(await verifyAdmin(req, res))) return;
 
   try {
-    const reviews = reviewRepository.getAllReviews();
+    const reviews = await reviewRepository.getAllReviews();
     const dateStr = new Date().toISOString().slice(0, 10);
     const filename = `theretrotalks_reviews_${dateStr}.csv`;
 
@@ -199,7 +280,7 @@ const parseCSV = (text) => {
 };
 
 const importDatabase = async (req, res) => {
-  if (!verifyAdmin(req, res)) return;
+  if (!(await verifyAdmin(req, res))) return;
 
   if (!req.file || !req.file.buffer) {
     return res.status(400).json({ error: "No file uploaded. Please provide a .sqlite, .json, or .csv file." });
@@ -213,7 +294,6 @@ const importDatabase = async (req, res) => {
   let detectedFormat = "unknown";
 
   try {
-    // 1. Check if SQLite binary: header starts with "SQLite format 3\0"
     const isSqliteHeader = buffer.length > 16 && buffer.subarray(0, 16).toString("ascii") === "SQLite format 3\0";
     const isSqliteExt = originalName.endsWith(".sqlite") || originalName.endsWith(".db");
 
@@ -246,7 +326,6 @@ const importDatabase = async (req, res) => {
         }
       }
     } else {
-      // String content (JSON or CSV)
       const text = buffer.toString("utf-8").trim();
 
       if (text.startsWith("{") || text.startsWith("[")) {
@@ -275,9 +354,8 @@ const importDatabase = async (req, res) => {
       });
     }
 
-    const result = reviewRepository.importReviewsBatch(reviews, mode);
+    const result = await reviewRepository.importReviewsBatch(reviews, mode);
 
-    // Broadcast SSE update so open pages immediately refresh
     try {
       broadcast("reviews_updated", { action: "import", count: result.count, mode });
     } catch (e) {

@@ -1,8 +1,8 @@
 const { slugify } = require("../utils/slugify");
 
-const initSchema = (db) => {
+const initSchema = async (db) => {
   // Initialize Tables
-  db.exec(`
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS reviews (
       id TEXT PRIMARY KEY,
       tmdb_id INTEGER,
@@ -11,76 +11,66 @@ const initSchema = (db) => {
       poster TEXT NOT NULL,
       backdrop TEXT,
       director TEXT,
-      genres TEXT, -- JSON array
+      genres TEXT,
       rating REAL NOT NULL,
       review TEXT NOT NULL,
       watched_date TEXT,
       is_favorite INTEGER DEFAULT 0,
       created_at INTEGER,
-      updated_at INTEGER
+      updated_at INTEGER,
+      cast TEXT,
+      crew TEXT,
+      overview TEXT,
+      slug TEXT,
+      display_order INTEGER DEFAULT 0,
+      backdrop_framing TEXT,
+      media_type TEXT DEFAULT 'movie'
     );
+  `);
 
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS admin_config (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+  `);
 
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS admin_sessions (
       token TEXT PRIMARY KEY,
       created_at INTEGER
     );
   `);
 
-  // Safely ensure cast and crew columns exist in reviews table
-  try {
-    db.exec("ALTER TABLE reviews ADD COLUMN cast TEXT;");
-  } catch (e) {
-    // Column already exists
-  }
+  // Safely ensure columns exist if reviews table was created with earlier schema
+  const optionalColumns = [
+    "ALTER TABLE reviews ADD COLUMN cast TEXT;",
+    "ALTER TABLE reviews ADD COLUMN crew TEXT;",
+    "ALTER TABLE reviews ADD COLUMN overview TEXT;",
+    "ALTER TABLE reviews ADD COLUMN slug TEXT;",
+    "ALTER TABLE reviews ADD COLUMN display_order INTEGER DEFAULT 0;",
+    "ALTER TABLE reviews ADD COLUMN backdrop_framing TEXT;",
+    "ALTER TABLE reviews ADD COLUMN media_type TEXT DEFAULT 'movie';",
+  ];
 
-  try {
-    db.exec("ALTER TABLE reviews ADD COLUMN crew TEXT;");
-  } catch (e) {
-    // Column already exists
-  }
-
-  try {
-    db.exec("ALTER TABLE reviews ADD COLUMN overview TEXT;");
-  } catch (e) {
-    // Column already exists
-  }
-
-  try {
-    db.exec("ALTER TABLE reviews ADD COLUMN slug TEXT;");
-  } catch (e) {
-    // Column already exists
-  }
-
-  try {
-    db.exec("ALTER TABLE reviews ADD COLUMN display_order INTEGER DEFAULT 0;");
-  } catch (e) {
-    // Column already exists
-  }
-
-  try {
-    db.exec("ALTER TABLE reviews ADD COLUMN backdrop_framing TEXT;");
-  } catch (e) {
-    // Column already exists
-  }
-
-  try {
-    db.exec("ALTER TABLE reviews ADD COLUMN media_type TEXT DEFAULT 'movie';");
-  } catch (e) {
-    // Column already exists
+  for (const alterSql of optionalColumns) {
+    try {
+      await db.execute(alterSql);
+    } catch (e) {
+      // Column already exists or duplicate column name
+    }
   }
 
   // Populate empty slugs
   try {
-    const unslugged = db.prepare("SELECT id, title FROM reviews WHERE slug IS NULL OR slug = ''").all();
+    const unsluggedRes = await db.execute("SELECT id, title FROM reviews WHERE slug IS NULL OR slug = ''");
+    const unslugged = unsluggedRes.rows;
     if (unslugged.length > 0) {
-      const updateSlug = db.prepare("UPDATE reviews SET slug = ? WHERE id = ?");
       for (const r of unslugged) {
-        updateSlug.run(slugify(r.title), r.id);
+        await db.execute({
+          sql: "UPDATE reviews SET slug = ? WHERE id = ?",
+          args: [slugify(r.title), r.id],
+        });
       }
     }
   } catch (e) {
@@ -89,13 +79,16 @@ const initSchema = (db) => {
 
   // Initialize display_order if all rows are 0 or unassigned
   try {
-    const rows = db.prepare("SELECT id, created_at, display_order FROM reviews ORDER BY created_at DESC").all();
+    const rowsRes = await db.execute("SELECT id, created_at, display_order FROM reviews ORDER BY created_at DESC");
+    const rows = rowsRes.rows;
     const hasDistinctOrder = rows.some((r, idx) => r.display_order !== 0 && r.display_order !== idx);
     if (!hasDistinctOrder && rows.length > 1) {
-      const updateOrder = db.prepare("UPDATE reviews SET display_order = ? WHERE id = ?");
-      rows.forEach((r, idx) => {
-        updateOrder.run(idx, r.id);
-      });
+      for (let idx = 0; idx < rows.length; idx++) {
+        await db.execute({
+          sql: "UPDATE reviews SET display_order = ? WHERE id = ?",
+          args: [idx, rows[idx].id],
+        });
+      }
     }
   } catch (e) {
     console.warn("Display order migration error:", e.message);

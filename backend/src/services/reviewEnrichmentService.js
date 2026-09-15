@@ -23,13 +23,13 @@ const enrichReviewIfCreditsMissing = async (review) => {
       const cast = extractTopCast(data.credits?.cast, 10);
       const crew = extractPrioritizedCrew(data.credits?.crew, 10);
       if (cast.length > 0 || crew.length > 0) {
-        reviewRepository.updateReviewCredits(review.id, cast, crew);
+        await reviewRepository.updateReviewCredits(review.id, cast, crew);
       }
       if (data.overview) {
-        reviewRepository.updateReviewOverview(review.id, data.overview);
+        await reviewRepository.updateReviewOverview(review.id, data.overview);
         review.overview = data.overview;
       }
-      return reviewRepository.getReviewById(review.id);
+      return await reviewRepository.getReviewById(review.id);
     }
   } catch (err) {
     console.warn(`Dynamic enrichment failed for review ${review.id}:`, err.message);
@@ -40,7 +40,7 @@ const enrichReviewIfCreditsMissing = async (review) => {
 
 const enrichAllReviewsOnStartup = async () => {
   try {
-    const reviews = reviewRepository.getAllReviews();
+    const reviews = await reviewRepository.getAllReviews();
     for (const review of reviews) {
       if (
         review.tmdbId &&
@@ -61,10 +61,10 @@ const enrichAllReviewsOnStartup = async () => {
             const crew = extractPrioritizedCrew(data.credits?.crew, 10);
 
             if (cast.length > 0 || crew.length > 0) {
-              reviewRepository.updateReviewCredits(review.id, cast, crew);
+              await reviewRepository.updateReviewCredits(review.id, cast, crew);
             }
             if (data.overview) {
-              reviewRepository.updateReviewOverview(review.id, data.overview);
+              await reviewRepository.updateReviewOverview(review.id, data.overview);
             }
             console.log(`Auto-enriched cast, crew, and overview for: "${review.title}"`);
           }

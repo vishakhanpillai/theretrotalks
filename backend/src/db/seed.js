@@ -1,8 +1,9 @@
-const seedInitialReviews = (db) => {
-  const seedCount = db.prepare("SELECT COUNT(*) as count FROM reviews").get().count;
+const seedInitialReviews = async (db) => {
+  const countRes = await db.execute("SELECT COUNT(*) as count FROM reviews");
+  const seedCount = Number(countRes.rows[0]?.count ?? 0);
 
   if (seedCount === 0) {
-    console.log("Seeding initial personal cinema reviews into SQLite database...");
+    console.log("Seeding initial personal cinema reviews into database...");
     const initialReviews = [
       {
         id: "rev-1",
@@ -70,28 +71,31 @@ const seedInitialReviews = (db) => {
       },
     ];
 
-    const insertStmt = db.prepare(`
+    const insertSql = `
       INSERT INTO reviews (id, tmdb_id, title, year, poster, backdrop, director, genres, rating, review, watched_date, is_favorite, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+    `;
 
     for (const r of initialReviews) {
-      insertStmt.run(
-        r.id,
-        r.tmdb_id,
-        r.title,
-        r.year,
-        r.poster,
-        r.backdrop,
-        r.director,
-        r.genres,
-        r.rating,
-        r.review,
-        r.watched_date,
-        r.is_favorite,
-        r.created_at,
-        r.updated_at
-      );
+      await db.execute({
+        sql: insertSql,
+        args: [
+          r.id,
+          r.tmdb_id,
+          r.title,
+          r.year,
+          r.poster,
+          r.backdrop,
+          r.director,
+          r.genres,
+          r.rating,
+          r.review,
+          r.watched_date,
+          r.is_favorite,
+          r.created_at,
+          r.updated_at,
+        ],
+      });
     }
   }
 };

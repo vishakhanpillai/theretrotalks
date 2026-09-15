@@ -16,6 +16,9 @@ const FRONTEND_DIST = process.env.FRONTEND_DIST
   ? path.resolve(process.env.FRONTEND_DIST)
   : path.resolve(__dirname, "../../../frontend/dist");
 
+const TURSO_DATABASE_URL = process.env.TURSO_DATABASE_URL || null;
+const TURSO_AUTH_TOKEN = process.env.TURSO_AUTH_TOKEN || null;
+
 module.exports = {
   PORT,
   TMDB_BASE_URL,
@@ -25,4 +28,6 @@ module.exports = {
   ADMIN_USERNAME,
   DB_PATH,
   FRONTEND_DIST,
+  TURSO_DATABASE_URL,
+  TURSO_AUTH_TOKEN,
 };
