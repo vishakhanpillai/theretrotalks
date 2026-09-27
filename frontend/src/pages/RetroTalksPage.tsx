@@ -357,7 +357,7 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
 
           </div>
 
-          {/* Right Column: Avengers Doomsday Countdown & Upcoming Movies of the Month */}
+          {/* Right Column: Avengers Doomsday Countdown & Upcoming Releases */}
           <div className="w-full lg:w-[330px] xl:w-[380px] flex-shrink-0 lg:sticky lg:top-20 space-y-6 lg:pt-[57px]">
             <AvengersCountdown onClick={() => setShowDoomsdayModal(true)} />
             <UpcomingMoviesSidebar

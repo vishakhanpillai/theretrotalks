@@ -7,16 +7,18 @@ interface UpcomingMoviesSidebarProps {
 }
 
 const formatDisplayDate = (dateStr?: string | null, fallback?: string) => {
-  if (!dateStr) return fallback || "TBA";
+  if (fallback && fallback !== "TBA") return fallback;
+  if (!dateStr) return "TBA";
   const parts = dateStr.split("-");
-  if (parts.length < 3) return fallback || dateStr;
+  if (parts.length < 3) return dateStr;
   const [y, m, d] = parts;
-  const date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
-  if (isNaN(date.getTime())) return fallback || dateStr;
+  const date = new Date(Date.UTC(parseInt(y), parseInt(m) - 1, parseInt(d)));
+  if (isNaN(date.getTime())) return dateStr;
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   });
 };
 
@@ -24,7 +26,6 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
   onSelectUpcoming,
 }) => {
   const [movies, setMovies] = useState<UpcomingMovie[]>([]);
-  const [monthName, setMonthName] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,8 +40,11 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
       })
       .then((data) => {
         if (isMounted) {
-          setMovies(data.movies || []);
-          setMonthName(data.monthName || "");
+          const todayStr = new Date().toISOString().split("T")[0];
+          const incoming = (data.movies || []).filter(
+            (m: UpcomingMovie) => !m.releaseDate || m.releaseDate >= todayStr
+          );
+          setMovies(incoming);
         }
       })
       .catch((err) => {
@@ -65,7 +69,7 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
       <div className="flex items-center gap-2.5 border-b border-white/[0.06] pb-3 sm:pb-4">
         <Calendar className="w-4 h-4 text-[#ff5500] flex-shrink-0" />
         <h3 className="text-base sm:text-lg font-poppins font-normal font-[400] text-white">
-          Upcoming {monthName || new Date().toLocaleString("en-US", { month: "long" })} Releases
+          Upcoming Releases
         </h3>
       </div>
 
@@ -74,7 +78,7 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
         <div className="py-12 flex flex-col items-center justify-center text-center space-y-2">
           <Loader2 className="w-6 h-6 animate-spin text-[#ff5500]" />
           <span className="text-xs font-inter text-zinc-500">
-            Syncing {monthName || "monthly"} releases...
+            Syncing upcoming releases...
           </span>
         </div>
       )}
@@ -150,7 +154,7 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
 
       {/* Footer Info */}
       <div className="pt-2 border-t border-white/[0.06] text-[11px] font-inter text-zinc-500 text-center">
-        <span>Curated schedule for {monthName || "this month"}</span>
+        <span>Curated upcoming release schedule</span>
       </div>
 
     </aside>

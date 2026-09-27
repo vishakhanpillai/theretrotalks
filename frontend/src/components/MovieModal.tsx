@@ -18,12 +18,13 @@ const formatReleaseDate = (dateStr?: string | null) => {
   const parts = dateStr.split("-");
   if (parts.length < 3) return dateStr;
   const [y, m, d] = parts;
-  const date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+  const date = new Date(Date.UTC(parseInt(y), parseInt(m) - 1, parseInt(d)));
   if (isNaN(date.getTime())) return dateStr;
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   });
 };
 
@@ -75,7 +76,10 @@ export const MovieModal: React.FC<MovieModalProps> = ({
         return res.json();
       })
       .then((data) => {
-        setDetails(data);
+        setDetails({
+          ...data,
+          releaseDate: data.releaseDate || movie.releaseDate,
+        });
       })
       .catch((err) => {
         console.warn("Using movie data:", err);

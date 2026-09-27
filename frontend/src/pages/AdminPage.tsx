@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Lock,
   Eye,
@@ -11,11 +11,9 @@ import {
   Film,
   Star,
   Heart,
-  LogOut,
   ArrowLeft,
   Loader2,
   AlertCircle,
-  Database,
   ExternalLink,
   Image as ImageIcon,
   Edit3,
@@ -29,15 +27,10 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Crop,
-  Download,
-  ChevronDown,
-  FileSpreadsheet,
-  FileJson,
-  Upload,
+  Menu,
 } from "lucide-react";
 import type { Review, Movie, BackdropFraming } from "../types";
 import { getPosterUrl } from "../utils/images";
-import { MovieModal } from "../components/MovieModal";
 import { PosterSelectorModal } from "../components/PosterSelectorModal";
 import { BackdropSelectorModal } from "../components/BackdropSelectorModal";
 import { BackdropFramingModal } from "../components/BackdropFramingModal";
@@ -45,7 +38,10 @@ import { StoryCardBuilderModal } from "../components/StoryCardBuilderModal";
 import { EditReviewModal } from "../components/EditReviewModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 import { DatabaseImportModal } from "../components/DatabaseImportModal";
-import { Footer } from "../components/Footer";
+import { AdminSidebar, type FilterTab } from "../components/AdminSidebar";
+import { CinemaSearchModal } from "../components/CinemaSearchModal";
+import { CinemaReviewStudioModal } from "../components/CinemaReviewStudioModal";
+import { getReviewDraft, clearReviewDraft, type ReviewDraft } from "../utils/draftStorage";
 import { slugify } from "../utils/slugify";
 import { formatRating } from "../utils/formatRating";
 
@@ -66,7 +62,6 @@ interface AdminPageProps {
   onNavigateToReview?: (id: string | number) => void;
 }
 
-type FilterTab = "all" | "movie" | "tv" | "favorites" | "5star" | "4star_plus";
 type SortOption = "custom" | "newest" | "oldest" | "rating_desc" | "rating_asc" | "year_desc" | "title_asc";
 
 export const AdminPage: React.FC<AdminPageProps> = ({
@@ -79,8 +74,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   onUpdateReview,
   onDeleteReview,
   onReorderReviews,
-  onUpdatePoster,
-  onUpdateBackdrop,
   onUpdateBackdropFraming,
   onNavigateHome,
   onNavigateToReview,
@@ -91,12 +84,20 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  // TMDB Autosuggest Search (for logging new reviews)
-  const [searchQuery, setSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<Movie[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
+  // Mobile Sidebar Drawer state
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // New Cinema Search & Review Studio Modals
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [selectedMovieForStudio, setSelectedMovieForStudio] = useState<Movie | null>(null);
+  const [currentDraft, setCurrentDraft] = useState<ReviewDraft | null>(null);
+
+  // Load draft on mount and when modal closes
+  useEffect(() => {
+    if (isAdmin) {
+      setCurrentDraft(getReviewDraft());
+    }
+  }, [isAdmin, selectedMovieForStudio]);
 
   // Filter & Sort State for Logged Reviews Grid
   const [gridSearch, setGridSearch] = useState("");
@@ -133,21 +134,21 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       await onReorderReviews(orderedList.map((r) => r.id));
       setHasPendingReorder(false);
       showToast("Display order updated on website!");
-    } catch (e) {
+    } catch {
       showToast("Failed to save display order.");
     } finally {
       setSavingReorder(false);
     }
   };
 
-  // Modals inside Admin Page
-  const [selectedMovieForReview, setSelectedMovieForReview] = useState<Movie | null>(null);
+  // Modals for existing review actions
   const [editReviewTarget, setEditReviewTarget] = useState<Review | null>(null);
   const [deleteReviewTarget, setDeleteReviewTarget] = useState<Review | null>(null);
   const [storyStudioReview, setStoryStudioReview] = useState<Review | null>(null);
   const [posterEditReview, setPosterEditReview] = useState<Review | null>(null);
   const [backdropEditReview, setBackdropEditReview] = useState<Review | null>(null);
   const [framingEditReview, setFramingEditReview] = useState<Review | null>(null);
+  const [showImportModal, setShowImportModal] = useState<boolean>(false);
 
   // Feedback Toast notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -159,32 +160,20 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     }, 3000);
   };
 
-  // Close search dropdown on click outside
+  // Global Keyboard Shortcut: ⌘K or Ctrl+K to open Cinema Search
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
-        setShowDropdown(false);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k" && isAdmin) {
+        e.preventDefault();
+        setIsSearchModalOpen((prev) => !prev);
       }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isAdmin]);
 
-  // One-click Backup & Export State & Handlers
-  const [showBackupMenu, setShowBackupMenu] = useState<boolean>(false);
+  // Database Backup Downloads
   const [downloadingFormat, setDownloadingFormat] = useState<"sqlite" | "json" | "csv" | null>(null);
-  const [showImportModal, setShowImportModal] = useState<boolean>(false);
-  const backupMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutsideBackup(event: MouseEvent) {
-      if (backupMenuRef.current && !backupMenuRef.current.contains(event.target as Node)) {
-        setShowBackupMenu(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutsideBackup);
-    return () => document.removeEventListener("mousedown", handleClickOutsideBackup);
-  }, []);
 
   const handleDownloadBackup = async (format: "sqlite" | "json" | "csv") => {
     try {
@@ -216,7 +205,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
-      setShowBackupMenu(false);
       showToast(`Exported ${format.toUpperCase()} (${filename})!`);
     } catch (err: unknown) {
       console.error("Backup download error:", err);
@@ -226,33 +214,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     }
   };
 
-  // TMDB Autosuggest debounce
-  useEffect(() => {
-    if (!isAdmin || !searchQuery.trim() || searchQuery.trim().length < 2) {
-      setSuggestions([]);
-      setShowDropdown(false);
-      return;
-    }
-
-    const timeoutId = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const res = await fetch(`/api/movies/search?q=${encodeURIComponent(searchQuery.trim())}`);
-        if (!res.ok) throw new Error("Search failed");
-        const data = await res.json();
-        const movies: Movie[] = (data.results || []).slice(0, 6);
-        setSuggestions(movies);
-        setShowDropdown(true);
-      } catch (err) {
-        console.error("Autosuggest error:", err);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 250);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, isAdmin]);
-
+  // Login Submit
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password.trim()) return;
@@ -312,18 +274,16 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
   // Filter & Sort Logged Reviews
   const displayedReviews = useMemo(() => {
-    const sourceList = isReorderMode ? orderedList : (sortBy === "custom" ? orderedList : reviews);
+    const sourceList = isReorderMode ? orderedList : sortBy === "custom" ? orderedList : reviews;
     return sourceList
       .filter((r) => {
-        if (isReorderMode) return true; // Show all reviews in reorder mode
-        // Tab Filter
+        if (isReorderMode) return true;
         if (filterTab === "tv" && r.mediaType !== "tv") return false;
         if (filterTab === "movie" && r.mediaType === "tv") return false;
         if (filterTab === "favorites" && !r.isFavorite) return false;
         if (filterTab === "5star" && r.rating < 5.0) return false;
         if (filterTab === "4star_plus" && r.rating < 4.0) return false;
 
-        // Search Filter
         if (gridSearch.trim()) {
           const q = gridSearch.toLowerCase();
           const matchTitle = r.title.toLowerCase().includes(q);
@@ -373,28 +333,25 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#ff5500]/10 rounded-full blur-[130px] pointer-events-none" />
 
         <div className="relative w-full max-w-md bg-[#090b0e] border border-white/[0.12] rounded-3xl p-8 shadow-[0_25px_80px_rgba(0,0,0,0.9),0_0_50px_rgba(255,85,0,0.12)] space-y-6">
-          {/* Header */}
           <div className="text-center space-y-2">
             <div className="w-12 h-12 rounded-2xl bg-[#ff5500]/10 border border-[#ff5500]/30 flex items-center justify-center text-[#ff5500] mx-auto mb-3 shadow-[0_0_20px_rgba(255,85,0,0.2)]">
               <Lock className="w-6 h-6" />
             </div>
-            <span className="text-[10px] font-inter uppercase tracking-[0.25em] text-[#ff5500] block font-semibold">
-              Restricted Area
+            <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#ff5500] block font-bold">
+              Restricted Desk
             </span>
             <h1 className="text-2xl font-black text-white uppercase tracking-tight">
-              Admin Portal
+              Admin Studio
             </h1>
             <p className="text-xs font-inter text-zinc-400">
-              The Retro Talks · Cinema Review & Management Center
+              The Retro Talks · Cinema Diary & Critique Center
             </p>
           </div>
 
-          {/* Notice */}
           <div className="p-3.5 rounded-2xl bg-[#0e1117] border border-white/[0.06] text-xs font-inter text-zinc-400 text-center leading-relaxed">
-            Enter your admin security passcode to edit critiques, customize artwork, and manage database records.
+            Enter your admin security passcode to compose reviews, customize posters, and manage database records.
           </div>
 
-          {/* Error message */}
           {loginError && (
             <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs font-inter text-red-400 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -402,7 +359,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({
             </div>
           )}
 
-          {/* Passcode Form */}
           <form onSubmit={handleLoginSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-xs font-inter font-medium text-zinc-400 block">
@@ -441,13 +397,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({
               ) : (
                 <>
                   <Shield className="w-4 h-4 stroke-[2.5]" />
-                  <span>Authenticate</span>
+                  <span>Enter Studio</span>
                 </>
               )}
             </button>
           </form>
 
-          {/* Return link */}
           <div className="pt-2 text-center border-t border-white/[0.06]">
             <button
               type="button"
@@ -464,10 +419,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   }
 
   // --------------------------------------------------------------------------
-  // 2. AUTHENTICATED STATE: Full Admin Command Center
+  // 2. AUTHENTICATED STATE: Redesigned Admin Studio with Left Sidebar
   // --------------------------------------------------------------------------
   return (
-    <div className="min-h-screen bg-[#07080a] text-[#ededed] flex flex-col font-poppins selection:bg-[#ff5500] selection:text-black">
+    <div className="min-h-screen bg-[#07080a] text-[#ededed] flex font-poppins selection:bg-[#ff5500] selection:text-black">
       
       {/* Toast Notification */}
       {toastMessage && (
@@ -477,566 +432,220 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         </div>
       )}
 
-      {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#07080a]/90 backdrop-blur-xl">
-        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 h-20 flex items-center justify-between">
-          
-          {/* Logo & Admin Badge */}
-          <div className="flex items-center gap-3">
-            <div
-              className="flex flex-col select-none cursor-pointer group"
-              onClick={onNavigateHome}
-              title="Return to Public Site"
-            >
-              <span className="text-[10px] font-semibold tracking-[0.3em] uppercase text-[#ff5500] leading-none mb-1">
-                The
-              </span>
-              <span className="text-xl font-extrabold tracking-tight text-white leading-none font-poppins group-hover:text-[#ff7a29] transition-colors">
-                Retro Talks
-              </span>
-            </div>
+      {/* LEFT NAVIGATION BAR (AdminSidebar) */}
+      <AdminSidebar
+        totalReviews={totalReviews}
+        favoritesCount={favoritesCount}
+        movieCount={movieCount}
+        tvCount={tvCount}
+        avgRating={avgRating}
+        filterTab={filterTab}
+        setFilterTab={setFilterTab}
+        isReorderMode={isReorderMode}
+        setIsReorderMode={setIsReorderMode}
+        hasPendingReorder={hasPendingReorder}
+        onSaveReorder={handleSaveReorder}
+        savingReorder={savingReorder}
+        onOpenAddCinema={() => setIsSearchModalOpen(true)}
+        onOpenImport={() => setShowImportModal(true)}
+        onDownloadBackup={handleDownloadBackup}
+        downloadingFormat={downloadingFormat}
+        onNavigateHome={onNavigateHome}
+        onLogout={onLogout}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        draft={currentDraft}
+        onResumeDraft={() => {
+          if (currentDraft) {
+            setSelectedMovieForStudio(currentDraft.movie);
+          }
+        }}
+        onDiscardDraft={() => {
+          clearReviewDraft();
+          setCurrentDraft(null);
+          showToast("Draft review discarded");
+        }}
+      />
 
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#ff5500]/15 border border-[#ff5500]/30 text-xs font-inter text-[#ff7a29]">
-              <Shield className="w-3 h-3" />
-              <span>Admin Center</span>
-            </div>
-          </div>
-
-          {/* Right actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* 1-Click Backup & Export Dropdown */}
-            <div className="relative" ref={backupMenuRef}>
-              <button
-                type="button"
-                onClick={() => setShowBackupMenu(!showBackupMenu)}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.2] text-xs font-inter text-zinc-300 hover:text-white transition-all cursor-pointer"
-                title="Backup & Export Database"
-              >
-                {downloadingFormat ? (
-                  <Loader2 className="w-3.5 h-3.5 text-[#ff5500] animate-spin" />
-                ) : (
-                  <Download className="w-3.5 h-3.5 text-[#ff5500]" />
-                )}
-                <span className="hidden sm:inline">Backup & Export</span>
-                <ChevronDown className={`w-3 h-3 text-zinc-500 transition-transform ${showBackupMenu ? "rotate-180" : ""}`} />
-              </button>
-
-              {showBackupMenu && (
-                <div className="absolute right-0 mt-2 w-72 bg-[#0e1118] border border-white/[0.12] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden z-50 p-2 space-y-1 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <div className="px-3 py-1.5 border-b border-white/[0.06] mb-1">
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-[#ff7a29] font-bold block">
-                      Database Backup
-                    </span>
-                    <span className="text-[11px] text-zinc-400 font-inter">
-                      1-click offline safekeeping & data portability
-                    </span>
-                  </div>
-
-                  {/* Option 1: SQLite DB */}
-                  <button
-                    type="button"
-                    onClick={() => handleDownloadBackup("sqlite")}
-                    disabled={Boolean(downloadingFormat)}
-                    className="w-full text-left p-2.5 rounded-xl hover:bg-white/[0.05] transition-colors flex items-start gap-3 cursor-pointer group disabled:opacity-50"
-                  >
-                    <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black transition-colors flex-shrink-0">
-                      <Database className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-semibold font-poppins text-white group-hover:text-[#ff7a29] transition-colors">
-                          Raw SQLite Database
-                        </span>
-                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300">
-                          .sqlite
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-zinc-400 font-inter leading-tight mt-0.5">
-                        Full binary database with all tables, reviews, and schema.
-                      </p>
-                    </div>
-                  </button>
-
-                  {/* Option 2: JSON Export */}
-                  <button
-                    type="button"
-                    onClick={() => handleDownloadBackup("json")}
-                    disabled={Boolean(downloadingFormat)}
-                    className="w-full text-left p-2.5 rounded-xl hover:bg-white/[0.05] transition-colors flex items-start gap-3 cursor-pointer group disabled:opacity-50"
-                  >
-                    <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 group-hover:bg-amber-500 group-hover:text-black transition-colors flex-shrink-0">
-                      <FileJson className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-semibold font-poppins text-white group-hover:text-[#ff7a29] transition-colors">
-                          JSON Data Export
-                        </span>
-                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300">
-                          .json
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-zinc-400 font-inter leading-tight mt-0.5">
-                        Complete structured backup with cast, crew, and framing metadata.
-                      </p>
-                    </div>
-                  </button>
-
-                  {/* Option 3: CSV Spreadsheet */}
-                  <button
-                    type="button"
-                    onClick={() => handleDownloadBackup("csv")}
-                    disabled={Boolean(downloadingFormat)}
-                    className="w-full text-left p-2.5 rounded-xl hover:bg-white/[0.05] transition-colors flex items-start gap-3 cursor-pointer group disabled:opacity-50"
-                  >
-                    <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 group-hover:bg-blue-500 group-hover:text-black transition-colors flex-shrink-0">
-                      <FileSpreadsheet className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-semibold font-poppins text-white group-hover:text-[#ff7a29] transition-colors">
-                          CSV Spreadsheet
-                        </span>
-                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300">
-                          .csv
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-zinc-400 font-inter leading-tight mt-0.5">
-                        Import directly into Excel, Google Sheets, or Notion.
-                      </p>
-                    </div>
-                  </button>
-
-                  {/* Import Database Option */}
-                  <div className="border-t border-white/[0.08] my-1 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowBackupMenu(false);
-                        setShowImportModal(true);
-                      }}
-                      className="w-full text-left p-2.5 rounded-xl bg-[#ff5500]/10 hover:bg-[#ff5500] text-[#ff7a29] hover:text-black transition-all flex items-start gap-3 cursor-pointer group"
-                    >
-                      <div className="p-2 rounded-lg bg-[#ff5500]/20 text-[#ff7a29] group-hover:bg-black/20 group-hover:text-black transition-colors flex-shrink-0">
-                        <Upload className="w-4 h-4 stroke-[2.3]" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold font-poppins text-white group-hover:text-black transition-colors">
-                            Import / Restore Database
-                          </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#ff5500]/20 text-[#ff7a29] group-hover:bg-black/20 group-hover:text-black font-semibold">
-                            Upload
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-zinc-400 group-hover:text-black/80 font-inter leading-tight mt-0.5">
-                          Restore or merge reviews from .sqlite, .json, or .csv.
-                        </p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={onNavigateHome}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.2] text-xs font-inter text-zinc-300 hover:text-white transition-all cursor-pointer"
-              title="View Public Site"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-[#ff5500]" />
-              <span className="hidden sm:inline">View Public Site</span>
-            </button>
-
-            <button
-              onClick={onLogout}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs font-inter text-red-400 hover:text-red-300 transition-all cursor-pointer"
-              title="Exit Admin Mode"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Logout</span>
-            </button>
-          </div>
-
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="flex-grow w-full px-4 sm:px-6 lg:px-10 xl:px-14 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      {/* MAIN CONTENT AREA (Offset by left sidebar on desktop) */}
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-72">
         
-        {/* Metric Cards Strip */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div className="p-4 sm:p-5 rounded-2xl bg-[#090b0e] border border-white/[0.08] shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-[#ff5500]/5 rounded-full blur-2xl group-hover:bg-[#ff5500]/10 transition-all pointer-events-none" />
-            <span className="text-[10px] font-inter uppercase tracking-wider text-zinc-500 block font-medium">Total Reviews</span>
-            <span className="text-2xl sm:text-3xl font-black font-poppins text-white mt-1.5 block">{totalReviews}</span>
-            <span className="text-[11px] font-inter text-zinc-400 mt-1 block">Logged cinema entries</span>
-          </div>
-
-          <div className="p-4 sm:p-5 rounded-2xl bg-[#090b0e] border border-white/[0.08] shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-[#ff5500]/5 rounded-full blur-2xl group-hover:bg-[#ff5500]/10 transition-all pointer-events-none" />
-            <span className="text-[10px] font-inter uppercase tracking-wider text-zinc-500 block font-medium">Average Rating</span>
-            <span className="text-2xl sm:text-3xl font-black font-poppins text-[#ff5500] mt-1.5 block">★ {avgRating}</span>
-            <span className="text-[11px] font-inter text-zinc-400 mt-1 block">Out of 5.0 scale</span>
-          </div>
-
-          <div className="p-4 sm:p-5 rounded-2xl bg-[#090b0e] border border-white/[0.08] shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-[#ff5500]/5 rounded-full blur-2xl group-hover:bg-[#ff5500]/10 transition-all pointer-events-none" />
-            <span className="text-[10px] font-inter uppercase tracking-wider text-zinc-500 block font-medium">Curated Favorites</span>
-            <span className="text-2xl sm:text-3xl font-black font-poppins text-white mt-1.5 block flex items-center gap-2">
-              <span>{favoritesCount}</span>
-              <Heart className="w-4 sm:w-5 h-4 sm:h-5 text-[#ff5500] fill-[#ff5500] inline" />
-            </span>
-            <span className="text-[11px] font-inter text-zinc-400 mt-1 block">Highlighted on homepage</span>
-          </div>
-
-          <div className="col-span-2 sm:col-span-2 lg:col-span-1 p-4 sm:p-5 rounded-2xl bg-[#090b0e] border border-white/[0.08] shadow-sm flex flex-col justify-between relative overflow-hidden group">
-            <div className="flex items-start justify-between">
-              <div>
-                <span className="text-[10px] font-inter uppercase tracking-wider text-zinc-500 block font-medium">Database & Backups</span>
-                <span className="text-base font-bold font-poppins text-white mt-1.5 block flex items-center gap-2">
-                  <Database className="w-4 h-4 text-emerald-400" />
-                  <span>SQLite WAL Active</span>
-                </span>
-              </div>
-              <span className="text-[10px] font-inter text-emerald-400/90 font-medium flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Online</span>
-              </span>
-            </div>
-
-            {/* Quick 1-Click Export Buttons */}
-            <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center gap-1.5 flex-wrap">
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-30 w-full border-b border-white/[0.08] bg-[#07080a]/90 backdrop-blur-xl">
+          <div className="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            
+            {/* Left: Mobile Hamburger & Just Cinema Catalog Title */}
+            <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => handleDownloadBackup("sqlite")}
-                disabled={Boolean(downloadingFormat)}
-                title="Download entire raw SQLite database file (retro_talks.sqlite)"
-                className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black border border-white/[0.08] hover:border-[#ff5500] text-[11px] font-inter font-medium flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                onClick={() => setIsMobileSidebarOpen(true)}
+                className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-300 lg:hidden cursor-pointer"
+                title="Open Navigation"
               >
-                {downloadingFormat === "sqlite" ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <Database className="w-3 h-3 text-[#ff5500]" />
-                )}
-                <span>.sqlite</span>
+                <Menu className="w-5 h-5" />
               </button>
 
-              <button
-                type="button"
-                onClick={() => handleDownloadBackup("json")}
-                disabled={Boolean(downloadingFormat)}
-                title="Export all reviews and metadata as structured JSON"
-                className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black border border-white/[0.08] hover:border-[#ff5500] text-[11px] font-inter font-medium flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
-              >
-                {downloadingFormat === "json" ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <FileJson className="w-3 h-3 text-[#ff5500]" />
-                )}
-                <span>JSON</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDownloadBackup("csv")}
-                disabled={Boolean(downloadingFormat)}
-                title="Export reviews as CSV spreadsheet for Excel / Google Sheets"
-                className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black border border-white/[0.08] hover:border-[#ff5500] text-[11px] font-inter font-medium flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
-              >
-                {downloadingFormat === "csv" ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <FileSpreadsheet className="w-3 h-3 text-[#ff5500]" />
-                )}
-                <span>CSV</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowImportModal(true)}
-                title="Import reviews from .sqlite, .json, or .csv"
-                className="px-2.5 py-1 rounded-lg bg-[#ff5500]/15 hover:bg-[#ff5500] text-[#ff7a29] hover:text-black border border-[#ff5500]/30 hover:border-[#ff5500] text-[11px] font-inter font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm ml-auto"
-              >
-                <Upload className="w-3 h-3 stroke-[2.5]" />
-                <span>Import</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 1: TMDB Movie & TV Search & Fast Review Logger */}
-        <section className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl bg-[#090b0e] border border-white/[0.08] space-y-4 shadow-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h2 className="text-base sm:text-lg font-bold font-poppins text-white flex items-center gap-2">
-                <Film className="w-4 sm:w-5 h-4 sm:h-5 text-[#ff5500]" />
-                <span>Log a Film or TV Review</span>
+              <h2 className="text-base sm:text-lg font-bold font-poppins text-white tracking-tight">
+                Cinema Catalog
               </h2>
-              <p className="text-xs font-inter text-zinc-400 mt-0.5">
-                Search TMDB's global catalog to pull artwork, cast, crew, and write your critique.
-              </p>
             </div>
-            <span className="text-xs font-inter text-zinc-500 hidden sm:inline">Live TMDB Sync</span>
           </div>
+        </header>
 
-          {/* Search Input with Autosuggest Dropdown */}
-          <div className="relative" ref={searchContainerRef}>
-            <div className="relative flex items-center">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => {
-                  if (suggestions.length > 0) setShowDropdown(true);
-                }}
-                placeholder="Search TMDB for movies & TV shows..."
-                className="w-full bg-[#0e1117] border border-white/[0.1] focus:border-[#ff5500] focus:ring-1 focus:ring-[#ff5500] rounded-2xl pl-10 sm:pl-12 pr-10 py-3 sm:py-3.5 text-xs sm:text-sm font-inter text-white placeholder-zinc-500 outline-none shadow-inner transition-all"
-              />
-              <Search className="w-4 sm:w-5 h-4 sm:h-5 text-zinc-500 absolute left-3.5 sm:left-4 pointer-events-none" />
-
-              {isSearching && (
-                <div className="absolute right-4">
-                  <Loader2 className="w-4 h-4 text-[#ff5500] animate-spin" />
-                </div>
-              )}
-            </div>
-
-            {/* Autosuggest Dropdown */}
-            {showDropdown && suggestions.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-2 bg-[#0d1016] border border-white/[0.12] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden z-50 divide-y divide-white/[0.06] animate-in fade-in slide-in-from-top-2 duration-150 max-h-80 overflow-y-auto">
-                {suggestions.map((movie) => {
-                  const poster = getPosterUrl(movie.poster, "w342");
-                  return (
-                    <div
-                      key={movie.id}
-                      onClick={() => {
-                        setSelectedMovieForReview(movie);
-                        setShowDropdown(false);
-                        setSearchQuery("");
-                      }}
-                      className="p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3.5 hover:bg-white/[0.04] transition-colors cursor-pointer group"
-                    >
-                      <div className="w-10 aspect-[2/3] rounded-lg overflow-hidden bg-[#181c24] flex-shrink-0 border border-white/[0.06]">
-                        {poster ? (
-                          <img src={poster} alt={movie.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-zinc-600">
-                            <Film className="w-4 h-4" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-grow">
-                        <div className="flex items-center gap-1.5 sm:gap-2">
-                          <h4 className="text-xs sm:text-sm font-medium font-poppins text-white group-hover:text-[#ff7a29] transition-colors truncate">
-                            {movie.title}
-                          </h4>
-                          {movie.mediaType && (
-                            <span className={`text-[9px] sm:text-[10px] font-semibold px-1.5 py-0.2 rounded tracking-wider uppercase flex-shrink-0 ${
-                              movie.mediaType === "tv"
-                                ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                                : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                            }`}>
-                              {movie.mediaType === "tv" ? "TV" : "Movie"}
-                            </span>
-                          )}
-                          {movie.year && (
-                            <span className="text-[11px] sm:text-xs font-inter text-zinc-500">
-                              ({movie.year})
-                            </span>
-                          )}
-                        </div>
-                        {movie.director && (
-                          <p className="text-[11px] sm:text-xs text-zinc-400 font-inter mt-0.5 truncate">
-                            {movie.mediaType === "tv" ? "Created by" : "Dir."} {movie.director}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1 text-xs font-inter text-[#ff7a29] group-hover:translate-x-0.5 transition-transform pr-1 font-medium flex-shrink-0">
-                        <span className="hidden sm:inline">Write Review</span>
-                        <Plus className="w-4 h-4 stroke-[2.5]" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Section 2: Logged Movies Poster Grid */}
-        <section className="space-y-6">
+        {/* Content Canvas */}
+        <main className="flex-grow p-4 sm:p-6 lg:p-8 space-y-6">
           
-          {/* Header & Controls Bar */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#090b0e] border border-white/[0.08]">
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-base sm:text-xl font-bold font-poppins text-white flex items-center gap-2">
-                  <Database className="w-4 sm:w-5 h-4 sm:h-5 text-[#ff5500]" />
-                  <span>Logged Movies Collection</span>
-                </h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#ff5500]/15 text-[#ff7a29] border border-[#ff5500]/30 text-xs font-inter font-semibold">
-                  {displayedReviews.length} {displayedReviews.length === 1 ? "film" : "films"}
-                </span>
-              </div>
-              <p className="text-xs font-inter text-zinc-400 mt-1">
-                Edit reviews, switch high-resolution TMDB posters or backdrops, generate story cards, or delete entries.
-              </p>
+          {/* Controls Bar: Search, Filters, and Sorting */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#090b0e] border border-white/[0.08] flex flex-col md:flex-row md:items-center justify-between gap-4">
+            
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-[#0e1118] border border-white/[0.08] overflow-x-auto no-scrollbar max-w-full flex-nowrap shrink-0">
+              <button
+                type="button"
+                onClick={() => setFilterTab("all")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
+                  filterTab === "all"
+                    ? "bg-[#ff5500] text-black font-semibold shadow-sm"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                All ({reviews.length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFilterTab("movie")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
+                  filterTab === "movie"
+                    ? "bg-[#ff5500] text-black font-semibold shadow-sm"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                Movies ({movieCount})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFilterTab("tv")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
+                  filterTab === "tv"
+                    ? "bg-[#ff5500] text-black font-semibold shadow-sm"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                TV ({tvCount})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFilterTab("favorites")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
+                  filterTab === "favorites"
+                    ? "bg-[#ff5500] text-black font-semibold shadow-sm"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Heart className={`w-3 h-3 ${filterTab === "favorites" ? "fill-black" : "text-[#ff5500]"}`} />
+                <span>Favorites ({favoritesCount})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFilterTab("5star")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
+                  filterTab === "5star"
+                    ? "bg-[#ff5500] text-black font-semibold shadow-sm"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Star className={`w-3 h-3 ${filterTab === "5star" ? "fill-black" : "text-[#ff5500]"}`} />
+                <span>5★ ({fiveStarCount})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFilterTab("4star_plus")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
+                  filterTab === "4star_plus"
+                    ? "bg-[#ff5500] text-black font-semibold shadow-sm"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                4★+ ({fourStarPlusCount})
+              </button>
             </div>
 
-            {/* Filter Pills, Search & Sort */}
-            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full lg:w-auto">
-              {/* Filter Tabs - Horizontal Swipe on Mobile */}
-              <div className="flex items-center gap-1 p-1 rounded-xl bg-[#0e1118] border border-white/[0.08] overflow-x-auto no-scrollbar max-w-full flex-nowrap w-full sm:w-auto shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setFilterTab("all")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
-                    filterTab === "all"
-                      ? "bg-[#ff5500] text-black font-semibold shadow-sm"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  All ({reviews.length})
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFilterTab("movie")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
-                    filterTab === "movie"
-                      ? "bg-[#ff5500] text-black font-semibold shadow-sm"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  Movies ({movieCount})
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFilterTab("tv")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
-                    filterTab === "tv"
-                      ? "bg-[#ff5500] text-black font-semibold shadow-sm"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  TV ({tvCount})
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFilterTab("favorites")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
-                    filterTab === "favorites"
-                      ? "bg-[#ff5500] text-black font-semibold shadow-sm"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  <Heart className={`w-3 h-3 ${filterTab === "favorites" ? "fill-black" : "text-[#ff5500]"}`} />
-                  <span>Favorites ({favoritesCount})</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFilterTab("5star")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
-                    filterTab === "5star"
-                      ? "bg-[#ff5500] text-black font-semibold shadow-sm"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  <Star className={`w-3 h-3 ${filterTab === "5star" ? "fill-black" : "text-[#ff5500]"}`} />
-                  <span>5★ ({fiveStarCount})</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFilterTab("4star_plus")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-inter font-medium transition-colors cursor-pointer shrink-0 ${
-                    filterTab === "4star_plus"
-                      ? "bg-[#ff5500] text-black font-semibold shadow-sm"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  4★+ ({fourStarPlusCount})
-                </button>
-              </div>
-
-              {/* Sub-row of search, sort, and rearrange */}
-              <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-                {/* Quick Search */}
-                <div className="relative flex-1 sm:w-56 sm:flex-initial min-w-[140px]">
-                  <input
-                    type="text"
-                    value={gridSearch}
-                    onChange={(e) => setGridSearch(e.target.value)}
-                    placeholder="Filter title, dir..."
-                    className="w-full bg-[#0e1118] border border-white/[0.08] focus:border-[#ff5500] rounded-xl pl-8 pr-7 py-1.5 text-xs font-inter text-white placeholder-zinc-500 outline-none"
-                  />
-                  <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  {gridSearch && (
-                    <button
-                      type="button"
-                      onClick={() => setGridSearch("")}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white cursor-pointer"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Sort By Dropdown */}
-                <div className="flex items-center gap-1.5 bg-[#0e1118] border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-xs font-inter text-zinc-300 flex-1 sm:flex-initial">
-                  <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortOption)}
-                    className="bg-transparent text-white outline-none cursor-pointer text-xs font-inter pr-1 w-full"
-                  >
-                    <option value="custom" className="bg-[#0e1118] text-[#ff7a29]">Site Display Order (Default)</option>
-                    <option value="newest" className="bg-[#0e1118] text-white">Date Added (Newest)</option>
-                    <option value="oldest" className="bg-[#0e1118] text-white">Date Added (Oldest)</option>
-                    <option value="rating_desc" className="bg-[#0e1118] text-white">Rating (Highest)</option>
-                    <option value="rating_asc" className="bg-[#0e1118] text-white">Rating (Lowest)</option>
-                    <option value="year_desc" className="bg-[#0e1118] text-white">Release Year (Newest)</option>
-                    <option value="title_asc" className="bg-[#0e1118] text-white">Title (A to Z)</option>
-                  </select>
-                </div>
-
-                {/* Rearrange Order Mode Toggle */}
-                {onReorderReviews && (
+            {/* Quick Search & Sort dropdown */}
+            <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+              {/* Quick Search */}
+              <div className="relative flex-1 sm:w-60 min-w-[150px]">
+                <input
+                  type="text"
+                  value={gridSearch}
+                  onChange={(e) => setGridSearch(e.target.value)}
+                  placeholder="Search title, director, genre..."
+                  className="w-full bg-[#0e1118] border border-white/[0.08] focus:border-[#ff5500] rounded-xl pl-8 pr-7 py-2 text-xs font-inter text-white placeholder-zinc-500 outline-none"
+                />
+                <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                {gridSearch && (
                   <button
                     type="button"
-                    onClick={() => {
-                      const nextMode = !isReorderMode;
-                      setIsReorderMode(nextMode);
-                      if (nextMode) {
-                        setSortBy("custom");
-                        setGridSearch("");
-                        setFilterTab("all");
-                      }
-                    }}
-                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-inter font-medium transition-all cursor-pointer w-full sm:w-auto ${
-                      isReorderMode
-                        ? "bg-[#ff5500] text-black border-[#ff5500] shadow-[0_0_15px_rgba(255,85,0,0.35)] font-bold"
-                        : "bg-[#0e1118] border-white/[0.08] text-zinc-300 hover:text-white hover:border-white/20"
-                    }`}
-                    title="Rearrange order of reviews on homepage and reviews page"
+                    onClick={() => setGridSearch("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white cursor-pointer"
                   >
-                    <Move className="w-3.5 h-3.5" />
-                    <span>{isReorderMode ? "Exit Rearrange" : "Rearrange Order"}</span>
+                    <X className="w-3 h-3" />
                   </button>
                 )}
               </div>
+
+              {/* Sort By Dropdown */}
+              <div className="flex items-center gap-1.5 bg-[#0e1118] border border-white/[0.08] rounded-xl px-2.5 py-2 text-xs font-inter text-zinc-300">
+                <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  className="bg-transparent text-white outline-none cursor-pointer text-xs font-inter pr-1"
+                >
+                  <option value="custom" className="bg-[#0e1118] text-[#ff7a29]">Site Display Order</option>
+                  <option value="newest" className="bg-[#0e1118] text-white">Date Added (Newest)</option>
+                  <option value="oldest" className="bg-[#0e1118] text-white">Date Added (Oldest)</option>
+                  <option value="rating_desc" className="bg-[#0e1118] text-white">Rating (Highest)</option>
+                  <option value="rating_asc" className="bg-[#0e1118] text-white">Rating (Lowest)</option>
+                  <option value="year_desc" className="bg-[#0e1118] text-white">Release Year (Newest)</option>
+                  <option value="title_asc" className="bg-[#0e1118] text-white">Title (A to Z)</option>
+                </select>
+              </div>
+
+              {/* Toggle Reorder Mode */}
+              {onReorderReviews && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextMode = !isReorderMode;
+                    setIsReorderMode(nextMode);
+                    if (nextMode) {
+                      setSortBy("custom");
+                      setGridSearch("");
+                      setFilterTab("all");
+                    }
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-inter font-medium transition-all cursor-pointer ${
+                    isReorderMode
+                      ? "bg-[#ff5500] text-black border-[#ff5500] font-bold shadow-[0_0_15px_rgba(255,85,0,0.35)]"
+                      : "bg-[#0e1118] border-white/[0.08] text-zinc-300 hover:text-white"
+                  }`}
+                  title="Rearrange order of reviews on homepage and reviews page"
+                >
+                  <Move className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{isReorderMode ? "Exit Sorting" : "Sort Order"}</span>
+                </button>
+              )}
             </div>
           </div>
 
           {/* REARRANGE MODE BANNER */}
           {isReorderMode && (
-            <div className="mb-6 p-4 rounded-2xl bg-[#ff5500]/10 border border-[#ff5500]/30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-in fade-in">
+            <div className="p-4 rounded-2xl bg-[#ff5500]/10 border border-[#ff5500]/30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-in fade-in">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-[#ff5500]/20 text-[#ff5500]">
                   <Move className="w-5 h-5" />
@@ -1046,7 +655,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                     Rearrange Review Order Mode
                   </h4>
                   <p className="text-xs font-inter text-zinc-300">
-                    Drag cards or use the arrow buttons to define the order of reviews shown across the site.
+                    Drag cards or use arrow buttons to define how reviews appear across the public site.
                   </p>
                 </div>
               </div>
@@ -1090,7 +699,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
           {/* THE POSTER GRID */}
           {displayedReviews.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5 lg:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-5">
               {displayedReviews.map((rev, idx) => {
                 const poster = getPosterUrl(rev.poster, "w500");
                 return (
@@ -1147,7 +756,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
                       {/* Top Badges */}
                       <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none z-10">
-                        {/* Position Badge in Reorder Mode or Rating Badge */}
                         {isReorderMode ? (
                           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#ff5500] text-black text-xs font-inter font-extrabold shadow-[0_0_15px_rgba(255,85,0,0.5)]">
                             <GripVertical className="w-3.5 h-3.5" />
@@ -1160,7 +768,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                           </div>
                         )}
 
-                        {/* Right Top Badges: TV indicator & Favorite */}
                         <div className="flex items-center gap-1.5">
                           {!isReorderMode && rev.mediaType === "tv" && (
                             <div className="px-1.5 py-0.5 rounded-lg bg-purple-900/80 backdrop-blur-md border border-purple-500/40 text-[10px] font-inter font-bold text-purple-300 shadow-md">
@@ -1187,7 +794,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                               }}
                               disabled={idx === 0}
                               title="Move to first"
-                              className="flex-1 py-1.5 rounded-lg bg-white/[0.08] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-20 disabled:hover:bg-white/[0.08] disabled:hover:text-zinc-300 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
+                              className="flex-1 py-1.5 rounded-lg bg-white/[0.08] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-20 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
                             >
                               <ChevronsLeft className="w-3.5 h-3.5" />
                             </button>
@@ -1199,7 +806,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                               }}
                               disabled={idx === 0}
                               title="Move left/up"
-                              className="flex-1 py-1.5 rounded-lg bg-white/[0.08] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-20 disabled:hover:bg-white/[0.08] disabled:hover:text-zinc-300 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
+                              className="flex-1 py-1.5 rounded-lg bg-white/[0.08] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-20 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
                             >
                               ←
                             </button>
@@ -1211,7 +818,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                               }}
                               disabled={idx === displayedReviews.length - 1}
                               title="Move right/down"
-                              className="flex-1 py-1.5 rounded-lg bg-white/[0.08] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-20 disabled:hover:bg-white/[0.08] disabled:hover:text-zinc-300 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
+                              className="flex-1 py-1.5 rounded-lg bg-white/[0.08] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-20 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
                             >
                               →
                             </button>
@@ -1223,7 +830,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                               }}
                               disabled={idx === displayedReviews.length - 1}
                               title="Move to last"
-                              className="flex-1 py-1.5 rounded-lg bg-white/[0.08] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-20 disabled:hover:bg-white/[0.08] disabled:hover:text-zinc-300 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
+                              className="flex-1 py-1.5 rounded-lg bg-white/[0.08] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-20 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
                             >
                               <ChevronsRight className="w-3.5 h-3.5" />
                             </button>
@@ -1232,7 +839,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                       ) : (
                         /* Standard Hover Overlay with Quick Actions */
                         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between p-3.5 z-20">
-                          {/* Top View Link */}
                           <div className="flex justify-end">
                             <button
                               type="button"
@@ -1244,75 +850,74 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                                   window.open(`/review/${target}`, "_blank");
                                 }
                               }}
-                            className="p-1.5 rounded-xl bg-black/60 hover:bg-[#ff5500] hover:text-black border border-white/[0.15] text-white text-xs transition-colors cursor-pointer shadow-md"
-                            title="View Public Review Page"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </button>
+                              className="p-1.5 rounded-xl bg-black/60 hover:bg-[#ff5500] hover:text-black border border-white/[0.15] text-white text-xs transition-colors cursor-pointer shadow-md"
+                              title="View Public Review Page"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          <div className="flex flex-col items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditReviewTarget(rev)}
+                              className="w-full py-2.5 px-3 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-inter font-bold text-xs shadow-[0_0_20px_rgba(255,85,0,0.4)] flex items-center justify-center gap-1.5 transition-transform active:scale-95 cursor-pointer"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Edit Review</span>
+                            </button>
+                          </div>
+
+                          {/* Bottom Mini Toolbar */}
+                          <div className="grid grid-cols-5 gap-1 pt-2 border-t border-white/[0.1]">
+                            <button
+                              type="button"
+                              onClick={() => setPosterEditReview(rev)}
+                              className="p-1.5 rounded-lg bg-black/60 hover:bg-white/[0.1] text-zinc-300 hover:text-[#ff7a29] flex items-center justify-center transition-colors cursor-pointer"
+                              title="Change Poster Artwork"
+                            >
+                              <Film className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setBackdropEditReview(rev)}
+                              className="p-1.5 rounded-lg bg-black/60 hover:bg-white/[0.1] text-zinc-300 hover:text-[#ff7a29] flex items-center justify-center transition-colors cursor-pointer"
+                              title="Change Backdrop Artwork"
+                            >
+                              <ImageIcon className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setFramingEditReview(rev)}
+                              className="p-1.5 rounded-lg bg-black/60 hover:bg-white/[0.1] text-zinc-300 hover:text-[#ff7a29] flex items-center justify-center transition-colors cursor-pointer"
+                              title="Crop & Frame Backdrop"
+                            >
+                              <Crop className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setStoryStudioReview(rev)}
+                              className="p-1.5 rounded-lg bg-black/60 hover:bg-white/[0.1] text-zinc-300 hover:text-[#ff7a29] flex items-center justify-center transition-colors cursor-pointer"
+                              title="Story Studio (Instagram 9:16)"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setDeleteReviewTarget(rev)}
+                              className="p-1.5 rounded-lg bg-black/60 hover:bg-red-500/30 text-zinc-300 hover:text-red-400 flex items-center justify-center transition-colors cursor-pointer"
+                              title="Delete Review"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
-
-                        {/* Center Primary Action: Edit Review */}
-                        <div className="flex flex-col items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setEditReviewTarget(rev)}
-                            className="w-full py-2.5 px-3 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-inter font-bold text-xs shadow-[0_0_20px_rgba(255,85,0,0.4)] flex items-center justify-center gap-1.5 transition-transform active:scale-95 cursor-pointer"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                            <span>Edit Review</span>
-                          </button>
-                        </div>
-
-                        {/* Bottom Mini Toolbar */}
-                        <div className="grid grid-cols-5 gap-1 pt-2 border-t border-white/[0.1]">
-                          <button
-                            type="button"
-                            onClick={() => setPosterEditReview(rev)}
-                            className="p-1.5 rounded-lg bg-black/60 hover:bg-white/[0.1] text-zinc-300 hover:text-[#ff7a29] flex items-center justify-center transition-colors cursor-pointer"
-                            title="Change Poster Artwork"
-                          >
-                            <Film className="w-3.5 h-3.5" />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setBackdropEditReview(rev)}
-                            className="p-1.5 rounded-lg bg-black/60 hover:bg-white/[0.1] text-zinc-300 hover:text-[#ff7a29] flex items-center justify-center transition-colors cursor-pointer"
-                            title="Change Backdrop Artwork"
-                          >
-                            <ImageIcon className="w-3.5 h-3.5" />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setFramingEditReview(rev)}
-                            className="p-1.5 rounded-lg bg-black/60 hover:bg-white/[0.1] text-zinc-300 hover:text-[#ff7a29] flex items-center justify-center transition-colors cursor-pointer"
-                            title="Crop & Frame Backdrop (Adjust vertical position & height)"
-                          >
-                            <Crop className="w-3.5 h-3.5" />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setStoryStudioReview(rev)}
-                            className="p-1.5 rounded-lg bg-black/60 hover:bg-white/[0.1] text-zinc-300 hover:text-[#ff7a29] flex items-center justify-center transition-colors cursor-pointer"
-                            title="Story Studio (Instagram 9:16)"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setDeleteReviewTarget(rev)}
-                            className="p-1.5 rounded-lg bg-black/60 hover:bg-red-500/30 text-zinc-300 hover:text-red-400 flex items-center justify-center transition-colors cursor-pointer"
-                            title="Delete Review"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
 
                     {/* Movie Info below poster */}
                     <div className="p-3.5 flex flex-col flex-grow justify-between bg-[#090b0f] space-y-2">
@@ -1347,7 +952,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                         </button>
                       </div>
 
-                      {/* Mobile Quick Actions Toolbar (Instant touch access on mobile/tablet without needing hover) */}
+                      {/* Mobile Quick Actions Toolbar */}
                       {!isReorderMode && (
                         <div className="flex lg:hidden items-center justify-between gap-1 pt-2 border-t border-white/[0.06]">
                           <button
@@ -1406,62 +1011,160 @@ export const AdminPage: React.FC<AdminPageProps> = ({
               })}
             </div>
           ) : (
-            <div className="text-center py-16 border border-white/[0.06] rounded-3xl bg-[#090b0e] p-8 space-y-3">
-              <Film className="w-10 h-10 text-zinc-600 mx-auto" />
-              <h3 className="text-base font-bold font-poppins text-white">No film reviews found</h3>
+            <div className="text-center py-20 border border-white/[0.06] rounded-3xl bg-[#090b0e] p-8 space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-[#ff5500]/10 border border-[#ff5500]/30 flex items-center justify-center mx-auto text-[#ff5500]">
+                <Film className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-bold font-poppins text-white">No film reviews match your filters</h3>
               <p className="text-xs font-inter text-zinc-400 max-w-sm mx-auto">
-                No logged reviews match your current filter or search query. Try clearing your filters or search above.
+                Try clearing your search query or switching tabs. Or click below to add a new cinema review.
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setGridSearch("");
-                  setFilterTab("all");
-                }}
-                className="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-inter text-zinc-200 transition-colors cursor-pointer mt-2"
-              >
-                Clear Filters
-              </button>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGridSearch("");
+                    setFilterTab("all");
+                  }}
+                  className="px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-inter text-zinc-300 transition-colors cursor-pointer"
+                >
+                  Clear Filters
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsSearchModalOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-inter font-bold text-xs transition-all cursor-pointer shadow-md flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                  <span>Add Cinema</span>
+                </button>
+              </div>
             </div>
           )}
-        </section>
+        </main>
+      </div>
 
-      </main>
+      {/* ========================================================================= */}
+      {/* MODALS SECTION */}
+      {/* ========================================================================= */}
 
-      {/* Footer */}
-      <Footer />
+      {/* 1. CINEMA SEARCH POPUP (Command-palette style TMDB Search) */}
+      <CinemaSearchModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+        onSelectMovie={(movie) => {
+          setSelectedMovieForStudio(movie);
+        }}
+        onSelectCustom={() => {
+          setSelectedMovieForStudio({
+            id: 0,
+            title: "",
+            year: new Date().getFullYear().toString(),
+            poster: "",
+            backdrop: "",
+            overview: "",
+            tmdbRating: 0,
+            director: "",
+            genres: ["Cinema"],
+            mediaType: "movie",
+          });
+        }}
+      />
 
-      {/* MODAL 1: Movie Detail & Fast Review Logger Modal */}
-      {selectedMovieForReview && (
-        <MovieModal
-          movie={selectedMovieForReview}
-          onClose={() => setSelectedMovieForReview(null)}
+      {/* 2. BIG CINEMA REVIEW STUDIO MODAL (Expansive, comfortable review typing) */}
+      {selectedMovieForStudio && (
+        <CinemaReviewStudioModal
+          movie={selectedMovieForStudio}
+          initialDraft={currentDraft}
+          isOpen={Boolean(selectedMovieForStudio)}
+          onClose={() => {
+            setSelectedMovieForStudio(null);
+            setCurrentDraft(getReviewDraft());
+          }}
           onSaveReview={async (newReview) => {
             await onSaveReview(newReview);
-            setSelectedMovieForReview(null);
-            showToast(`Logged review for "${newReview.title}"!`);
+            setSelectedMovieForStudio(null);
+            setCurrentDraft(null);
+            showToast(`Published review for "${newReview.title}"!`);
           }}
-          isAdmin={true}
         />
       )}
 
-      {/* MODAL 2: Dedicated Edit Review Modal */}
-      <EditReviewModal
-        review={editReviewTarget}
-        isOpen={Boolean(editReviewTarget)}
-        onClose={() => setEditReviewTarget(null)}
-        onSave={handleSaveEditedReview}
-      />
+      {/* 3. EDIT EXISTING REVIEW MODAL */}
+      {editReviewTarget && (
+        <EditReviewModal
+          review={editReviewTarget}
+          isOpen={Boolean(editReviewTarget)}
+          onClose={() => setEditReviewTarget(null)}
+          onSave={handleSaveEditedReview}
+        />
+      )}
 
-      {/* MODAL 3: Cinema Delete Confirmation Modal */}
-      <DeleteConfirmModal
-        review={deleteReviewTarget}
-        isOpen={Boolean(deleteReviewTarget)}
-        onClose={() => setDeleteReviewTarget(null)}
-        onConfirmDelete={handleConfirmDelete}
-      />
+      {/* 4. CONFIRM DELETE REVIEW MODAL */}
+      {deleteReviewTarget && (
+        <DeleteConfirmModal
+          review={deleteReviewTarget}
+          isOpen={Boolean(deleteReviewTarget)}
+          onClose={() => setDeleteReviewTarget(null)}
+          onConfirmDelete={handleConfirmDelete}
+        />
+      )}
 
-      {/* MODAL 4: Instagram Story Card Builder Studio (Edits isolated to story studio) */}
+      {/* 5. POSTER SELECTOR MODAL */}
+      {posterEditReview && (
+        <PosterSelectorModal
+          isOpen={Boolean(posterEditReview)}
+          onClose={() => setPosterEditReview(null)}
+          movieTitle={posterEditReview.title}
+          movieId={Number(posterEditReview.tmdbId) || 0}
+          currentPosterUrl={posterEditReview.poster}
+          onSelectPoster={async (newPosterUrl) => {
+            if (onUpdateReview) {
+              await onUpdateReview(posterEditReview.id, { poster: newPosterUrl });
+            }
+            setPosterEditReview(null);
+            showToast(`Updated poster for "${posterEditReview.title}"`);
+          }}
+        />
+      )}
+
+      {/* 6. BACKDROP SELECTOR MODAL */}
+      {backdropEditReview && (
+        <BackdropSelectorModal
+          isOpen={Boolean(backdropEditReview)}
+          onClose={() => setBackdropEditReview(null)}
+          movieTitle={backdropEditReview.title}
+          movieId={Number(backdropEditReview.tmdbId) || 0}
+          currentBackdropUrl={backdropEditReview.backdrop}
+          onSelectBackdrop={async (newBackdropUrl) => {
+            if (onUpdateReview) {
+              await onUpdateReview(backdropEditReview.id, { backdrop: newBackdropUrl });
+            }
+            setBackdropEditReview(null);
+            showToast(`Updated backdrop for "${backdropEditReview.title}"`);
+          }}
+        />
+      )}
+
+      {/* 7. BACKDROP FRAMING MODAL */}
+      {framingEditReview && (
+        <BackdropFramingModal
+          isOpen={Boolean(framingEditReview)}
+          onClose={() => setFramingEditReview(null)}
+          movieTitle={framingEditReview.title}
+          backdropUrl={framingEditReview.backdrop}
+          currentFraming={framingEditReview.backdropFraming}
+          onSaveFraming={async (newFraming) => {
+            if (onUpdateBackdropFraming) {
+              await onUpdateBackdropFraming(framingEditReview.id, newFraming);
+            }
+            setFramingEditReview(null);
+            showToast(`Saved backdrop framing for "${framingEditReview.title}"`);
+          }}
+        />
+      )}
+
+      {/* 8. STORY CARD BUILDER MODAL */}
       {storyStudioReview && (
         <StoryCardBuilderModal
           isOpen={Boolean(storyStudioReview)}
@@ -1470,66 +1173,18 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         />
       )}
 
-      {/* MODAL 5: TMDB Poster Selector Modal */}
-      {posterEditReview && (
-        <PosterSelectorModal
-          movieId={posterEditReview.tmdbId || Number(posterEditReview.id)}
-          movieTitle={posterEditReview.title}
-          mediaType={posterEditReview.mediaType}
-          currentPosterUrl={posterEditReview.poster}
-          isOpen={Boolean(posterEditReview)}
-          onSelectPoster={async (newPosterUrl) => {
-            await onUpdatePoster(posterEditReview.id, newPosterUrl);
-            setPosterEditReview(null);
-            showToast(`Poster artwork updated for "${posterEditReview.title}"!`);
-          }}
-          onClose={() => setPosterEditReview(null)}
-        />
-      )}
-
-      {/* MODAL 6: TMDB Backdrop Selector Modal */}
-      {backdropEditReview && onUpdateBackdrop && (
-        <BackdropSelectorModal
-          movieId={backdropEditReview.tmdbId || Number(backdropEditReview.id)}
-          movieTitle={backdropEditReview.title}
-          mediaType={backdropEditReview.mediaType}
-          currentBackdropUrl={backdropEditReview.backdrop}
-          isOpen={Boolean(backdropEditReview)}
-          onSelectBackdrop={async (newBackdropUrl) => {
-            await onUpdateBackdrop(backdropEditReview.id, newBackdropUrl);
-            setBackdropEditReview(null);
-            showToast(`Backdrop artwork updated for "${backdropEditReview.title}"!`);
-          }}
-          onClose={() => setBackdropEditReview(null)}
-        />
-      )}
-
-      {/* MODAL 7: Backdrop Framing & Crop Modal */}
-      {framingEditReview && onUpdateBackdropFraming && (
-        <BackdropFramingModal
-          isOpen={Boolean(framingEditReview)}
-          onClose={() => setFramingEditReview(null)}
-          movieTitle={framingEditReview.title}
-          backdropUrl={framingEditReview.backdrop}
-          currentFraming={framingEditReview.backdropFraming}
-          onSaveFraming={async (newFraming) => {
-            await onUpdateBackdropFraming(framingEditReview.id, newFraming);
-            setFramingEditReview(null);
-            showToast(`Backdrop framing saved for "${framingEditReview.title}"!`);
+      {/* 9. DATABASE IMPORT MODAL */}
+      {showImportModal && (
+        <DatabaseImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          showToast={showToast}
+          onSuccess={() => {
+            if (onRefreshReviews) onRefreshReviews();
+            setShowImportModal(false);
           }}
         />
       )}
-
-      {/* MODAL 8: Database & Backup Import Modal */}
-      <DatabaseImportModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        onSuccess={() => {
-          onRefreshReviews?.();
-        }}
-        showToast={showToast}
-      />
-
     </div>
   );
 };

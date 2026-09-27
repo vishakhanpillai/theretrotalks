@@ -106,46 +106,114 @@ const searchMovies = async (query) => {
   };
 };
 
+const extractOfficialReleaseDate = (releaseDatesResults, fallbackDate) => {
+  if (!releaseDatesResults || !Array.isArray(releaseDatesResults)) {
+    return fallbackDate;
+  }
+  const usEntry = releaseDatesResults.find((r) => r.iso_3166_1 === "US");
+  const fallbackEntry = releaseDatesResults[0];
+
+  const getTheatricalFromEntry = (entry) => {
+    if (!entry || !Array.isArray(entry.release_dates)) return null;
+    // type 3: Theatrical (wide), type 2: Theatrical (limited), type 4: Digital, type 1: Premiere
+    const theatrical =
+      entry.release_dates.find((d) => d.type === 3) ||
+      entry.release_dates.find((d) => d.type === 2) ||
+      entry.release_dates.find((d) => d.type === 4) ||
+      entry.release_dates[0];
+    return theatrical?.release_date ? theatrical.release_date.split("T")[0] : null;
+  };
+
+  const usDate = getTheatricalFromEntry(usEntry);
+  if (usDate) return usDate;
+
+  const fallbackDateFromEntry = getTheatricalFromEntry(fallbackEntry);
+  if (fallbackDateFromEntry) return fallbackDateFromEntry;
+
+  return fallbackDate;
+};
+
 const getUpcomingMonthMovies = async () => {
   const now = new Date();
   const year = now.getFullYear();
-  const monthIndex = now.getMonth();
   const monthName = now.toLocaleString("en-US", { month: "long" });
-  const monthNum = String(monthIndex + 1).padStart(2, "0");
 
-  const firstDay = `${year}-${monthNum}-01`;
-  const lastDayObj = new Date(year, monthIndex + 1, 0);
-  const lastDay = `${year}-${monthNum}-${String(lastDayObj.getDate()).padStart(2, "0")}`;
+  const monthNum = String(now.getMonth() + 1).padStart(2, "0");
+  const dayNum = String(now.getDate()).padStart(2, "0");
+  const todayStr = `${year}-${monthNum}-${dayNum}`;
 
-  const url = `${TMDB_BASE_URL}/discover/movie?primary_release_date.gte=${firstDay}&primary_release_date.lte=${lastDay}&sort_by=popularity.desc&include_adult=false&page=1`;
+  // Look ahead 90 days to gather upcoming theatrical releases
+  const futureDate = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+  const futureYear = futureDate.getFullYear();
+  const futureMonth = String(futureDate.getMonth() + 1).padStart(2, "0");
+  const futureDay = String(futureDate.getDate()).padStart(2, "0");
+  const futureDateStr = `${futureYear}-${futureMonth}-${futureDay}`;
 
-  const response = await fetchTMDB(url);
-  const data = await response.json();
-  let results = data.results || [];
+  const discoverUrl = `${TMDB_BASE_URL}/discover/movie?region=US&with_release_type=2|3&primary_release_date.gte=${todayStr}&primary_release_date.lte=${futureDateStr}&sort_by=popularity.desc&include_adult=false&page=1`;
+  const upcomingUrl = `${TMDB_BASE_URL}/movie/upcoming?language=en-US&page=1&region=US`;
 
-  // If fewer than 8 movies in current month, supplement with upcoming releases
-  if (results.length < 8) {
-    try {
-      const fallbackRes = await fetchTMDB(`${TMDB_BASE_URL}/movie/upcoming?language=en-US&page=1`);
-      const fallbackData = await fallbackRes.json();
-      const combined = [...results, ...(fallbackData.results || [])];
-      const seen = new Set();
-      results = combined.filter((m) => {
-        if (seen.has(m.id)) return false;
+  let results = [];
+  try {
+    const [resDiscover, resUpcoming] = await Promise.all([
+      fetchTMDB(discoverUrl),
+      fetchTMDB(upcomingUrl),
+    ]);
+    const [dataDiscover, dataUpcoming] = await Promise.all([
+      resDiscover.json(),
+      resUpcoming.json(),
+    ]);
+    const combined = [...(dataDiscover.results || []), ...(dataUpcoming.results || [])];
+    const seen = new Set();
+    for (const m of combined) {
+      if (m && m.id && m.poster_path && !seen.has(m.id)) {
         seen.add(m.id);
-        return true;
-      });
-    } catch (fbErr) {
-      console.warn("Fallback upcoming error:", fbErr.message);
+        results.push(m);
+      }
     }
+  } catch (err) {
+    console.warn("Discover upcoming error:", err.message);
   }
 
-  const movies = results.slice(0, 10).map((movie) => ({
+  // Fetch official theatrical release dates from TMDB release_dates endpoint
+  const candidatesWithOfficialDates = await Promise.all(
+    results.slice(0, 20).map(async (movie) => {
+      try {
+        const detailRes = await fetchTMDB(`${TMDB_BASE_URL}/movie/${movie.id}?append_to_response=release_dates`);
+        const detail = await detailRes.json();
+        const officialDate = extractOfficialReleaseDate(detail.release_dates?.results, movie.release_date);
+        return {
+          ...movie,
+          release_date: officialDate,
+        };
+      } catch {
+        return movie;
+      }
+    })
+  );
+
+  // STRICT FILTER: Only movies releasing from today (same day) or in the future
+  const upcomingOnly = candidatesWithOfficialDates.filter(
+    (movie) => movie && movie.release_date && movie.release_date >= todayStr
+  );
+
+  // Sort chronologically by official release date (closest upcoming release first); tie-break with popularity
+  upcomingOnly.sort((a, b) => {
+    const dateDiff = a.release_date.localeCompare(b.release_date);
+    if (dateDiff !== 0) return dateDiff;
+    return (b.popularity || 0) - (a.popularity || 0);
+  });
+
+  const movies = upcomingOnly.slice(0, 10).map((movie) => ({
     id: movie.id,
     title: movie.title,
     releaseDate: movie.release_date || null,
     formattedDate: movie.release_date
-      ? new Date(movie.release_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+      ? new Date(movie.release_date + "T00:00:00Z").toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          timeZone: "UTC",
+        })
       : "TBA",
     poster: formatImageUrl(movie.poster_path, "w342"),
     backdrop: formatImageUrl(movie.backdrop_path, "original"),
@@ -167,7 +235,7 @@ const getMovieDetails = async (movieId, mediaType = "movie") => {
   const primaryEndpoint = isTv ? "tv" : "movie";
 
   let response = await fetchTMDB(
-    `${TMDB_BASE_URL}/${primaryEndpoint}/${movieId}?append_to_response=credits,videos`
+    `${TMDB_BASE_URL}/${primaryEndpoint}/${movieId}?append_to_response=credits,videos,release_dates`
   );
   let resolvedType = primaryEndpoint;
 
@@ -175,7 +243,7 @@ const getMovieDetails = async (movieId, mediaType = "movie") => {
   if (!response.ok && !isTv) {
     try {
       const tvResponse = await fetchTMDB(
-        `${TMDB_BASE_URL}/tv/${movieId}?append_to_response=credits,videos`
+        `${TMDB_BASE_URL}/tv/${movieId}?append_to_response=credits,videos,content_ratings`
       );
       if (tvResponse.ok) {
         response = tvResponse;
@@ -187,7 +255,7 @@ const getMovieDetails = async (movieId, mediaType = "movie") => {
   } else if (!response.ok && isTv) {
     try {
       const movieResponse = await fetchTMDB(
-        `${TMDB_BASE_URL}/movie/${movieId}?append_to_response=credits,videos`
+        `${TMDB_BASE_URL}/movie/${movieId}?append_to_response=credits,videos,release_dates`
       );
       if (movieResponse.ok) {
         response = movieResponse;
@@ -242,14 +310,23 @@ const getMovieDetails = async (movieId, mediaType = "movie") => {
       }
     : null;
 
+  let officialReleaseDate = isTvResolved ? (data.first_air_date || null) : (data.release_date || null);
+  if (!isTvResolved && data.release_dates?.results) {
+    officialReleaseDate = extractOfficialReleaseDate(data.release_dates.results, data.release_date);
+  }
+
+  const resolvedYear = officialReleaseDate
+    ? officialReleaseDate.split("-")[0]
+    : isTvResolved
+      ? (data.first_air_date ? data.first_air_date.split("-")[0] : null)
+      : (data.release_date ? data.release_date.split("-")[0] : null);
+
   return {
     id: data.id,
     mediaType: isTvResolved ? "tv" : "movie",
     title: isTvResolved ? (data.name || data.original_name) : data.title,
-    year: isTvResolved
-      ? (data.first_air_date ? data.first_air_date.split("-")[0] : null)
-      : (data.release_date ? data.release_date.split("-")[0] : null),
-    releaseDate: isTvResolved ? (data.first_air_date || null) : (data.release_date || null),
+    year: resolvedYear,
+    releaseDate: officialReleaseDate,
     poster: formatImageUrl(data.poster_path, "w500"),
     backdrop: formatImageUrl(data.backdrop_path, "original"),
     overview: data.overview,
