@@ -83,7 +83,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                 )}
                 <span>{review.year}</span>
                 <span>•</span>
-                <span>{review.mediaType === "tv" ? "Created by" : "Dir."} {review.director}</span>
+                <span>{review.mediaType === "tv" ? "Created by" : review.director?.includes(",") ? "Dirs." : "Dir."} {review.director}</span>
               </div>
               <h2 className="text-xl sm:text-3xl md:text-4xl font-poppins font-medium text-white tracking-tight leading-tight">
                 {review.title}

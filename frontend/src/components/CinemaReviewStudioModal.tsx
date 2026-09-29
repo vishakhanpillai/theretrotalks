@@ -560,7 +560,7 @@ export const CinemaReviewStudioModal: React.FC<CinemaReviewStudioModalProps> = (
                       {customTitle || current?.title || "Untitled"}
                     </h3>
                     <p className="text-xs text-zinc-400 font-inter mt-0.5">
-                      {isTv ? "Created by" : "Dir."}{" "}
+                      {isTv ? "Created by" : (customDirector || current?.director)?.includes(",") ? "Dirs." : "Dir."}{" "}
                       <strong className="text-white font-medium">{customDirector || current?.director || "Unknown"}</strong>
                     </p>
                   </div>

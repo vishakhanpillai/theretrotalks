@@ -277,17 +277,59 @@ const getMovieDetails = async (movieId, mediaType = "movie") => {
 
   let director = null;
   if (isTvResolved) {
-    const creator = Array.isArray(data.created_by) && data.created_by.length > 0
-      ? data.created_by.map((c) => c.name).join(", ")
-      : null;
-    director = creator || data.credits?.crew?.find(
-      (person) => person.job === "Director" || person.job === "Creator" || person.job === "Showrunner" || person.department === "Directing"
-    )?.name || null;
+    const creatorNames = Array.isArray(data.created_by) && data.created_by.length > 0
+      ? data.created_by.map((c) => c.name?.trim()).filter(Boolean)
+      : [];
+
+    if (creatorNames.length > 0) {
+      director = Array.from(new Set(creatorNames)).join(", ");
+    } else {
+      const tvDirecting = [];
+      const seen = new Set();
+      const directingCrew = data.credits?.crew || [];
+      const creators = directingCrew.filter(
+        (person) => person.name && (person.job === "Creator" || person.job === "Showrunner")
+      );
+      const candidates = creators.length > 0
+        ? creators
+        : directingCrew.filter(
+            (person) => person.name && (person.job === "Director" || person.department === "Directing")
+          );
+
+      for (const p of candidates) {
+        const name = p.name.trim();
+        if (!seen.has(name)) {
+          seen.add(name);
+          tvDirecting.push(name);
+        }
+      }
+      director = tvDirecting.length > 0 ? tvDirecting.join(", ") : null;
+    }
   } else {
-    const dir = data.credits?.crew?.find(
-      (person) => person.job === "Director" && person.department === "Directing"
-    );
-    director = dir ? dir.name : null;
+    const dirs = [];
+    const seen = new Set();
+    for (const person of (data.credits?.crew || [])) {
+      if (person.job === "Director" && person.department === "Directing" && person.name) {
+        const name = person.name.trim();
+        if (!seen.has(name)) {
+          seen.add(name);
+          dirs.push(name);
+        }
+      }
+    }
+    // Fallback if no person matched department === Directing
+    if (dirs.length === 0) {
+      for (const person of (data.credits?.crew || [])) {
+        if ((person.job === "Director" || person.job === "Co-Director") && person.name) {
+          const name = person.name.trim();
+          if (!seen.has(name)) {
+            seen.add(name);
+            dirs.push(name);
+          }
+        }
+      }
+    }
+    director = dirs.length > 0 ? dirs.join(", ") : null;
   }
 
   const cast = extractTopCast(data.credits?.cast, 10);

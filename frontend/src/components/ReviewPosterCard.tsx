@@ -78,7 +78,7 @@ export const ReviewPosterCard: React.FC<ReviewPosterCardProps> = ({
         </h3>
 
         <p className="text-[11px] text-zinc-300 font-inter line-clamp-1 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-          {review.mediaType === "tv" ? "Created by" : "Dir."} {review.director}
+          {review.mediaType === "tv" ? "Created by" : review.director?.includes(",") ? "Dirs." : "Dir."} {review.director}
         </p>
 
         {review.genres && review.genres.length > 0 && (

@@ -297,7 +297,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
                 {current.director && (
                   <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.03] text-zinc-300 border border-white/[0.08] text-xs font-inter">
                     <User className="w-3.5 h-3.5 text-[#ff7a29]" />
-                    <span>{current.mediaType === "tv" ? "Created by" : "Dir."} <strong className="text-white font-medium">{current.director}</strong></span>
+                    <span>{current.mediaType === "tv" ? "Created by" : current.director?.includes(",") ? "Dirs." : "Dir."} <strong className="text-white font-medium">{current.director}</strong></span>
                   </div>
                 )}
               </div>
