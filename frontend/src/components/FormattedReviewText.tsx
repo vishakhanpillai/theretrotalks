@@ -123,26 +123,35 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
   const activeFont = fontClassName || "font-poppins";
   const activeItalic = isItalic ? "italic" : "";
   const activeAlign =
-    textAlign === "left"
-      ? "text-left"
-      : textAlign === "center"
+    textAlign === "center"
       ? "text-center"
-      : "text-justify [text-align-last:left]";
+      : textAlign === "justify"
+      ? "text-justify [text-align-last:left]"
+      : "text-left";
 
-  // Story density styling profiles:
-  const storyContainerSpacing =
+  // Check if slide content is shorter than typical capacity to provide comfortable breathing room
+  const isCompact = isStory && content.length < 750;
+
+  // Story density styling profiles (strictly fixed dimensions, no viewport-relative sm: classes):
+  const storyParagraphMargin =
     density === "spacious"
-      ? "space-y-2.5"
+      ? (isCompact ? "mb-4 last:mb-0" : "mb-3.5 last:mb-0")
       : density === "standard"
-      ? "space-y-2"
-      : "space-y-1.5";
+      ? (isCompact ? "mb-3.5 last:mb-0" : "mb-3 last:mb-0")
+      : (isCompact ? "mb-3 last:mb-0" : "mb-2.5 last:mb-0");
 
   const storyParagraphClass =
     density === "spacious"
-      ? `leading-[1.62] text-zinc-100 text-[13px] sm:text-[13.5px] ${activeFont} ${activeItalic} ${activeAlign} drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]`
+      ? isCompact
+        ? `leading-[1.74] text-zinc-100 text-[13.5px] ${activeFont} ${activeItalic} ${activeAlign} drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]`
+        : `leading-[1.66] text-zinc-100 text-[13px] ${activeFont} ${activeItalic} ${activeAlign} drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]`
       : density === "standard"
-      ? `leading-[1.52] text-zinc-100 text-[12px] sm:text-[12.5px] ${activeFont} ${activeItalic} ${activeAlign} drop-shadow-[0_2px_7px_rgba(0,0,0,0.95)]`
-      : `leading-[1.46] text-zinc-100 text-[11px] sm:text-[11.5px] ${activeFont} ${activeItalic} ${activeAlign} drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]`;
+      ? isCompact
+        ? `leading-[1.66] text-zinc-100 text-[12.5px] ${activeFont} ${activeItalic} ${activeAlign} drop-shadow-[0_2px_7px_rgba(0,0,0,0.95)]`
+        : `leading-[1.58] text-zinc-100 text-[12px] ${activeFont} ${activeItalic} ${activeAlign} drop-shadow-[0_2px_7px_rgba(0,0,0,0.95)]`
+      : isCompact
+        ? `leading-[1.60] text-zinc-100 text-[11.5px] ${activeFont} ${activeItalic} ${activeAlign} drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]`
+        : `leading-[1.52] text-zinc-100 text-[11px] ${activeFont} ${activeItalic} ${activeAlign} drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]`;
 
   const storyQuoteClass =
     density === "spacious"
@@ -158,11 +167,19 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
       ? `my-1.5 space-y-0.5 list-disc list-inside text-zinc-100 text-[11.5px] ${activeFont} ${activeAlign}`
       : `my-1 space-y-0.5 list-disc list-inside text-zinc-100 text-[11px] ${activeFont} ${activeAlign}`;
 
-  // Split content by paragraphs (two or more newlines)
-  const blocks = content.split(/\n{2,}/);
+  // Normalize newlines: convert CRLF to LF, clean whitespace-only lines, and collapse 3+ newlines
+  const normalized = content
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  // Split content by paragraphs
+  const blocks = normalized.split(/\n\s*\n/);
 
   return (
-    <div className={`${isStory ? storyContainerSpacing : "space-y-4"} ${className}`}>
+    <div className={`${isStory ? "w-full" : "space-y-4"} ${className}`}>
       {blocks.map((block, bIdx) => {
         const trimmed = block.trim();
         if (!trimmed) return null;
@@ -180,7 +197,7 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
               key={bIdx}
               className={
                 isStory
-                  ? storyQuoteClass
+                  ? `${storyQuoteClass} mb-2.5 last:mb-0`
                   : "my-4 pl-4 pr-3 py-2 border-l-2 border-[#ff5500] bg-white/[0.02] text-zinc-300 italic rounded-r-xl leading-relaxed text-sm sm:text-base font-inter"
               }
             >
@@ -205,7 +222,7 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
                 key={bIdx}
                 className={
                   isStory
-                    ? "font-poppins font-bold text-xs sm:text-[13px] text-white pt-0.5 pb-0.5 border-b border-white/10 text-left"
+                    ? "font-poppins font-bold text-[13px] text-white pt-0.5 pb-0.5 mb-2 border-b border-white/10 text-left"
                     : "font-poppins font-bold text-xl sm:text-2xl text-white pt-2 pb-1 border-b border-white/[0.08]"
                 }
               >
@@ -219,7 +236,7 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
                 key={bIdx}
                 className={
                   isStory
-                    ? "font-poppins font-bold text-[11px] sm:text-xs text-[#ff7a29] pt-0.5 text-left"
+                    ? "font-poppins font-bold text-[12px] text-[#ff7a29] pt-0.5 mb-1.5 text-left"
                     : "font-poppins font-bold text-lg sm:text-xl text-white pt-2"
                 }
               >
@@ -232,7 +249,7 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
               key={bIdx}
               className={
                 isStory
-                  ? "font-poppins font-semibold text-[10.5px] text-zinc-100 pt-0.5 text-left"
+                  ? "font-poppins font-semibold text-[11px] text-zinc-100 pt-0.5 mb-1.5 text-left"
                   : "font-poppins font-semibold text-base sm:text-lg text-zinc-100 pt-1"
               }
             >
@@ -250,7 +267,7 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
               key={bIdx}
               className={
                 isStory
-                  ? storyListClass
+                  ? `${storyListClass} mb-2.5 last:mb-0`
                   : "my-3 space-y-1.5 list-disc list-inside text-zinc-200 text-sm sm:text-base"
               }
             >
@@ -262,20 +279,23 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
           );
         }
 
-        // Normal paragraph (render with internal single line-breaks if any)
+        // Normal paragraph (in story mode, join soft newlines with a single space to preserve continuous typography)
+        const storyProse = isStory ? trimmed.replace(/([^\s])\n([^\s])/g, "$1 $2") : trimmed;
+        const paragraphLines = storyProse.split("\n");
+
         return (
           <p
             key={bIdx}
             className={
               isStory
-                ? storyParagraphClass
+                ? `${storyParagraphClass} ${storyParagraphMargin}`
                 : "leading-[1.9] text-zinc-200 text-base sm:text-lg"
             }
           >
-            {lines.map((line, lIdx) => (
+            {paragraphLines.map((line, lIdx) => (
               <React.Fragment key={lIdx}>
                 {renderInline(line, revealSpoilers)}
-                {lIdx < lines.length - 1 && <br />}
+                {lIdx < paragraphLines.length - 1 && <br />}
               </React.Fragment>
             ))}
           </p>

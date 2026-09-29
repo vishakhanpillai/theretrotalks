@@ -132,11 +132,140 @@ const hexToRgba = (hex: string, alpha: number): string => {
  * Split a full review into readable story slide chunks for 9:16 vertical cards.
  * Balances content across slides evenly so no slide is left with an orphan paragraph or empty space.
  */
+interface DynamicSlideOptions {
+  density?: "dense" | "standard" | "spacious";
+  hasTopLogo?: boolean;
+  hasHeadlineBadge?: boolean;
+  title?: string;
+  titleSize?: "sm" | "base" | "lg" | "xl" | "2xl";
+  hasSlide1Callout?: boolean;
+  standoutQuote?: string;
+  hasFooter?: boolean;
+}
+
+/**
+ * Break long sentences into natural, reader-friendly clause segments so text
+ * can seamlessly flow right to the bottom line of the story card without stranding empty lines.
+ */
+const splitIntoSegments = (paragraph: string): string[] => {
+  const sentenceRegex = /[^.!?]+(?:[.!?]+(?:\s+|$)|$)/g;
+  const rawSentences = paragraph.match(sentenceRegex) || [paragraph];
+  const segments: string[] = [];
+
+  for (const rawSent of rawSentences) {
+    const sent = rawSent.trim();
+    if (!sent) continue;
+
+    // Short or medium sentences stay intact
+    if (sent.length <= 110) {
+      segments.push(sent);
+      continue;
+    }
+
+    // Long sentences break naturally at clauses (commas, semicolons, em-dashes, conjunctions)
+    const clauseParts = sent.split(/(?<=[;,—–]|\b(?:and|but|while|although|because)\b)\s+/);
+    let buffer = "";
+    for (const part of clauseParts) {
+      if (!buffer) {
+        buffer = part;
+      } else if ((buffer + " " + part).length <= 95) {
+        buffer += " " + part;
+      } else {
+        segments.push(buffer.trim());
+        buffer = part;
+      }
+    }
+    if (buffer.trim()) {
+      segments.push(buffer.trim());
+    }
+  }
+
+  return segments;
+};
+
+/**
+ * Dynamically computes the exact character capacity for a 360x640 story slide based on
+ * the active presence and dimensions of top bar logo, badge, title wrapping, standout quote callout,
+ * footer handle/genres, and chosen typographic density.
+ */
+const calculateDynamicCapacity = (
+  options: DynamicSlideOptions,
+  isSlide1: boolean
+): number => {
+  const {
+    density = "dense",
+    hasTopLogo = true,
+    hasHeadlineBadge = true,
+    title = "",
+    titleSize = "lg",
+    hasSlide1Callout = false,
+    standoutQuote = "",
+    hasFooter = true,
+  } = options;
+
+  let availableHeight = 640;
+
+  // 1. Top Bar (Logo watermark & badge tag)
+  if (hasTopLogo || hasHeadlineBadge) {
+    availableHeight -= 52; // pt-8 (32px) + content (16px) + pb-1 (4px)
+  } else {
+    availableHeight -= 14; // minimal top breathing room
+  }
+
+  // 2. Title & Metadata Header
+  const charsPerLineMap: Record<string, number> = {
+    sm: 32,
+    base: 28,
+    lg: 24,
+    xl: 20,
+    "2xl": 17,
+  };
+  const tCpl = charsPerLineMap[titleSize] || 24;
+  const titleLines = Math.max(1, Math.ceil((title.length || 10) / tCpl));
+  const titleHeightPerLine =
+    titleSize === "2xl" ? 28 : titleSize === "xl" ? 25 : 22;
+  const titleHeaderHeight = titleLines * titleHeightPerLine + 24;
+  availableHeight -= titleHeaderHeight;
+
+  // 3. Slide 1 Callout Quote (if active on slide 1)
+  if (isSlide1 && hasSlide1Callout && standoutQuote.trim()) {
+    const qLines = Math.max(1, Math.ceil(standoutQuote.trim().length / 40));
+    const calloutHeight = qLines * 17 + 28;
+    availableHeight -= calloutHeight;
+  }
+
+  // 4. Footer (Handle watermark and/or genres)
+  if (hasFooter) {
+    availableHeight -= 38; // pb-4 + pt-1.5 + border + content
+  } else {
+    availableHeight -= 12; // minimal bottom margin
+  }
+
+  // Safe inner container padding
+  availableHeight -= 6;
+
+  // 5. Typography metrics per density (328px wide container):
+  // dense (Max Words): font 11px, line-height 16.7px, ~53 chars/line (~1,550 chars)
+  // standard: font 12px, line-height 19.0px, ~47 chars/line (~1,220 chars)
+  // spacious: font 13px, line-height 21.6px, ~41 chars/line (~940 chars)
+  const metrics = {
+    dense: { lineHeight: 16.7, charsPerLine: 53 },
+    standard: { lineHeight: 19.0, charsPerLine: 47 },
+    spacious: { lineHeight: 21.6, charsPerLine: 41 },
+  }[density] || { lineHeight: 16.7, charsPerLine: 53 };
+
+  const usableLines = Math.max(8, Math.floor(availableHeight / metrics.lineHeight));
+  return usableLines * metrics.charsPerLine;
+};
+
+/**
+ * Split a full review into seamless, balanced story slides for 9:16 vertical cards.
+ * Calibrated across all 3 card word capacity frameworks (Max Words, Standard, Spacious)
+ * so every card is fully utilized right down to the footer with zero awkward bottom voids.
+ */
 const splitReviewIntoSlides = (
   text: string,
-  density: "dense" | "standard" | "spacious" = "dense",
-  hasSlide1Callout: boolean = false,
-  hasFooter: boolean = false
+  options: DynamicSlideOptions = {}
 ): string[] => {
   if (!text) return [""];
 
@@ -149,103 +278,112 @@ const splitReviewIntoSlides = (
     if (manualParts.length > 0) return manualParts;
   }
 
-  const trimmed = text.trim();
+  // Normalize text: uniform newlines, clean whitespace-only lines, and collapse 3+ newlines
+  const clean = text
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 
-  // Calibrated character capacities for 360x640 portrait story format:
-  // Available height for review text is ~525px with footer, ~550px without footer.
-  // With 328px line width:
-  // - dense (~11-11.5px font, leading 1.46): ~31 lines * ~53 chars = ~1,640 max physical capacity.
-  //   Setting budget to 1,450 base (and 1,320 with footer) allows maximum content while ensuring safe margins.
-  // - standard (~12-12.5px font, leading 1.52): ~27 lines * ~50 chars = ~1,350 max physical capacity.
-  //   Setting budget to 1,200 base (and 1,080 with footer).
-  // - spacious (~13-13.5px font, leading 1.62): ~23 lines * ~46 chars = ~1,050 max physical capacity.
-  //   Setting budget to 950 base (and 850 with footer).
-  let maxChunk = density === "dense" ? 1450 : density === "spacious" ? 950 : 1200;
-  if (hasFooter) {
-    maxChunk -= density === "dense" ? 130 : density === "spacious" ? 100 : 120;
+  const normalCap = calculateDynamicCapacity(options, false);
+  const slide1Cap = calculateDynamicCapacity(options, true);
+
+  if (clean.length <= slide1Cap) {
+    return [clean];
   }
 
-  // Slide 1 Callout: If standout quote callout box is shown on slide 1, it uses ~60px
-  let slide1Max = maxChunk;
-  if (hasSlide1Callout) {
-    slide1Max -= density === "dense" ? 220 : density === "spacious" ? 150 : 180;
-  }
-  slide1Max = Math.max(350, slide1Max);
+  // Calculate ideal slide count so slides are fully packed and uniform
+  const minSlides = Math.max(2, Math.ceil(clean.length / normalCap));
+  const avgTarget = Math.ceil(clean.length / minSlides);
+  const isHighFullness = avgTarget >= normalCap * 0.85;
 
-  // 2. If the review fits on 1 slide, keep it on 1 slide
-  if (trimmed.length <= slide1Max * 1.02) {
-    return [trimmed];
-  }
+  const paragraphs = clean
+    .split(/\n\s*\n/)
+    .map((p) => p.replace(/([^\s])\n([^\s])/g, "$1 $2").trim())
+    .filter(Boolean);
 
-  // 3. Continuous text flow packing with paragraph preservation
-  const paragraphs = trimmed.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
   const slides: string[] = [];
-  let current = "";
+  let currentSlide = "";
+
+  const getCurrentLimit = () => {
+    const isSlide1 = slides.length === 0;
+    const physicalCap = calculateDynamicCapacity(options, isSlide1);
+    const remainingTextLen = clean.length - slides.reduce((acc, s) => acc + s.length, 0);
+    const slidesRemaining = minSlides - slides.length;
+
+    // On the final intended slide, allow up to physicalCap * 1.10 to absorb remaining text cleanly
+    if (slidesRemaining <= 1) {
+      return physicalCap * 1.10;
+    }
+
+    if (!isHighFullness) {
+      return physicalCap;
+    }
+
+    const currentSlideTarget = Math.ceil(remainingTextLen / slidesRemaining);
+    // Allow slide to fill comfortably between currentSlideTarget and physicalCap
+    return Math.min(physicalCap, Math.max(currentSlideTarget + 30, Math.floor(physicalCap * 0.94)));
+  };
 
   for (let pIdx = 0; pIdx < paragraphs.length; pIdx++) {
     const p = paragraphs[pIdx];
-    const targetLimit = slides.length === 0 ? slide1Max : maxChunk;
-    const sep = current ? "\n\n" : "";
-    const candidate = current ? current + sep + p : p;
+    const limit = getCurrentLimit();
+    const gapWeight = currentSlide ? 25 : 0;
+    const candidate = currentSlide ? currentSlide + "\n\n" + p : p;
 
-    // A. If whole paragraph fits into current slide (with 2% tolerance), keep paragraph intact & flow text
-    if (candidate.length <= targetLimit * 1.02) {
-      current = candidate;
+    // A. If whole paragraph fits into current slide, append it!
+    if (candidate.length + gapWeight <= limit) {
+      currentSlide = candidate;
       continue;
     }
 
-    // B. If current slide is already nearly full (>= 86% of capacity) and the paragraph fits on its own slide,
-    // push current slide so the paragraph starts fresh on next slide without being chopped in half.
-    const nextLimit = slides.length + 1 === 0 ? slide1Max : maxChunk;
-    if (current.length >= targetLimit * 0.86 && p.length <= nextLimit * 1.02) {
-      slides.push(current.trim());
-      current = p;
-      continue;
-    }
+    // B. The paragraph does not fit completely.
+    // Break into natural segments (sentences and clauses) to fill up the card cleanly
+    const segments = splitIntoSegments(p);
+    let pHead = "";
+    let sIdx = 0;
 
-    // C. Otherwise, current slide still has room below:
-    // Flow sentences from p into current slide to fill up the available space down towards the footer!
-    const rawSents = p.match(/[^.!?]+[.!?]+(\s+|$)|[^\n]+/g) || [p];
-    const sents: string[] = [];
-    for (const raw of rawSents) {
-      if (raw.length > 350) {
-        const subParts = raw.match(/[^,;—]+[,;—]+(\s+|$)|[^,;—]+/g) || [raw];
-        for (const sub of subParts) {
-          if (sub.trim()) sents.push(sub.trim());
-        }
+    for (; sIdx < segments.length; sIdx++) {
+      const seg = segments[sIdx];
+      const sCandidate = pHead ? pHead + " " + seg : seg;
+      const totalCandidate = currentSlide ? currentSlide + "\n\n" + sCandidate : sCandidate;
+
+      if (totalCandidate.length + gapWeight <= limit) {
+        pHead = sCandidate;
       } else {
-        if (raw.trim()) sents.push(raw.trim());
+        break;
       }
     }
 
-    let isFirstSent = true;
+    if (pHead) {
+      currentSlide = currentSlide ? currentSlide + "\n\n" + pHead : pHead;
+      slides.push(currentSlide.trim());
+      currentSlide = "";
 
-    for (let sIdx = 0; sIdx < sents.length; sIdx++) {
-      const s = sents[sIdx].trim();
-      if (!s) continue;
-
-      const currentLimit = slides.length === 0 ? slide1Max : maxChunk;
-      const sSep = current ? (isFirstSent ? "\n\n" : " ") : "";
-      const sCand = current ? current + sSep + s : s;
-
-      if (sCand.length <= currentLimit) {
-        current = sCand;
-        isFirstSent = false;
-      } else {
-        if (current.trim()) {
-          slides.push(current.trim());
-        }
-        current = s;
-        isFirstSent = false;
+      const remainingSegments = segments.slice(sIdx);
+      if (remainingSegments.length > 0) {
+        currentSlide = remainingSegments.join(" ").trim();
       }
+    } else {
+      if (currentSlide) {
+        slides.push(currentSlide.trim());
+      }
+      currentSlide = p;
     }
   }
 
-  if (current.trim()) {
-    slides.push(current.trim());
+  if (currentSlide.trim()) {
+    // If the remaining text is very small and we already reached minSlides,
+    // merge into previous slide instead of creating an orphan slide!
+    if (slides.length >= minSlides && currentSlide.trim().length < normalCap * 0.2) {
+      slides[slides.length - 1] = (slides[slides.length - 1] + "\n\n" + currentSlide.trim()).trim();
+    } else {
+      slides.push(currentSlide.trim());
+    }
   }
 
-  return slides.length > 0 ? slides : [trimmed];
+  return slides.length > 0 ? slides : [clean];
 };
 
 export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
@@ -340,6 +478,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
   const [titleSize, setTitleSize] = useState<TitleSize>("lg");
   const [isReviewItalic, setIsReviewItalic] = useState<boolean>(true);
   const [quoteAlignment, setQuoteAlignment] = useState<TextAlignment>("left");
+  const [verticalAlignment, setVerticalAlignment] = useState<"auto" | "top" | "center">("auto");
   const [materialStyle, setMaterialStyle] = useState<CardMaterialStyle>("obsidian");
   const [ratingFormat, setRatingFormat] = useState<RatingDisplayFormat>("stars_metric");
   const [showHairlineAccent, setShowHairlineAccent] = useState<boolean>(true);
@@ -501,6 +640,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
       setBodyFont("inter");
       setIsReviewItalic(true);
       setQuoteAlignment("left");
+      setVerticalAlignment("auto");
       setMaterialStyle("obsidian");
       setRatingFormat("stars_metric");
       setShowHairlineAccent(true);
@@ -564,11 +704,32 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
 
   const hasSlide1Callout = showStandoutQuote && Boolean(standoutQuoteText.trim());
   const hasFooter = Boolean(effectiveHandle) || (showGenres && Boolean(review.genres && review.genres.length > 0));
+  const hasTopLogo = showWatermark;
+  const hasHeadlineBadge = showBadgeTag && Boolean(headline.trim());
 
-  // Derived slide list for full review set based on selected text density and footer presence
+  // Derived slide list for full review set dynamically adjusted to all active card elements
   const reviewSlides = useMemo(() => {
-    return splitReviewIntoSlides(fullReviewText, textDensity, hasSlide1Callout, hasFooter);
-  }, [fullReviewText, textDensity, hasSlide1Callout, hasFooter]);
+    return splitReviewIntoSlides(fullReviewText, {
+      density: textDensity,
+      hasTopLogo,
+      hasHeadlineBadge,
+      title: review.title || "",
+      titleSize,
+      hasSlide1Callout,
+      standoutQuote: standoutQuoteText,
+      hasFooter,
+    });
+  }, [
+    fullReviewText,
+    textDensity,
+    hasTopLogo,
+    hasHeadlineBadge,
+    review.title,
+    titleSize,
+    hasSlide1Callout,
+    standoutQuoteText,
+    hasFooter,
+  ]);
 
   // Active clamped slide index
   const activeSlideIndex = Math.min(currentSlideIndex, Math.max(0, reviewSlides.length - 1));
@@ -591,10 +752,21 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
     setExportProgress("Exporting 1080×1920 PNG...");
 
     try {
+      if (document.fonts) {
+        await document.fonts.ready;
+      }
+
       const dataUrl = await toPng(cardRef.current, {
+        width: 360,
+        height: 640,
         pixelRatio: 3,
         cacheBust: true,
         quality: 0.98,
+        style: {
+          transform: "none",
+          transformOrigin: "top left",
+          margin: "0",
+        },
       });
 
       const suffix =
@@ -630,13 +802,24 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
         setCurrentSlideIndex(i);
         setExportProgress(`Rendering slide ${i + 1} of ${reviewSlides.length}...`);
         // Allow DOM to update and paint slide i
-        await new Promise((resolve) => setTimeout(resolve, 140));
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
         if (!cardRef.current) continue;
+        if (document.fonts) {
+          await document.fonts.ready;
+        }
+
         const dataUrl = await toPng(cardRef.current, {
+          width: 360,
+          height: 640,
           pixelRatio: 3,
           cacheBust: true,
           quality: 0.98,
+          style: {
+            transform: "none",
+            transformOrigin: "top left",
+            margin: "0",
+          },
         });
 
         const base64Data = dataUrl.split(",")[1];
@@ -753,17 +936,17 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
   const getTitleSizeClass = () => {
     switch (titleSize) {
       case "sm":
-        return "text-sm sm:text-base";
+        return "text-sm";
       case "base":
-        return "text-base sm:text-lg";
+        return "text-base";
       case "lg":
-        return "text-lg sm:text-xl";
+        return "text-lg";
       case "xl":
-        return "text-xl sm:text-2xl";
+        return "text-xl";
       case "2xl":
-        return "text-2xl sm:text-3xl";
+        return "text-2xl";
       default:
-        return "text-lg sm:text-xl";
+        return "text-lg";
     }
   };
 
@@ -1227,7 +1410,15 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
 
               {/* -------------------- CARD TOP HEADER (Flex in Summary & Full Set Modes) -------------------- */}
               {studioMode !== "rating" && (
-                <div className={`relative z-10 ${studioMode === "full_set" ? "px-4 pt-8 pb-1" : "px-5 pt-14 pb-2"} flex items-center justify-between shrink-0`}>
+                <div
+                  className={`relative z-10 ${
+                    studioMode === "full_set"
+                      ? showWatermark || (showBadgeTag && headline.trim())
+                        ? "px-4 pt-8 pb-1"
+                        : "px-4 pt-3.5 pb-0"
+                      : "px-5 pt-14 pb-2"
+                  } flex items-center justify-between shrink-0`}
+                >
                   {showWatermark ? (
                     <div className="flex items-center gap-2">
                       <div
@@ -1266,7 +1457,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                     <div className="flex flex-col items-center justify-center text-center space-y-3 my-auto shrink-0">
                       {/* Floating Poster (Enlarged) */}
                       {showPoster && displayPoster && (
-                        <div className="relative w-32 sm:w-34 aspect-[2/3] rounded-none overflow-hidden shadow-[0_20px_45px_rgba(0,0,0,0.95),0_0_25px_rgba(255,85,0,0.25)] border border-white/20 shrink-0 my-0.5">
+                        <div className="relative w-32 aspect-[2/3] rounded-none overflow-hidden shadow-[0_20px_45px_rgba(0,0,0,0.95),0_0_25px_rgba(255,85,0,0.25)] border border-white/20 shrink-0 my-0.5">
                           <img
                             src={displayPoster}
                             alt={review.title}
@@ -1297,7 +1488,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                     <div className="flex flex-col items-center justify-center text-center space-y-3 my-auto shrink-0">
                       {/* Poster Hero (Enlarged) */}
                       {showPoster && displayPoster && (
-                        <div className="relative w-36 sm:w-38 aspect-[2/3] rounded-none overflow-hidden shadow-[0_25px_50px_rgba(0,0,0,0.98),0_0_30px_rgba(255,85,0,0.3)] border-2 border-white/25 shrink-0 my-0.5">
+                        <div className="relative w-36 aspect-[2/3] rounded-none overflow-hidden shadow-[0_25px_50px_rgba(0,0,0,0.98),0_0_30px_rgba(255,85,0,0.3)] border-2 border-white/25 shrink-0 my-0.5">
                           <img
                             src={displayPoster}
                             alt={review.title}
@@ -1312,7 +1503,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                           {review.title}
                         </h2>
                         <div className="flex items-center justify-center gap-2">
-                          <span className="text-[10px] sm:text-[11px] font-inter text-zinc-300">
+                          <span className="text-[10.5px] font-inter text-zinc-300">
                             {review.year && `${review.year} · `}{review.director}
                           </span>
                         </div>
@@ -1327,7 +1518,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   {theme === "editorial" && (
                     <div className="flex flex-col items-center justify-center text-center space-y-3 my-auto shrink-0">
                       {showPoster && displayPoster && (
-                        <div className="relative w-32 sm:w-34 aspect-[2/3] rounded-none overflow-hidden shadow-2xl border border-white/20 shrink-0 my-0.5">
+                        <div className="relative w-32 aspect-[2/3] rounded-none overflow-hidden shadow-2xl border border-white/20 shrink-0 my-0.5">
                           <img
                             src={displayPoster}
                             alt={review.title}
@@ -1355,7 +1546,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                     <div className="flex flex-col items-center justify-center text-center space-y-3 my-auto shrink-0">
                       {/* Floating Monolith Poster (Enlarged) */}
                       {showPoster && displayPoster && (
-                        <div className="relative w-32 sm:w-34 aspect-[2/3] shrink-0 overflow-hidden shadow-[0_25px_50px_rgba(0,0,0,0.98)] border border-white/20 shrink-0 my-0.5">
+                        <div className="relative w-32 aspect-[2/3] shrink-0 overflow-hidden shadow-[0_25px_50px_rgba(0,0,0,0.98)] border border-white/20 shrink-0 my-0.5">
                           <img
                             src={displayPoster}
                             alt={review.title}
@@ -1447,7 +1638,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   {theme === "masthead" && (
                     <div className="flex flex-col items-center justify-center text-center space-y-3 my-auto shrink-0 max-w-[300px]">
                       {showPoster && displayPoster && (
-                        <div className="relative w-32 sm:w-34 aspect-[2/3] shrink-0 overflow-hidden shadow-2xl border border-white/20 my-0.5">
+                        <div className="relative w-32 aspect-[2/3] shrink-0 overflow-hidden shadow-2xl border border-white/20 my-0.5">
                           <img
                             src={displayPoster}
                             alt={review.title}
@@ -1567,7 +1758,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                           {review.title}
                         </h2>
                         <div className="flex items-center justify-center gap-2">
-                          <span className="text-[10px] sm:text-[11px] font-inter text-zinc-300">
+                          <span className="text-[10.5px] font-inter text-zinc-300">
                             {review.year && `${review.year} · `}{review.director}
                           </span>
                         </div>
@@ -1674,7 +1865,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                     <div className="relative z-10 px-6 flex flex-col items-center justify-center flex-1 min-h-0 overflow-hidden py-3 text-center space-y-3">
                       {/* Floating Monolith Poster */}
                       {showPoster && displayPoster && (
-                        <div className="relative w-28 sm:w-30 aspect-[2/3] shrink-0 overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.95)] border border-white/20">
+                        <div className="relative w-28 aspect-[2/3] shrink-0 overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.95)] border border-white/20">
                           <img
                             src={displayPoster}
                             alt={review.title}
@@ -1918,7 +2109,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
 
                     <div className="flex items-center gap-2 flex-wrap pt-0.5">
                       {(review.year || review.director) && (
-                        <span className="text-[10px] sm:text-[10.5px] font-inter text-zinc-300 drop-shadow-sm font-normal">
+                        <span className="text-[10px] font-inter text-zinc-300 drop-shadow-sm font-normal">
                           {review.year && `${review.year}`}
                           {review.year && review.director && ` · `}
                           {review.director && `${review.mediaType === "tv" ? "Created by" : "Dir."} ${review.director}`}
@@ -1954,12 +2145,12 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                         <div className="inline-flex items-center gap-1.5">
                           <div className="flex items-center gap-0.5">
                             {[0, 1, 2, 3, 4].map((starIndex) =>
-                              renderStoryStar(starIndex, rating, "w-2.5 h-2.5 sm:w-3 sm:h-3")
+                              renderStoryStar(starIndex, rating, "w-3 h-3")
                             )}
                           </div>
                           {ratingFormat !== "stars_minimal" && (
                             <span
-                              className="text-[10px] sm:text-[10.5px] font-poppins font-semibold tracking-wider drop-shadow-sm leading-none translate-y-[1px]"
+                              className="text-[10px] font-poppins font-semibold tracking-wider drop-shadow-sm leading-none translate-y-[1px]"
                               style={{ color: activePalette.secondary }}
                             >
                               {formatStoryCardRating(rating)}
@@ -1996,18 +2187,46 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   )}
 
                   {/* The rest of the card filled with the logged review across the max width */}
-                  <div className="flex-1 pt-1 pb-0.5 overflow-hidden flex flex-col min-h-0 justify-start w-full">
-                    <FormattedReviewText
-                      content={reviewSlides[activeSlideIndex] || "No review content."}
-                      variant="story"
-                      density={textDensity}
-                      revealSpoilers={true}
-                      fontClassName={bodyFont === "jetbrains" ? "font-jetbrains font-mono" : bodyFont === "poppins" ? "font-poppins" : bodyFont === "playfair" ? "font-playfair" : bodyFont === "cinzel" ? "font-cinzel" : "font-inter"}
-                      isItalic={isReviewItalic}
-                      textAlign={quoteAlignment}
-                      className="w-full text-justify [text-align-last:left]"
-                    />
-                  </div>
+                  {(() => {
+                    const currentSlideText = reviewSlides[activeSlideIndex] || "";
+                    const slideCap = calculateDynamicCapacity(
+                      {
+                        density: textDensity,
+                        hasTopLogo,
+                        hasHeadlineBadge,
+                        title: review.title,
+                        titleSize,
+                        hasSlide1Callout,
+                        standoutQuote: standoutQuoteText,
+                        hasFooter,
+                      },
+                      activeSlideIndex === 0
+                    );
+                    const isSlideCompact = currentSlideText.length < slideCap * 0.72;
+                    const effectiveVerticalJustify =
+                      verticalAlignment === "center"
+                        ? "justify-center"
+                        : verticalAlignment === "top"
+                        ? "justify-start"
+                        : isSlideCompact
+                        ? "justify-center"
+                        : "justify-start";
+
+                    return (
+                      <div className={`flex-1 pt-1 pb-0.5 overflow-hidden flex flex-col min-h-0 ${effectiveVerticalJustify} w-full`}>
+                        <FormattedReviewText
+                          content={currentSlideText || "No review content."}
+                          variant="story"
+                          density={textDensity}
+                          revealSpoilers={true}
+                          fontClassName={bodyFont === "jetbrains" ? "font-jetbrains font-mono" : bodyFont === "poppins" ? "font-poppins" : bodyFont === "playfair" ? "font-playfair" : bodyFont === "cinzel" ? "font-cinzel" : "font-inter"}
+                          isItalic={isReviewItalic}
+                          textAlign={quoteAlignment}
+                          className="w-full"
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -2392,10 +2611,10 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                     <span className="text-[11px] font-poppins font-medium text-white">Card Word Capacity:</span>
                     <span className="text-[10px] font-mono text-[#ff7a29]">
                       {textDensity === "dense"
-                        ? "~1,400 chars / card (Max Words)"
+                        ? "~1,550 chars / card (Max Words)"
                         : textDensity === "standard"
-                        ? "~1,150 chars / card"
-                        : "~900 chars / card"}
+                        ? "~1,220 chars / card"
+                        : "~940 chars / card"}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
@@ -2806,6 +3025,39 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                       </button>
                     ))}
                   </div>
+                </div>
+              </div>
+
+              {/* Vertical Text Distribution */}
+              <div className="space-y-1.5 pt-1 border-t border-white/[0.06]">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-inter text-zinc-300 font-medium">Vertical Text Distribution</label>
+                  <span className="text-[9.5px] font-mono text-[#ff7a29] uppercase">
+                    {verticalAlignment === "auto" ? "Smart Fit (Auto)" : verticalAlignment}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[
+                    { id: "auto", label: "Smart Fit", desc: "Adaptive fill & auto-center" },
+                    { id: "top", label: "Top Anchored", desc: "Pinned directly to header" },
+                    { id: "center", label: "Dead Center", desc: "Balanced vertical monograph" },
+                  ].map((valign) => (
+                    <button
+                      key={valign.id}
+                      type="button"
+                      onClick={() => setVerticalAlignment(valign.id as any)}
+                      className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
+                        verticalAlignment === valign.id
+                          ? "bg-[#ff5500] text-black border-[#ff5500] font-bold shadow-sm"
+                          : "bg-white/[0.02] border-white/[0.07] text-zinc-300 hover:text-white hover:border-white/20"
+                      }`}
+                    >
+                      <div className="text-xs font-semibold">{valign.label}</div>
+                      <div className={`text-[9px] leading-tight mt-0.5 ${verticalAlignment === valign.id ? "text-black/80 font-medium" : "text-zinc-500 font-mono"}`}>
+                        {valign.desc}
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
 
