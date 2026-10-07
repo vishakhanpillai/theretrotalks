@@ -9,6 +9,9 @@ interface FormattedReviewTextProps {
   fontClassName?: string;
   isItalic?: boolean;
   textAlign?: "left" | "center" | "justify";
+  customFontSize?: number | null;
+  customLineHeight?: number | null;
+  customParagraphSpacing?: number | null;
 }
 
 const SpoilerSpan: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -115,6 +118,9 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
   fontClassName,
   isItalic,
   textAlign,
+  customFontSize,
+  customLineHeight,
+  customParagraphSpacing,
 }) => {
   if (!content) return null;
 
@@ -176,13 +182,39 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
     .trim();
 
   // Split content by paragraphs
-  const blocks = normalized.split(/\n\s*\n/);
+  const blocks = normalized.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
 
   return (
     <div className={`${isStory ? "w-full" : "space-y-4"} ${className}`}>
       {blocks.map((block, bIdx) => {
-        const trimmed = block.trim();
-        if (!trimmed) return null;
+        const trimmed = block;
+        const isLastBlock = bIdx === blocks.length - 1;
+
+        const customParagraphStyle: React.CSSProperties = isStory
+          ? {
+              fontSize: customFontSize ? `${customFontSize}px` : undefined,
+              lineHeight: customLineHeight !== null && customLineHeight !== undefined ? customLineHeight : undefined,
+              marginBottom:
+                customParagraphSpacing !== null && customParagraphSpacing !== undefined
+                  ? isLastBlock
+                    ? 0
+                    : `${customParagraphSpacing}px`
+                  : undefined,
+            }
+          : {};
+
+        const customBlockStyle: React.CSSProperties = isStory
+          ? {
+              fontSize: customFontSize ? `${Math.max(9.5, customFontSize - 0.5)}px` : undefined,
+              lineHeight: customLineHeight !== null && customLineHeight !== undefined ? customLineHeight : undefined,
+              marginBottom:
+                customParagraphSpacing !== null && customParagraphSpacing !== undefined
+                  ? isLastBlock
+                    ? 0
+                    : `${customParagraphSpacing}px`
+                  : undefined,
+            }
+          : {};
 
         // Check for blockquote: lines starting with "> " or <blockquote>
         if (trimmed.startsWith("> ") || trimmed.startsWith(">") || trimmed.startsWith("<blockquote>")) {
@@ -195,9 +227,10 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
           return (
             <blockquote
               key={bIdx}
+              style={customBlockStyle}
               className={
                 isStory
-                  ? `${storyQuoteClass} mb-2.5 last:mb-0`
+                  ? `${storyQuoteClass} ${customParagraphSpacing !== null && customParagraphSpacing !== undefined ? "" : "mb-2.5 last:mb-0"}`
                   : "my-4 pl-4 pr-3 py-2 border-l-2 border-[#ff5500] bg-white/[0.02] text-zinc-300 italic rounded-r-xl leading-relaxed text-sm sm:text-base font-inter"
               }
             >
@@ -265,9 +298,10 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
           return (
             <ul
               key={bIdx}
+              style={customBlockStyle}
               className={
                 isStory
-                  ? `${storyListClass} mb-2.5 last:mb-0`
+                  ? `${storyListClass} ${customParagraphSpacing !== null && customParagraphSpacing !== undefined ? "" : "mb-2.5 last:mb-0"}`
                   : "my-3 space-y-1.5 list-disc list-inside text-zinc-200 text-sm sm:text-base"
               }
             >
@@ -286,9 +320,10 @@ export const FormattedReviewText: React.FC<FormattedReviewTextProps> = ({
         return (
           <p
             key={bIdx}
+            style={customParagraphStyle}
             className={
               isStory
-                ? `${storyParagraphClass} ${storyParagraphMargin}`
+                ? `${storyParagraphClass} ${customParagraphSpacing !== null && customParagraphSpacing !== undefined ? "" : storyParagraphMargin}`
                 : "leading-[1.9] text-zinc-200 text-base sm:text-lg"
             }
           >

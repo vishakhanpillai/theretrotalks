@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useState, useRef } from "react";
-import { ArrowLeft, Heart, User, Film, Image as ImageIcon, AlignLeft, Crop, Sparkles } from "lucide-react";
+import { ArrowLeft, User, Film, Image as ImageIcon, AlignLeft, Crop, Sparkles } from "lucide-react";
 import type { Review, BackdropFraming } from "../types";
 import { getBackdropUrl, getPosterUrl } from "../utils/images";
 import { StarRating } from "../components/StarRating";
@@ -86,8 +86,8 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
         return;
       }
 
-      if (headerRef.current) {
-        const rect = headerRef.current.getBoundingClientRect();
+      if (headerRef.current) { 
+        const rect = headerRef.current.getBoundingClientRect();          
         const stickPoint = 64; // Sticky at top-16 (64px)
         const fadeStart = 260; // Begins smooth fade as the review approaches the navbar
 
@@ -371,7 +371,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
             
             {/* The Poster */}
             <div className="relative group max-w-[220px] sm:max-w-[260px] lg:max-w-none mx-auto lg:mx-0">
-              <div className="aspect-[2/3] rounded-lg overflow-hidden border border-white/[0.12] shadow-[0_25px_60px_rgba(0,0,0,0.85)] bg-[#12151c]">
+              <div className="aspect-[2/3] rounded-lg overflow-hidden border border-[#07080a] shadow-[0_25px_60px_rgba(0,0,0,0.85)] bg-[#12151c]">
                 {posterUrl && !posterError ? (
                   <img
                     src={posterUrl}
@@ -512,7 +512,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
                   </p>
                 </div>
 
-                {/* Star Rating & Favorite (Same position as older one) */}
+                {/* Star Rating */}
                 <div className="flex items-center gap-3 pt-1">
                   <StarRating
                     rating={review.rating}
@@ -520,13 +520,6 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
                     size="md"
                     valueClassName="text-base sm:text-lg min-w-[3.5rem]"
                   />
-
-                  {review.isFavorite && (
-                    <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#ff5500]/15 text-[#ff7a29] border border-[#ff5500]/30 text-xs font-inter ml-2 shadow-sm">
-                      <Heart className="w-3.5 h-3.5 fill-[#ff5500]" />
-                      <span>Favorite</span>
-                    </span>
-                  )}
                 </div>
 
                 {/* Review by Vishakhan Pillai V P · Date */}

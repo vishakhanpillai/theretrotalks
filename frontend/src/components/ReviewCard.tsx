@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Heart, Trash2, User, ArrowRight, Calendar, Star, Film } from "lucide-react";
+import { Trash2, User, ArrowRight, Calendar, Star, Film } from "lucide-react";
 import type { Review, CastMember, CrewMember } from "../types";
 import { getPosterUrl, getBackdropUrl } from "../utils/images";
 import { StarRating } from "./StarRating";
@@ -61,7 +61,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   return (
     <article
       onClick={() => onOpenReview(review)}
-      className="group relative flex flex-col md:flex-row bg-[#080a0f] hover:bg-[#0c0f16] rounded-3xl overflow-hidden border border-white/[0.08] hover:border-[#ff5500]/40 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_25px_70px_rgba(0,0,0,0.85),0_0_40px_rgba(255,85,0,0.1)] cursor-pointer"
+      className="group relative flex flex-col md:flex-row bg-[#080a0f] hover:bg-[#0c0f16] rounded-3xl overflow-hidden border border-[#07080a] hover:border-[#ff5500]/40 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_25px_70px_rgba(0,0,0,0.85),0_0_40px_rgba(255,85,0,0.1)] cursor-pointer"
     >
       {/* Subtle Backdrop Tint dissolved in background */}
       {backdropUrl && (
@@ -94,19 +94,12 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/80 md:from-transparent via-transparent to-transparent pointer-events-none opacity-80 group-hover:opacity-50 transition-opacity" />
 
         {/* Floating Poster Badges */}
-        <div className="absolute top-3 left-3 right-3 sm:top-3.5 sm:left-3.5 sm:right-3.5 flex items-center justify-between pointer-events-none z-10">
+        <div className="absolute top-3 left-3 sm:top-3.5 sm:left-3.5 flex items-center pointer-events-none z-10">
           {/* Star Rating Badge */}
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/80 backdrop-blur-md border border-white/[0.12] text-xs font-inter font-bold text-[#ff7a29] shadow-lg">
             <Star className="w-3.5 h-3.5 fill-[#ff5500] text-[#ff5500]" />
             <span>{formatRating(review.rating)}</span>
           </div>
-
-          {/* Favorite Badge */}
-          {review.isFavorite && (
-            <div className="p-1.5 rounded-xl bg-black/80 backdrop-blur-md border border-[#ff5500]/35 text-[#ff5500] shadow-lg">
-              <Heart className="w-3.5 h-3.5 fill-[#ff5500]" />
-            </div>
-          )}
         </div>
 
         {/* Mobile Release Year Pill */}
@@ -141,13 +134,6 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                     </span>
                   ))}
                 </div>
-              )}
-
-              {review.isFavorite && (
-                <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-[#ff5500]/15 text-[#ff7a29] border border-[#ff5500]/30 text-[11px] font-inter font-medium">
-                  <Heart className="w-3 h-3 fill-[#ff5500]" />
-                  <span>Curated Favorite</span>
-                </span>
               )}
             </div>
 

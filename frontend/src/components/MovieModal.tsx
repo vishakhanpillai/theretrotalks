@@ -242,7 +242,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
             
             {/* Poster column */}
             <div className="flex-shrink-0 w-32 sm:w-44 mx-auto sm:mx-0">
-              <div className="aspect-[2/3] rounded-2xl overflow-hidden border border-white/[0.1] shadow-2xl bg-[#12151c]">
+              <div className="aspect-[2/3] rounded-2xl overflow-hidden border border-[#07080a] shadow-2xl bg-[#12151c]">
                 {activePosterUrl && !posterError ? (
                   <img
                     src={activePosterUrl}

@@ -26,7 +26,7 @@ export const ReviewPosterCard: React.FC<ReviewPosterCardProps> = ({
   return (
     <article
       onClick={() => onOpenReview(review)}
-      className="group relative w-full aspect-[2/3] bg-[#07090e] rounded-2xl overflow-hidden border border-white/[0.08] hover:border-[#ff5500]/50 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_50px_rgba(0,0,0,0.9),0_0_30px_rgba(255,85,0,0.2)] cursor-pointer"
+      className="group relative w-full aspect-[2/3] bg-[#07090e] rounded-2xl overflow-hidden border border-[#07080a] hover:border-[#ff5500]/50 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_50px_rgba(0,0,0,0.9),0_0_30px_rgba(255,85,0,0.2)] cursor-pointer"
     >
       {/* Film Poster Image */}
       {posterUrl && !imageError ? (
