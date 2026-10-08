@@ -10,16 +10,18 @@ import { AvengersCountdown } from "../components/AvengersCountdown";
 import { AvengersDoomsdayModal } from "../components/AvengersDoomsdayModal";
 import { Footer } from "../components/Footer";
 import { Aurora } from "../components/Aurora";
+import { useReviews } from "../context/ReviewsContext";
 
 interface RetroTalksPageProps {
-  reviews: Review[];
+  reviews?: Review[];
   onOpenReview: (review: Review | string | number) => void;
 }
 
-export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
-  reviews,
-  onOpenReview,
-}) => {
+export const RetroTalksPage: React.FC<RetroTalksPageProps> = (props) => {
+  const reviewsContext = useReviews();
+  const reviews = props.reviews ?? reviewsContext.reviews;
+  const onOpenReview = props.onOpenReview;
+
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showDoomsdayModal, setShowDoomsdayModal] = useState(false);

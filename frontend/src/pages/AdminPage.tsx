@@ -41,8 +41,11 @@ import { getPosterUrl } from "../utils/images";
 import { PosterSelectorModal } from "../components/PosterSelectorModal";
 import { BackdropSelectorModal } from "../components/BackdropSelectorModal";
 import { BackdropFramingModal } from "../components/BackdropFramingModal";
-import { StoryCardBuilderModal } from "../components/StoryCardBuilderModal";
 import { EditReviewModal } from "../components/EditReviewModal";
+
+const StoryCardBuilderModal = React.lazy(() =>
+  import("../components/StoryCardBuilderModal").then((m) => ({ default: m.StoryCardBuilderModal }))
+);
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 import { DatabaseImportModal } from "../components/DatabaseImportModal";
 import { AdminSidebar, type FilterTab } from "../components/AdminSidebar";
@@ -51,18 +54,20 @@ import { CinemaReviewStudioModal } from "../components/CinemaReviewStudioModal";
 import { getReviewDraft, clearReviewDraft, type ReviewDraft } from "../utils/draftStorage";
 import { slugify } from "../utils/slugify";
 import { formatRating } from "../utils/formatRating";
+import { useAuth } from "../context/AuthContext";
+import { useReviews } from "../context/ReviewsContext";
 
 interface AdminPageProps {
-  reviews: Review[];
-  isAdmin: boolean;
-  onLoginSuccess: (token: string) => void;
-  onLogout: () => void;
+  reviews?: Review[];
+  isAdmin?: boolean;
+  onLoginSuccess?: (token: string) => void;
+  onLogout?: () => void;
   onRefreshReviews?: () => Promise<void> | void;
-  onSaveReview: (review: Review) => Promise<void>;
-  onUpdateReview?: (reviewId: string | number, updatedData: Partial<Review>) => Promise<void>;
-  onDeleteReview: (id: string | number) => Promise<void>;
+  onSaveReview?: (review: Review) => Promise<void> | Promise<Review>;
+  onUpdateReview?: (reviewId: string | number, updatedData: Partial<Review>) => Promise<Review | void>;
+  onDeleteReview?: (id: string | number) => Promise<void>;
   onReorderReviews?: (orderedIds: (string | number)[]) => Promise<void>;
-  onUpdatePoster: (reviewId: string | number, newPosterUrl: string) => Promise<void>;
+  onUpdatePoster?: (reviewId: string | number, newPosterUrl: string) => Promise<void>;
   onUpdateBackdrop?: (reviewId: string | number, newBackdropUrl: string) => Promise<void>;
   onUpdateBackdropFraming?: (reviewId: string | number, framing: BackdropFraming) => Promise<void>;
   onNavigateHome: () => void;
@@ -72,20 +77,25 @@ interface AdminPageProps {
 type SortOption = "custom" | "newest" | "oldest" | "rating_desc" | "rating_asc" | "year_desc" | "title_asc";
 type ViewMode = "grid" | "table";
 
-export const AdminPage: React.FC<AdminPageProps> = ({
-  reviews,
-  isAdmin,
-  onLoginSuccess,
-  onLogout,
-  onRefreshReviews,
-  onSaveReview,
-  onUpdateReview,
-  onDeleteReview,
-  onReorderReviews,
-  onUpdateBackdropFraming,
-  onNavigateHome,
-  onNavigateToReview,
-}) => {
+export const AdminPage: React.FC<AdminPageProps> = (props) => {
+  const auth = useAuth();
+  const reviewsContext = useReviews();
+
+  const reviews = props.reviews ?? reviewsContext.reviews;
+  const isAdmin = props.isAdmin ?? auth.isAdmin;
+  const onSaveReview = props.onSaveReview ?? reviewsContext.saveReview;
+  const onUpdateReview = props.onUpdateReview ?? reviewsContext.updateReview;
+  const onDeleteReview = props.onDeleteReview ?? reviewsContext.deleteReview;
+  const onReorderReviews = props.onReorderReviews ?? reviewsContext.reorderReviews;
+  const onUpdatePoster = props.onUpdatePoster ?? reviewsContext.updatePoster;
+  const onUpdateBackdrop = props.onUpdateBackdrop ?? reviewsContext.updateBackdrop;
+  const onUpdateBackdropFraming = props.onUpdateBackdropFraming ?? reviewsContext.updateBackdropFraming;
+  const onRefreshReviews = props.onRefreshReviews ?? reviewsContext.refreshReviews;
+  const onNavigateHome = props.onNavigateHome;
+  const onNavigateToReview = props.onNavigateToReview;
+  const onLoginSuccess = props.onLoginSuccess ?? auth.setToken;
+  const onLogout = props.onLogout ?? auth.logout;
+
   // Login form states
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -215,7 +225,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const handleDownloadBackup = async (format: "sqlite" | "json" | "csv") => {
     try {
       setDownloadingFormat(format);
-      const token = localStorage.getItem("the_retro_talks_admin_token");
+      const token = auth.adminToken || localStorage.getItem("the_retro_talks_admin_token");
       const res = await fetch(`/api/admin/backup/${format}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -260,18 +270,14 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     setLoginError(null);
 
     try {
-      const res = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: password.trim() }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Incorrect admin passcode. Access denied.");
+      const result = await auth.login(password.trim());
+      if (!result.success) {
+        throw new Error(result.error || "Incorrect admin passcode. Access denied.");
       }
 
-      onLoginSuccess(data.token);
+      if (auth.adminToken) {
+        onLoginSuccess(auth.adminToken);
+      }
       setPassword("");
     } catch (err: unknown) {
       setLoginError(err instanceof Error ? err.message : "Authentication failed");
@@ -817,29 +823,27 @@ export const AdminPage: React.FC<AdminPageProps> = ({
               </div>
 
               {/* Toggle Reorder Mode */}
-              {onReorderReviews && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const nextMode = !isReorderMode;
-                    setIsReorderMode(nextMode);
-                    if (nextMode) {
-                      setSortBy("custom");
-                      setGridSearch("");
-                      setFilterTab("all");
-                    }
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-inter font-medium transition-all cursor-pointer ${
-                    isReorderMode
-                      ? "bg-[#ff5500] text-black border-[#ff5500] font-bold shadow-[0_0_15px_rgba(255,85,0,0.35)]"
-                      : "bg-[#0e1118] border-white/[0.08] text-zinc-300 hover:text-white"
-                  }`}
-                  title="Arrange custom sequence of reviews across website"
-                >
-                  <Move className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{isReorderMode ? "Exit Sorting" : "Sort Order"}</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  const nextMode = !isReorderMode;
+                  setIsReorderMode(nextMode);
+                  if (nextMode) {
+                    setSortBy("custom");
+                    setGridSearch("");
+                    setFilterTab("all");
+                  }
+                }}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-inter font-medium transition-all cursor-pointer ${
+                  isReorderMode
+                    ? "bg-[#ff5500] text-black border-[#ff5500] font-bold shadow-[0_0_15px_rgba(255,85,0,0.35)]"
+                    : "bg-[#0e1118] border-white/[0.08] text-zinc-300 hover:text-white"
+                }`}
+                title="Arrange custom sequence of reviews across website"
+              >
+                <Move className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{isReorderMode ? "Exit Sorting" : "Sort Order"}</span>
+              </button>
             </div>
           </div>
 
@@ -1514,9 +1518,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           movieId={Number(posterEditReview.tmdbId) || 0}
           currentPosterUrl={posterEditReview.poster}
           onSelectPoster={async (newPosterUrl) => {
-            if (onUpdateReview) {
-              await onUpdateReview(posterEditReview.id, { poster: newPosterUrl });
-            }
+            await onUpdatePoster(posterEditReview.id, newPosterUrl);
             setPosterEditReview(null);
             showToast(`Updated poster for "${posterEditReview.title}"`);
           }}
@@ -1532,9 +1534,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           movieId={Number(backdropEditReview.tmdbId) || 0}
           currentBackdropUrl={backdropEditReview.backdrop}
           onSelectBackdrop={async (newBackdropUrl) => {
-            if (onUpdateReview) {
-              await onUpdateReview(backdropEditReview.id, { backdrop: newBackdropUrl });
-            }
+            await onUpdateBackdrop(backdropEditReview.id, newBackdropUrl);
             setBackdropEditReview(null);
             showToast(`Updated backdrop for "${backdropEditReview.title}"`);
           }}
@@ -1561,11 +1561,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
       {/* 8. STORY CARD BUILDER MODAL */}
       {storyStudioReview && (
-        <StoryCardBuilderModal
-          isOpen={Boolean(storyStudioReview)}
-          onClose={() => setStoryStudioReview(null)}
-          review={storyStudioReview}
-        />
+        <React.Suspense fallback={null}>
+          <StoryCardBuilderModal
+            isOpen={Boolean(storyStudioReview)}
+            onClose={() => setStoryStudioReview(null)}
+            review={storyStudioReview}
+          />
+        </React.Suspense>
       )}
 
       {/* 9. DATABASE IMPORT MODAL */}

@@ -45,3 +45,6 @@ yarn-error.log*
 *.db-shm
 *.sqlite
 *.sqlite3
+
+# Scanner & security audit artifacts
+.scannerwork/

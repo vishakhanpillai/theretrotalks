@@ -1,13 +1,30 @@
-import { useState, useEffect } from "react";
-import type { Review, BackdropFraming } from "./types";
+import { useState, useEffect, lazy, Suspense } from "react";
+import { Loader2 } from "lucide-react";
+import type { Review } from "./types";
 import { RetroTalksPage } from "./pages/RetroTalksPage";
-import { AdminPage } from "./pages/AdminPage";
-import { ReviewPage } from "./pages/ReviewPage";
-import { INITIAL_REVIEWS } from "./data/sampleReviews";
 import { slugify, getReviewSlug } from "./utils/slugify";
+import { AuthProvider } from "./context/AuthContext";
+import { ReviewsProvider, useReviews } from "./context/ReviewsContext";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
-const STORAGE_KEY = "the_retro_talks_personal_reviews";
-const ADMIN_TOKEN_KEY = "the_retro_talks_admin_token";
+const AdminPage = lazy(() =>
+  import("./pages/AdminPage").then((m) => ({ default: m.AdminPage }))
+);
+
+const ReviewPage = lazy(() =>
+  import("./pages/ReviewPage").then((m) => ({ default: m.ReviewPage }))
+);
+
+const CinematicLoadingFallback = () => (
+  <div className="min-h-screen bg-[#07080a] flex flex-col items-center justify-center text-zinc-400 font-poppins selection:bg-[#ff5500] selection:text-black">
+    <div className="w-11 h-11 rounded-2xl bg-[#ff5500]/10 border border-[#ff5500]/30 flex items-center justify-center text-[#ff5500] mb-4 shadow-[0_0_20px_rgba(255,85,0,0.2)]">
+      <Loader2 className="w-5 h-5 animate-spin" />
+    </div>
+    <span className="text-[11px] font-mono tracking-[0.28em] uppercase text-zinc-500 font-semibold">
+      Loading Reel...
+    </span>
+  </div>
+);
 
 type Page = "home" | "admin" | "review";
 
@@ -33,129 +50,9 @@ function parseCurrentRoute(): RouteState {
   return { page: "home", reviewId: null };
 }
 
-function App() {
-  // Page Routing State: "home" vs "admin" vs "review"
+function AppContent() {
   const [route, setRoute] = useState<RouteState>(parseCurrentRoute);
-
-  // Admin Authentication State
-  const [adminToken, setAdminToken] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem(ADMIN_TOKEN_KEY);
-    } catch {
-      return null;
-    }
-  });
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-
-  // Reviews State (loaded from SQLite database)
-  const [reviews, setReviews] = useState<Review[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (e) {
-      console.warn("Could not load from localStorage cache:", e);
-    }
-    return INITIAL_REVIEWS;
-  });
-
-  // Verify Admin Token on mount
-  useEffect(() => {
-    if (!adminToken) {
-      setIsAdmin(false);
-      return;
-    }
-
-    fetch("/api/admin/status", {
-      headers: { Authorization: `Bearer ${adminToken}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.isAdmin) {
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false);
-          localStorage.removeItem(ADMIN_TOKEN_KEY);
-        }
-      })
-      .catch((err) => {
-        console.warn("Admin status check failed:", err);
-      });
-  }, [adminToken]);
-
-  // Fetch reviews from SQLite Database
-  const fetchReviewsFromDb = async () => {
-    try {
-      const res = await fetch("/api/reviews");
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.reviews)) {
-          setReviews(data.reviews);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data.reviews));
-        }
-      }
-    } catch (err) {
-      console.warn("Could not fetch from SQLite API, using local cache:", err);
-    }
-  };
-
-  // Real-time live synchronization via Server-Sent Events (SSE) + window focus/visibility
-  useEffect(() => {
-    fetchReviewsFromDb();
-
-    let eventSource: EventSource | null = null;
-    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-
-    const connectSSE = () => {
-      try {
-        eventSource = new EventSource("/api/events");
-
-        eventSource.addEventListener("reviews_updated", () => {
-          fetchReviewsFromDb();
-        });
-
-        eventSource.onerror = () => {
-          if (eventSource) {
-            eventSource.close();
-            eventSource = null;
-          }
-          if (!reconnectTimeout) {
-            reconnectTimeout = setTimeout(() => {
-              reconnectTimeout = null;
-              connectSSE();
-            }, 5000);
-          }
-        };
-      } catch (e) {
-        console.warn("SSE connection error:", e);
-      }
-    };
-
-    connectSSE();
-
-    // Revalidate on visibility change or window focus
-    const handleVisibilityOrFocus = () => {
-      if (document.visibilityState === "visible") {
-        fetchReviewsFromDb();
-      }
-    };
-
-    window.addEventListener("focus", handleVisibilityOrFocus);
-    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
-
-    return () => {
-      if (eventSource) {
-        eventSource.close();
-      }
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
-      }
-      window.removeEventListener("focus", handleVisibilityOrFocus);
-      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
-    };
-  }, []);
+  const { reviews, refreshReviews } = useReviews();
 
   // Sync browser back/forward history navigation
   useEffect(() => {
@@ -182,7 +79,7 @@ function App() {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
-    fetchReviewsFromDb();
+    refreshReviews();
     setRoute({ page: "home", reviewId: null });
     window.history.pushState({}, "", "/");
   };
@@ -227,267 +124,48 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleLoginSuccess = (token: string) => {
-    setAdminToken(token);
-    setIsAdmin(true);
-    localStorage.setItem(ADMIN_TOKEN_KEY, token);
-  };
-
-  const handleLogout = async () => {
-    if (adminToken) {
-      try {
-        await fetch("/api/admin/logout", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${adminToken}` },
-        });
-      } catch (e) {
-        console.warn("Logout error:", e);
-      }
-    }
-    setAdminToken(null);
-    setIsAdmin(false);
-    localStorage.removeItem(ADMIN_TOKEN_KEY);
-  };
-
-  // Save review to SQLite (Admin Only)
-  const handleSaveNewReview = async (newReview: Review) => {
-    if (!adminToken) return;
-
-    try {
-      const res = await fetch("/api/reviews", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${adminToken}`,
-        },
-        body: JSON.stringify(newReview),
-      });
-
-      if (res.ok) {
-        const saved = await res.json();
-        setReviews((prev) => [saved, ...prev]);
-      } else {
-        setReviews((prev) => [newReview, ...prev]);
-      }
-    } catch (err) {
-      console.error("Error saving review to SQLite:", err);
-      setReviews((prev) => [newReview, ...prev]);
-    }
-  };
-
-  // Delete review from SQLite (Admin Only)
-  const handleDeleteReview = async (id: string | number) => {
-    if (!adminToken) return;
-
-    try {
-      const res = await fetch(`/api/reviews/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
-        },
-      });
-
-      if (res.ok) {
-        setReviews((prev) => prev.filter((r) => r.id !== id));
-      }
-    } catch (err) {
-      console.error("Error deleting review from SQLite:", err);
-      setReviews((prev) => prev.filter((r) => r.id !== id));
-    }
-  };
-
-  // Update review poster in SQLite (Admin Only)
-  const handleUpdatePoster = async (reviewId: string | number, newPosterUrl: string) => {
-    if (!adminToken) return;
-
-    try {
-      const res = await fetch(`/api/reviews/${reviewId}/poster`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${adminToken}`,
-        },
-        body: JSON.stringify({ posterUrl: newPosterUrl }),
-      });
-
-      if (res.ok) {
-        setReviews((prev) =>
-          prev.map((r) => (r.id === reviewId ? { ...r, poster: newPosterUrl } : r))
-        );
-      }
-    } catch (err) {
-      console.error("Error updating poster in SQLite:", err);
-      setReviews((prev) =>
-        prev.map((r) => (r.id === reviewId ? { ...r, poster: newPosterUrl } : r))
-      );
-    }
-  };
-
-  // Update review backdrop in SQLite (Admin Only)
-  const handleUpdateBackdrop = async (reviewId: string | number, newBackdropUrl: string) => {
-    if (!adminToken) return;
-
-    try {
-      const res = await fetch(`/api/reviews/${reviewId}/backdrop`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${adminToken}`,
-        },
-        body: JSON.stringify({ backdropUrl: newBackdropUrl }),
-      });
-
-      if (res.ok) {
-        setReviews((prev) =>
-          prev.map((r) => (r.id === reviewId ? { ...r, backdrop: newBackdropUrl } : r))
-        );
-      }
-    } catch (err) {
-      console.error("Error updating backdrop in SQLite:", err);
-      setReviews((prev) =>
-        prev.map((r) => (r.id === reviewId ? { ...r, backdrop: newBackdropUrl } : r))
-      );
-    }
-  };
-
-  // Update review backdrop framing in SQLite (Admin Only)
-  const handleUpdateBackdropFraming = async (
-    reviewId: string | number,
-    framing: BackdropFraming
-  ) => {
-    if (!adminToken) return;
-
-    try {
-      const res = await fetch(`/api/reviews/${reviewId}/backdrop-framing`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${adminToken}`,
-        },
-        body: JSON.stringify({ framing }),
-      });
-
-      if (res.ok) {
-        setReviews((prev) =>
-          prev.map((r) => (r.id === reviewId ? { ...r, backdropFraming: framing } : r))
-        );
-      }
-    } catch (err) {
-      console.error("Error updating backdrop framing in SQLite:", err);
-      setReviews((prev) =>
-        prev.map((r) => (r.id === reviewId ? { ...r, backdropFraming: framing } : r))
-      );
-    }
-  };
-
-  // Update review details in SQLite (Admin Only)
-  const handleUpdateReview = async (reviewId: string | number, updatedData: Partial<Review>) => {
-    if (!adminToken) return;
-
-    try {
-      const res = await fetch(`/api/reviews/${reviewId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${adminToken}`,
-        },
-        body: JSON.stringify(updatedData),
-      });
-
-      if (res.ok) {
-        const saved = await res.json();
-        setReviews((prev) =>
-          prev.map((r) => (r.id === reviewId ? { ...r, ...saved } : r))
-        );
-      } else {
-        setReviews((prev) =>
-          prev.map((r) => (r.id === reviewId ? { ...r, ...updatedData } : r))
-        );
-      }
-    } catch (err) {
-      console.error("Error updating review in SQLite:", err);
-      setReviews((prev) =>
-        prev.map((r) => (r.id === reviewId ? { ...r, ...updatedData } : r))
-      );
-    }
-  };
-
-  // Reorder reviews in SQLite (Admin Only)
-  const handleReorderReviews = async (orderedIds: (string | number)[]) => {
-    if (!adminToken) return;
-
-    try {
-      const res = await fetch("/api/reviews/reorder", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${adminToken}`,
-        },
-        body: JSON.stringify({ orderedIds: orderedIds.map(String) }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.reviews)) {
-          setReviews(data.reviews);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data.reviews));
-        }
-      }
-    } catch (err) {
-      console.error("Error reordering reviews:", err);
-    }
-  };
-
   // 1. Admin Page (only accessible at /admin or via secret shortcut)
   if (route.page === "admin") {
     return (
-      <AdminPage
-        reviews={reviews}
-        isAdmin={isAdmin}
-        onLoginSuccess={handleLoginSuccess}
-        onLogout={handleLogout}
-        onRefreshReviews={fetchReviewsFromDb}
-        onSaveReview={handleSaveNewReview}
-        onUpdateReview={handleUpdateReview}
-        onDeleteReview={handleDeleteReview}
-        onReorderReviews={handleReorderReviews}
-        onUpdatePoster={handleUpdatePoster}
-        onUpdateBackdrop={handleUpdateBackdrop}
-        onUpdateBackdropFraming={handleUpdateBackdropFraming}
-        onNavigateHome={navigateToHome}
-        onNavigateToReview={navigateToReview}
-      />
+      <Suspense fallback={<CinematicLoadingFallback />}>
+        <AdminPage
+          onNavigateHome={navigateToHome}
+          onNavigateToReview={navigateToReview}
+        />
+      </Suspense>
     );
   }
 
   // 2. Standalone Dedicated Cinema Review Page
   if (route.page === "review" && route.reviewId) {
-    const matchedReview = reviews.find(
-      (r) =>
-        r.slug === route.reviewId ||
-        slugify(r.title) === route.reviewId ||
-        String(r.id) === String(route.reviewId)
-    );
     return (
-      <ReviewPage
-        key={route.reviewId}
-        reviewId={route.reviewId}
-        initialReview={matchedReview}
-        isAdmin={isAdmin}
-        onNavigateHome={navigateToHome}
-        onUpdatePoster={handleUpdatePoster}
-        onUpdateBackdrop={handleUpdateBackdrop}
-        onUpdateBackdropFraming={handleUpdateBackdropFraming}
-      />
+      <Suspense fallback={<CinematicLoadingFallback />}>
+        <ReviewPage
+          key={route.reviewId}
+          reviewId={route.reviewId}
+          onNavigateHome={navigateToHome}
+        />
+      </Suspense>
     );
   }
 
   // 3. Primary Home Page: The Retro Talks
   return (
     <RetroTalksPage
-      reviews={reviews}
       onOpenReview={navigateToReview}
     />
+  );
+}
+
+export function App() {
+  return (
+    <ErrorBoundary>
+      <AuthProvider>
+        <ReviewsProvider>
+          <AppContent />
+        </ReviewsProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -2,6 +2,9 @@ const crypto = require("crypto");
 const { db } = require("../connection");
 const { ADMIN_PASSWORD } = require("../../config/env");
 
+// 30 Days Session Time-To-Live
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
 const getAdminPassword = () => {
   if (!ADMIN_PASSWORD) {
     console.error("SECURITY ALERT: ADMIN_PASSWORD environment variable is not defined in backend/.env!");
@@ -39,12 +42,24 @@ const verifyPasswordAndCreateSession = async (password) => {
 };
 
 const validateSessionToken = async (token) => {
-  if (!token) return false;
+  if (!token || typeof token !== "string") return false;
   const res = await db.execute({
     sql: "SELECT * FROM admin_sessions WHERE token = ?",
     args: [token],
   });
-  return res.rows.length > 0;
+  if (res.rows.length === 0) return false;
+
+  const session = res.rows[0];
+  const createdAt = Number(session.created_at) || 0;
+  const now = Date.now();
+
+  // Enforce session TTL expiry
+  if (now - createdAt > SESSION_TTL_MS) {
+    await revokeSession(token);
+    return false;
+  }
+
+  return true;
 };
 
 const revokeSession = async (token) => {
@@ -59,4 +74,5 @@ module.exports = {
   verifyPasswordAndCreateSession,
   validateSessionToken,
   revokeSession,
+  SESSION_TTL_MS,
 };

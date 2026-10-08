@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
+const rateLimit = require("express-rate-limit");
 const authController = require("../controllers/authController");
 const backupController = require("../controllers/backupController");
 
@@ -9,7 +10,19 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max file size
 });
 
-router.post("/login", authController.login);
+// Protect login endpoint against brute-force attacks (max 10 failed attempts per 15 min)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: {
+    error: "Too many failed login attempts. For security reasons, please try again in 15 minutes.",
+  },
+});
+
+router.post("/login", loginLimiter, authController.login);
 router.get("/status", authController.getStatus);
 router.post("/logout", authController.logout);
 

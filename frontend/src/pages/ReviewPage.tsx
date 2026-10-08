@@ -6,9 +6,14 @@ import { StarRating } from "../components/StarRating";
 import { PosterSelectorModal } from "../components/PosterSelectorModal";
 import { BackdropSelectorModal } from "../components/BackdropSelectorModal";
 import { BackdropFramingModal } from "../components/BackdropFramingModal";
-import { StoryCardBuilderModal } from "../components/StoryCardBuilderModal";
 import { FormattedReviewText } from "../components/FormattedReviewText";
 import { Footer } from "../components/Footer";
+import { useAuth } from "../context/AuthContext";
+import { useReviews } from "../context/ReviewsContext";
+
+const StoryCardBuilderModal = React.lazy(() =>
+  import("../components/StoryCardBuilderModal").then((m) => ({ default: m.StoryCardBuilderModal }))
+);
 
 interface ReviewPageProps {
   reviewId: string;
@@ -20,15 +25,21 @@ interface ReviewPageProps {
   onUpdateBackdropFraming?: (reviewId: string | number, framing: BackdropFraming) => Promise<void> | void;
 }
 
-export const ReviewPage: React.FC<ReviewPageProps> = ({
-  reviewId,
-  initialReview,
-  isAdmin = false,
-  onNavigateHome,
-  onUpdatePoster,
-  onUpdateBackdrop,
-  onUpdateBackdropFraming,
-}) => {
+export const ReviewPage: React.FC<ReviewPageProps> = (props) => {
+  const auth = useAuth();
+  const reviewsContext = useReviews();
+
+  const reviewId = props.reviewId;
+  const onNavigateHome = props.onNavigateHome;
+  const isAdmin = props.isAdmin ?? auth.isAdmin;
+  const onUpdatePoster = props.onUpdatePoster ?? reviewsContext.updatePoster;
+  const onUpdateBackdrop = props.onUpdateBackdrop ?? reviewsContext.updateBackdrop;
+  const onUpdateBackdropFraming = props.onUpdateBackdropFraming ?? reviewsContext.updateBackdropFraming;
+
+  const initialReview = props.initialReview ?? reviewsContext.reviews.find(
+    (r) => r.slug === reviewId || String(r.id) === String(reviewId)
+  );
+
   const [review, setReview] = useState<Review | null>(initialReview || null);
   const [loading, setLoading] = useState<boolean>(!initialReview);
   const [synopsis, setSynopsis] = useState<string | null>(initialReview?.overview || null);
@@ -719,12 +730,14 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({
       )}
 
       {/* Instagram Story Card Builder Studio (Admin Only - Edits isolated to story studio) */}
-      {isAdmin && (
-        <StoryCardBuilderModal
-          isOpen={showStoryModal}
-          onClose={() => setShowStoryModal(false)}
-          review={review}
-        />
+      {isAdmin && showStoryModal && review && (
+        <React.Suspense fallback={null}>
+          <StoryCardBuilderModal
+            isOpen={showStoryModal}
+            onClose={() => setShowStoryModal(false)}
+            review={review}
+          />
+        </React.Suspense>
       )}
 
     </div>
