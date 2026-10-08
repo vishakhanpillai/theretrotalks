@@ -9,6 +9,7 @@ import { UpcomingMoviesSidebar } from "../components/UpcomingMoviesSidebar";
 import { AvengersCountdown } from "../components/AvengersCountdown";
 import { AvengersDoomsdayModal } from "../components/AvengersDoomsdayModal";
 import { Footer } from "../components/Footer";
+import { Aurora } from "../components/Aurora";
 
 interface RetroTalksPageProps {
   reviews: Review[];
@@ -125,12 +126,19 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
   return (
     <div className="min-h-screen bg-[#07080a] text-[#ededed] flex flex-col font-poppins selection:bg-[#ff5500] selection:text-black relative overflow-x-hidden">
       
-      {/* Ambient Cinema Lighting & Background Depth */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-[520px] pointer-events-none select-none overflow-hidden z-0">
-        {/* Subtle warm ember radial glow centered on the hero */}
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] sm:w-[820px] h-[380px] bg-gradient-to-b from-[#ff5500]/14 via-[#ff5500]/[0.025] to-transparent rounded-full blur-3xl" />
-        {/* Fine cinema grain texture */}
-        <div className="absolute inset-0 cinema-grain opacity-40" />
+      {/* Ambient Cinema Lighting & Aurora Canvas */}
+      <div className="absolute top-0 left-0 right-0 h-[480px] sm:h-[560px] pointer-events-none select-none overflow-hidden z-0">
+        <Aurora
+          colorStops={["#ff3700", "#ff7a29", "#f59e0b"]}
+          blend={0.5}
+          amplitude={1.1}
+          speed={0.5}
+        />
+
+        {/* Cinematic Noir Vignette & Bottom Dissolve into #07080a */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#07080a]/60 via-transparent to-[#07080a]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#07080a]/40 via-transparent to-[#07080a]/40" />
+        <div className="absolute inset-0 cinema-grain opacity-30" />
         {/* Top hairline amber accent */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 sm:w-[480px] h-[1px] bg-gradient-to-r from-transparent via-[#ff5500]/40 to-transparent" />
       </div>
@@ -181,16 +189,16 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = ({
       {/* Hero Section - Modern Editorial Masthead */}
       <section className="relative z-10 w-full px-4 sm:px-6 lg:px-10 xl:px-14 pt-8 sm:pt-12 pb-6">
         <div className="w-full space-y-3 pb-8 border-b border-white/[0.07]">
-          <div className="flex items-center gap-2 text-[11px] font-mono tracking-[0.25em] text-[#ff5500] uppercase font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ff5500]" />
+          <div className="flex items-center gap-2 text-[11px] font-mono tracking-[0.25em] text-[#ff5500] uppercase font-semibold drop-shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ff5500] shadow-[0_0_8px_rgba(255,85,0,0.8)]" />
             <span>Film Archive & Journal</span>
           </div>
           
-          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[2rem] xl:text-[2.35rem] 2xl:text-[2.65rem] font-bold tracking-tight text-white font-poppins leading-tight sm:whitespace-nowrap">
+          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[2rem] xl:text-[2.35rem] 2xl:text-[2.65rem] font-bold tracking-tight text-white font-poppins leading-tight sm:whitespace-nowrap drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)]">
             I watch movies. Sometimes I have a lot to say about them.
           </h1>
           
-          <p className="text-sm sm:text-base text-zinc-400 font-normal leading-relaxed max-w-2xl pt-1">
+          <p className="text-sm sm:text-base text-zinc-300 font-normal leading-relaxed max-w-2xl pt-1 drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
             Most of it is probably unnecessary. I’m writing it down anyway.
           </p>
         </div>

@@ -12,10 +12,10 @@ import {
   LogOut,
   FileJson,
   FileSpreadsheet,
-  X,
   Loader2,
   Check,
   Edit3,
+  PanelLeftClose,
 } from "lucide-react";
 import type { ReviewDraft } from "../utils/draftStorage";
 
@@ -27,6 +27,8 @@ interface AdminSidebarProps {
   movieCount: number;
   tvCount: number;
   avgRating: string;
+  fiveStarCount?: number;
+  fourStarPlusCount?: number;
   filterTab: FilterTab;
   setFilterTab: (tab: FilterTab) => void;
   isReorderMode: boolean;
@@ -40,6 +42,9 @@ interface AdminSidebarProps {
   downloadingFormat: "sqlite" | "json" | "csv" | null;
   onNavigateHome: () => void;
   onLogout: () => void;
+  isOpen?: boolean;
+  onToggle?: () => void;
+  onClose?: () => void;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
   draft?: ReviewDraft | null;
@@ -65,87 +70,100 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   downloadingFormat,
   onNavigateHome,
   onLogout,
-  isMobileOpen = false,
+  isOpen = true,
+  onToggle,
+  onClose,
+  isMobileOpen,
   onCloseMobile,
   draft,
   onResumeDraft,
   onDiscardDraft,
 }) => {
+  const isActuallyOpen = isOpen ?? isMobileOpen ?? true;
+  const handleClose = onClose || onCloseMobile || onToggle || (() => {});
+
+  const handleMobileNav = () => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      handleClose();
+    }
+  };
+
   return (
     <>
       {/* Mobile Backdrop overlay */}
-      {isMobileOpen && (
+      {isActuallyOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden animate-in fade-in duration-200"
-          onClick={onCloseMobile}
+          className="fixed inset-0 z-40 bg-black/80 backdrop-blur-md lg:hidden animate-in fade-in duration-200"
+          onClick={handleClose}
         />
       )}
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-[#08090d] border-r border-white/[0.08] flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-          isMobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-[#08090d] border-r border-white/[0.08] flex flex-col justify-between transition-transform duration-300 ease-in-out ${
+          isActuallyOpen ? "translate-x-0 shadow-2xl lg:shadow-none" : "-translate-x-full"
         }`}
       >
         {/* Top Section */}
         <div className="flex flex-col flex-grow overflow-y-auto no-scrollbar p-5 space-y-5">
           
-          {/* Brand Header */}
+          {/* Brand Header with Toggle Button */}
           <div className="flex items-center justify-between">
             <div
               onClick={onNavigateHome}
-              className="flex items-center gap-2.5 cursor-pointer group select-none"
+              className="flex items-center gap-3 cursor-pointer group select-none"
               title="Return to Public Homepage"
             >
-              <div className="w-8 h-8 rounded-xl bg-[#ff5500]/15 border border-[#ff5500]/30 flex items-center justify-center text-[#ff5500] group-hover:scale-105 transition-transform">
+              <div className="w-9 h-9 rounded-xl bg-[#ff5500]/15 border border-[#ff5500]/30 flex items-center justify-center text-[#ff5500] group-hover:scale-105 group-hover:bg-[#ff5500] group-hover:text-black transition-all shadow-[0_0_15px_rgba(255,85,0,0.15)]">
                 <Film className="w-4 h-4 stroke-[2.5]" />
               </div>
               <div className="flex flex-col">
                 <span className="text-[10px] font-mono tracking-[0.25em] uppercase text-[#ff5500] font-bold leading-none mb-1">
-                  The
+                  The Retro Talks
                 </span>
                 <span className="text-base font-extrabold font-poppins text-white tracking-tight leading-none group-hover:text-[#ff7a29] transition-colors">
-                  Retro Talks
+                  Studio Desk
                 </span>
               </div>
             </div>
 
-            {/* Mobile close button */}
+            {/* Collapse / Close Button */}
             <button
               type="button"
-              onClick={onCloseMobile}
-              className="p-1.5 rounded-lg bg-white/[0.04] text-zinc-400 hover:text-white lg:hidden cursor-pointer"
+              onClick={handleClose}
+              className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              title="Collapse sidebar"
             >
-              <X className="w-4 h-4" />
+              <PanelLeftClose className="w-4 h-4" />
             </button>
           </div>
 
           {/* Database Live Cloud Indicator */}
-          <div className="px-3 py-1.5 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/15 flex items-center justify-between text-xs font-inter text-emerald-400">
+          <div className="px-3 py-2 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/15 flex items-center justify-between text-xs font-inter text-emerald-400">
             <div className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span className="font-medium text-[11px]">Turso Cloud Database</span>
+              <span className="font-medium text-[11px] tracking-wide">Turso Cloud Database</span>
             </div>
-            <span className="text-[10px] font-mono text-emerald-500/80 uppercase">Active</span>
+            <span className="text-[9px] font-mono font-bold text-emerald-500/80 uppercase px-1.5 py-0.5 rounded bg-emerald-500/10">Active</span>
           </div>
 
-          {/* CLEAN, MINIMALIST "ADD CINEMA" BUTTON */}
+          {/* PRIMARY "ADD CINEMA" BUTTON */}
           <button
             type="button"
             onClick={() => {
               onOpenAddCinema();
-              if (onCloseMobile) onCloseMobile();
+              handleMobileNav();
             }}
-            className="w-full py-2.5 px-3.5 rounded-xl bg-white/[0.04] hover:bg-[#ff5500] text-zinc-200 hover:text-black border border-white/[0.1] hover:border-[#ff5500] text-xs font-inter font-medium transition-all duration-200 cursor-pointer flex items-center justify-between group shadow-sm active:scale-[0.98]"
+            className="w-full py-2.5 px-3.5 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black border border-[#ff5500] text-xs font-inter font-bold transition-all duration-200 cursor-pointer flex items-center justify-between group shadow-[0_0_20px_rgba(255,85,0,0.25)] hover:shadow-[0_0_25px_rgba(255,85,0,0.4)] active:scale-[0.98]"
           >
-            <div className="flex items-center gap-2.5">
-              <Plus className="w-4 h-4 text-[#ff5500] group-hover:text-black transition-colors" />
-              <span>Add Cinema</span>
+            <div className="flex items-center gap-2">
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>Add Cinema Review</span>
             </div>
-            <kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] group-hover:bg-black/15 text-zinc-400 group-hover:text-black transition-colors">
+            <kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-black/15 text-black font-semibold">
               ⌘K
             </kbd>
           </button>
@@ -165,7 +183,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     className="text-zinc-500 hover:text-red-400 p-0.5 rounded transition-colors cursor-pointer"
                     title="Discard draft"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <PanelLeftClose className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
@@ -179,7 +197,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   type="button"
                   onClick={() => {
                     onResumeDraft();
-                    if (onCloseMobile) onCloseMobile();
+                    handleMobileNav();
                   }}
                   className="w-full py-1.5 px-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-inter font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
                 >
@@ -193,7 +211,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           {/* Catalog Navigation & Filters */}
           <div className="space-y-1">
             <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 font-semibold px-2 block mb-1.5">
-              Catalog
+              Archive Filters
             </span>
 
             {/* All Reviews Tab */}
@@ -201,7 +219,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               type="button"
               onClick={() => {
                 setFilterTab("all");
-                if (onCloseMobile) onCloseMobile();
+                handleMobileNav();
               }}
               className={`w-full px-3 py-2 rounded-xl text-xs font-inter flex items-center justify-between transition-all cursor-pointer ${
                 filterTab === "all" && !isReorderMode
@@ -211,7 +229,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             >
               <div className="flex items-center gap-2.5">
                 <Layers className="w-4 h-4" />
-                <span>All Reviews</span>
+                <span>All Titles</span>
               </div>
               <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-white/[0.06] text-zinc-300">
                 {totalReviews}
@@ -223,7 +241,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               type="button"
               onClick={() => {
                 setFilterTab("movie");
-                if (onCloseMobile) onCloseMobile();
+                handleMobileNav();
               }}
               className={`w-full px-3 py-2 rounded-xl text-xs font-inter flex items-center justify-between transition-all cursor-pointer ${
                 filterTab === "movie" && !isReorderMode
@@ -245,7 +263,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               type="button"
               onClick={() => {
                 setFilterTab("tv");
-                if (onCloseMobile) onCloseMobile();
+                handleMobileNav();
               }}
               className={`w-full px-3 py-2 rounded-xl text-xs font-inter flex items-center justify-between transition-all cursor-pointer ${
                 filterTab === "tv" && !isReorderMode
@@ -255,7 +273,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             >
               <div className="flex items-center gap-2.5">
                 <Tv className="w-4 h-4" />
-                <span>TV Series</span>
+                <span>TV Shows</span>
               </div>
               <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-white/[0.06] text-zinc-300">
                 {tvCount}
@@ -267,7 +285,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               type="button"
               onClick={() => {
                 setFilterTab("favorites");
-                if (onCloseMobile) onCloseMobile();
+                handleMobileNav();
               }}
               className={`w-full px-3 py-2 rounded-xl text-xs font-inter flex items-center justify-between transition-all cursor-pointer ${
                 filterTab === "favorites" && !isReorderMode
@@ -289,20 +307,20 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               type="button"
               onClick={() => {
                 setIsReorderMode(!isReorderMode);
-                if (onCloseMobile) onCloseMobile();
+                handleMobileNav();
               }}
-              className={`w-full px-3 py-2 rounded-xl text-xs font-inter flex items-center justify-between transition-all cursor-pointer mt-1 ${
+              className={`w-full px-3 py-2 rounded-xl text-xs font-inter flex items-center justify-between transition-all cursor-pointer mt-2 ${
                 isReorderMode
-                  ? "bg-amber-500 text-black font-bold shadow-[0_0_15px_rgba(245,158,11,0.4)]"
+                  ? "bg-[#ff5500] text-black font-bold shadow-[0_0_20px_rgba(255,85,0,0.35)]"
                   : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
               }`}
             >
               <div className="flex items-center gap-2.5">
                 <ArrowUpDown className="w-4 h-4" />
-                <span>Custom Order</span>
+                <span>Display Order Mode</span>
               </div>
               <span
-                className={`text-[9px] font-mono px-1.5 py-0.2 rounded font-bold uppercase ${
+                className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase ${
                   isReorderMode ? "bg-black/20 text-black" : "bg-white/[0.08] text-zinc-400"
                 }`}
               >
@@ -316,17 +334,17 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 type="button"
                 onClick={onSaveReorder}
                 disabled={savingReorder}
-                className="w-full mt-2 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs font-inter flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg animate-pulse"
+                className="w-full mt-2 py-2 px-3 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-bold text-xs font-inter flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg animate-pulse"
               >
                 {savingReorder ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Saving...</span>
+                    <span>Saving Order...</span>
                   </>
                 ) : (
                   <>
                     <Check className="w-3.5 h-3.5 stroke-[3]" />
-                    <span>Save Order</span>
+                    <span>Save Order Changes</span>
                   </>
                 )}
               </button>
@@ -335,9 +353,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
           {/* Database & Backups */}
           <div className="space-y-2 pt-2 border-t border-white/[0.06]">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 font-semibold px-2 block mb-1">
-              Database
-            </span>
+            <div className="flex items-center justify-between px-2 mb-1">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 font-semibold">
+                Database Backups
+              </span>
+            </div>
 
             {/* 1-Click Backup Export Buttons */}
             <div className="grid grid-cols-3 gap-1.5">
@@ -345,7 +365,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 type="button"
                 onClick={() => onDownloadBackup("sqlite")}
                 disabled={Boolean(downloadingFormat)}
-                title="Download entire binary SQLite database (.sqlite)"
+                title="Download binary SQLite database (.sqlite)"
                 className="p-2 rounded-xl bg-white/[0.03] hover:bg-[#ff5500] text-zinc-300 hover:text-black border border-white/[0.06] hover:border-[#ff5500] flex flex-col items-center justify-center gap-1 transition-all cursor-pointer disabled:opacity-50"
               >
                 {downloadingFormat === "sqlite" ? (
@@ -375,7 +395,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 type="button"
                 onClick={() => onDownloadBackup("csv")}
                 disabled={Boolean(downloadingFormat)}
-                title="Export reviews as CSV spreadsheet for Excel / Sheets"
+                title="Export reviews as CSV spreadsheet"
                 className="p-2 rounded-xl bg-white/[0.03] hover:bg-[#ff5500] text-zinc-300 hover:text-black border border-white/[0.06] hover:border-[#ff5500] flex flex-col items-center justify-center gap-1 transition-all cursor-pointer disabled:opacity-50"
               >
                 {downloadingFormat === "csv" ? (
@@ -392,11 +412,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               type="button"
               onClick={() => {
                 onOpenImport();
-                if (onCloseMobile) onCloseMobile();
+                handleMobileNav();
               }}
-              className="w-full p-2.5 rounded-xl bg-[#ff5500]/10 hover:bg-[#ff5500] text-[#ff7a29] hover:text-black border border-[#ff5500]/25 hover:border-[#ff5500] text-xs font-inter font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+              className="w-full p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-inter font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
-              <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
+              <Upload className="w-3.5 h-3.5 text-[#ff5500]" />
               <span>Import / Restore Data</span>
             </button>
           </div>
@@ -407,11 +427,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <button
             type="button"
             onClick={onNavigateHome}
-            className="w-full px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-inter text-zinc-300 hover:text-white flex items-center justify-between transition-all cursor-pointer"
+            className="w-full px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-xs font-inter text-zinc-300 hover:text-white flex items-center justify-between transition-all cursor-pointer"
           >
             <div className="flex items-center gap-2">
               <ExternalLink className="w-3.5 h-3.5 text-[#ff5500]" />
-              <span>View Public Site</span>
+              <span>Public Cinema Site</span>
             </div>
             <span className="text-[10px] font-mono text-zinc-500">↗</span>
           </button>
@@ -419,13 +439,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <button
             type="button"
             onClick={onLogout}
-            className="w-full px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-xs font-inter text-red-400 hover:text-red-300 flex items-center justify-between transition-all cursor-pointer"
+            className="w-full px-3 py-2 rounded-xl bg-red-500/[0.06] hover:bg-red-500/15 border border-red-500/15 hover:border-red-500/30 text-xs font-inter text-red-400 hover:text-red-300 flex items-center justify-between transition-all cursor-pointer"
           >
             <div className="flex items-center gap-2">
               <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out</span>
+              <span>Exit Admin</span>
             </div>
-            <span className="text-[10px] font-mono text-red-400/80">Admin</span>
+            <span className="text-[10px] font-mono text-red-400/80">Lock</span>
           </button>
         </div>
       </aside>

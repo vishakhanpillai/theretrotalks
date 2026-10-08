@@ -14,6 +14,7 @@
     "html-to-image": "^1.11.13",
     "jszip": "^3.10.2",
     "lucide-react": "^1.41.0",
+    "ogl": "^1.0.11",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
