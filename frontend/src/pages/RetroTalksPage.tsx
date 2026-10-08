@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Film, Search, ArrowUpDown, X, LayoutList, LayoutGrid } from "lucide-react";
+import {
+  Film,
+  Search,
+  ArrowUpDown,
+  X,
+  LayoutList,
+  LayoutGrid,
+} from "lucide-react";
 import type { Movie, Review, UpcomingMovie } from "../types";
 import { ReviewCard } from "../components/ReviewCard";
 import { ReviewPosterCard } from "../components/ReviewPosterCard";
@@ -72,10 +79,14 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = (props) => {
   const filteredAndSortedReviews = useMemo(() => {
     let list = [...reviews];
 
-    // 1. Live Search (Movie Title Only)
+    // 1. Live Search (Movie Title and Director)
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      list = list.filter((r) => r.title?.toLowerCase().includes(q));
+      list = list.filter(
+        (r) =>
+          r.title?.toLowerCase().includes(q) ||
+          r.director?.toLowerCase().includes(q)
+      );
     }
 
     // 2. Sorting
@@ -188,7 +199,7 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = (props) => {
         </div>
       </header>
 
-      {/* Hero Section - Modern Editorial Masthead */}
+      {/* Hero Section - Pure Original Editorial Taglines */}
       <section className="relative z-10 w-full px-4 sm:px-6 lg:px-10 xl:px-14 pt-8 sm:pt-12 pb-6">
         <div className="w-full space-y-3 pb-8 border-b border-white/[0.07]">
           <div className="flex items-center gap-2 text-[11px] font-mono tracking-[0.25em] text-[#ff5500] uppercase font-semibold drop-shadow-sm">
@@ -210,26 +221,21 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = (props) => {
       <main className="relative z-10 flex-grow w-full px-4 sm:px-6 lg:px-10 xl:px-14 py-6">
         <div className="flex flex-col lg:flex-row gap-8 xl:gap-10 items-start">
           
-          {/* Left Column: Widened Reviews List */}
+          {/* Left Column: Reviews List */}
           <div className="flex-grow min-w-0 w-full space-y-6">
             
             {/* Reviews Section Header & Controls */}
             <div className="space-y-3 pb-3 border-b border-white/[0.06]">
-              {/* Top Row: Section Title & High-Width Search + Sort + View Mode Controls */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5">
                 <div className="flex items-center gap-2.5 shrink-0">
                   <h2 className="text-xs font-inter uppercase tracking-[0.2em] font-semibold text-zinc-300">
                     Reviews
                   </h2>
-                  <span className="px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-[11px] font-mono text-zinc-400">
-                    {filteredAndSortedReviews.length}
-                    {filteredAndSortedReviews.length !== reviews.length && ` / ${reviews.length}`}
-                  </span>
                 </div>
 
-                {/* High-Width Search & Sort Controls */}
+                {/* Original Style Search & Sort Controls */}
                 <div className="flex items-center gap-2.5 flex-grow sm:max-w-2xl justify-end flex-wrap sm:flex-nowrap w-full md:w-auto">
-                  {/* Higher Width Live Search Input (Title Only) */}
+                  {/* Original Search Input */}
                   <div className="relative w-full sm:flex-1 sm:min-w-[220px]">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
                     <input
@@ -251,7 +257,7 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = (props) => {
                     )}
                   </div>
 
-                  {/* Secondary Controls Row on Mobile */}
+                  {/* Secondary Controls Row */}
                   <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto">
                     {/* Sort Dropdown */}
                     <div className="relative flex-1 sm:flex-initial">
@@ -330,7 +336,7 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = (props) => {
                   </div>
                 )}
 
-                {/* Load More Button */}
+                {/* Load More Button (Without Film Counts) */}
                 {hasMore && (
                   <div className="pt-4 pb-2 text-center">
                     <button
@@ -339,9 +345,6 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = (props) => {
                       className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0b0e14] hover:bg-[#121620] border border-white/10 hover:border-[#ff5500]/50 text-xs font-inter font-medium text-zinc-300 hover:text-white transition-all cursor-pointer shadow-lg hover:shadow-[0_0_20px_rgba(255,85,0,0.15)] group"
                     >
                       <span>Load More Films</span>
-                      <span className="text-[10.5px] font-mono text-zinc-500 group-hover:text-zinc-400">
-                        ({visibleReviews.length} of {filteredAndSortedReviews.length})
-                      </span>
                     </button>
                   </div>
                 )}
