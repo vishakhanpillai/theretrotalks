@@ -63,7 +63,7 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
   }, []);
 
   return (
-    <aside className="w-full bg-[#0b0d12] border border-white/[0.08] rounded-3xl p-4 sm:p-6 flex flex-col space-y-4 sm:space-y-5 shadow-[0_15px_40px_rgba(0,0,0,0.6)]">
+    <aside className="w-full bg-[#0b0d12] border border-white/[0.08] rounded-3xl p-3.5 sm:p-6 flex flex-col space-y-4 sm:space-y-5 shadow-[0_15px_40px_rgba(0,0,0,0.6)]">
       
       {/* Sidebar Header */}
       <div className="flex items-center gap-2.5 border-b border-white/[0.06] pb-3 sm:pb-4">
@@ -92,15 +92,15 @@ export const UpcomingMoviesSidebar: React.FC<UpcomingMoviesSidebarProps> = ({
 
       {/* Movies List */}
       {!loading && movies.length > 0 && (
-        <div className="space-y-3 max-h-[75vh] overflow-y-auto pr-1">
+        <div className="space-y-2.5 sm:space-y-3 max-h-[60vh] sm:max-h-[75vh] overflow-y-auto pr-1">
           {movies.map((movie, index) => (
             <div
               key={movie.id}
               onClick={() => onSelectUpcoming && onSelectUpcoming(movie)}
-              className="group flex items-center gap-3.5 p-2.5 rounded-2xl bg-[#0e1117] hover:bg-[#141822] border border-white/[0.05] hover:border-[#ff5500]/40 transition-all duration-300 cursor-pointer"
+              className="group flex items-center gap-3 sm:gap-3.5 p-2 sm:p-2.5 rounded-2xl bg-[#0e1117] hover:bg-[#141822] border border-white/[0.05] hover:border-[#ff5500]/40 transition-all duration-300 cursor-pointer"
             >
               {/* Poster Thumbnail */}
-              <div className="w-13 sm:w-14 aspect-[2/3] rounded-xl overflow-hidden bg-[#181c24] flex-shrink-0 border border-white/[0.08] shadow-md group-hover:shadow-[0_0_15px_rgba(255,85,0,0.3)] transition-all">
+              <div className="w-12 sm:w-14 aspect-[2/3] rounded-xl overflow-hidden bg-[#181c24] flex-shrink-0 border border-white/[0.08] shadow-md group-hover:shadow-[0_0_15px_rgba(255,85,0,0.3)] transition-all">
                 {movie.poster ? (
                   <img
                     src={movie.poster}

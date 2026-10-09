@@ -226,18 +226,18 @@ export const DatabaseImportModal: React.FC<DatabaseImportModalProps> = ({
                 </p>
               </div>
 
-              <div className="inline-flex items-center gap-4 p-3 rounded-xl bg-[#0c0f16] border border-white/[0.08] text-xs font-inter text-zinc-300">
-                <div>
+              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 p-3 rounded-xl bg-[#0c0f16] border border-white/[0.08] text-xs font-inter text-zinc-300 max-w-full">
+                <div className="text-center sm:text-left">
                   <span className="text-[10px] uppercase font-mono text-zinc-500 block">Imported</span>
                   <span className="text-base font-bold font-poppins text-emerald-400">{successResult.count} reviews</span>
                 </div>
-                <div className="w-px h-8 bg-white/10" />
-                <div>
+                <div className="hidden sm:block w-px h-8 bg-white/10" />
+                <div className="text-center sm:text-left">
                   <span className="text-[10px] uppercase font-mono text-zinc-500 block">Total In DB</span>
                   <span className="text-base font-bold font-poppins text-white">{successResult.total} reviews</span>
                 </div>
-                <div className="w-px h-8 bg-white/10" />
-                <div>
+                <div className="hidden sm:block w-px h-8 bg-white/10" />
+                <div className="text-center sm:text-left">
                   <span className="text-[10px] uppercase font-mono text-zinc-500 block">Format</span>
                   <span className="text-xs font-mono font-bold text-[#ff7a29] uppercase">{successResult.format}</span>
                 </div>

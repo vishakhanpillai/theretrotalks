@@ -55,7 +55,7 @@ export const AvengersCountdown: React.FC<AvengersCountdownProps> = ({ onClick })
           onClick?.();
         }
       }}
-      className="relative overflow-hidden rounded-3xl p-5 sm:p-6 border border-emerald-500/35 bg-[#050b07] shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_35px_rgba(16,185,129,0.14)] space-y-5 group hover:border-emerald-400/60 hover:shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_55px_rgba(16,185,129,0.28)] transition-all duration-500 cursor-pointer select-none active:scale-[0.99]"
+      className="relative overflow-hidden rounded-3xl p-4 sm:p-6 border border-emerald-500/35 bg-[#050b07] shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_35px_rgba(16,185,129,0.14)] space-y-4 sm:space-y-5 group hover:border-emerald-400/60 hover:shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_55px_rgba(16,185,129,0.28)] transition-all duration-500 cursor-pointer select-none active:scale-[0.99]"
       title="Click to view Avengers: Doomsday details"
     >
       {/* Official Marvel Graphic Backdrop with Cinematic Vignette */}
@@ -81,7 +81,7 @@ export const AvengersCountdown: React.FC<AvengersCountdownProps> = ({ onClick })
 
       {/* Official Avengers: Doomsday Transparent Logo Artwork */}
       <div className="relative z-10 pt-1 flex flex-col items-center text-center">
-        <div className="relative w-full max-w-[270px] sm:max-w-[300px] flex items-center justify-center">
+        <div className="relative w-full max-w-[240px] sm:max-w-[300px] flex items-center justify-center">
           {/* Backlight glow behind logo */}
           <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full scale-90 pointer-events-none animate-doom-pulse" />
           <img
@@ -93,10 +93,10 @@ export const AvengersCountdown: React.FC<AvengersCountdownProps> = ({ onClick })
 
         {/* Title: "Countdown to Doomsday" */}
         <div className="mt-3 space-y-1">
-          <h2 className="text-lg sm:text-xl font-black tracking-[0.15em] uppercase font-poppins text-transparent bg-clip-text bg-gradient-to-r from-white via-emerald-100 to-emerald-400 drop-shadow-[0_2px_12px_rgba(16,185,129,0.4)]">
+          <h2 className="text-base sm:text-xl font-black tracking-[0.15em] uppercase font-poppins text-transparent bg-clip-text bg-gradient-to-r from-white via-emerald-100 to-emerald-400 drop-shadow-[0_2px_12px_rgba(16,185,129,0.4)]">
             Countdown to Doomsday
           </h2>
-          <p className="text-[11px] font-mono tracking-wider text-emerald-300/80 flex items-center justify-center gap-1.5">
+          <p className="text-[10px] sm:text-[11px] font-mono tracking-wider text-emerald-300/80 flex items-center justify-center gap-1.5 flex-wrap">
             <Calendar className="w-3 h-3 text-emerald-400 flex-shrink-0" />
             <span>DECEMBER 18, 2026 • IN THEATERS</span>
           </p>
@@ -108,50 +108,50 @@ export const AvengersCountdown: React.FC<AvengersCountdownProps> = ({ onClick })
         <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
           
           {/* Days */}
-          <div className="relative overflow-hidden flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-500/30 group-hover:border-emerald-400/40 shadow-inner transition-colors">
+          <div className="relative overflow-hidden flex flex-col items-center justify-center p-1.5 min-[360px]:p-2 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-500/30 group-hover:border-emerald-400/40 shadow-inner transition-colors">
             <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
-            <span className="text-xl sm:text-2xl md:text-3xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]">
+            <span className="text-base min-[360px]:text-lg sm:text-2xl md:text-3xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]">
               {timeLeft.days}
             </span>
-            <span className="text-[8.5px] sm:text-[9px] uppercase font-mono tracking-widest text-emerald-400/80 font-bold mt-1">
+            <span className="text-[8px] sm:text-[9px] uppercase font-mono tracking-widest text-emerald-400/80 font-bold mt-0.5 sm:mt-1">
               Days
             </span>
           </div>
 
           {/* Hours */}
-          <div className="relative overflow-hidden flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-500/30 group-hover:border-emerald-400/40 shadow-inner transition-colors">
+          <div className="relative overflow-hidden flex flex-col items-center justify-center p-1.5 min-[360px]:p-2 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-500/30 group-hover:border-emerald-400/40 shadow-inner transition-colors">
             <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
-            <span className="text-xl sm:text-2xl md:text-3xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]">
+            <span className="text-base min-[360px]:text-lg sm:text-2xl md:text-3xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]">
               {String(timeLeft.hours).padStart(2, "0")}
             </span>
-            <span className="text-[8.5px] sm:text-[9px] uppercase font-mono tracking-widest text-emerald-400/80 font-bold mt-1">
+            <span className="text-[8px] sm:text-[9px] uppercase font-mono tracking-widest text-emerald-400/80 font-bold mt-0.5 sm:mt-1">
               Hours
             </span>
           </div>
 
           {/* Minutes */}
-          <div className="relative overflow-hidden flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-500/30 group-hover:border-emerald-400/40 shadow-inner transition-colors">
+          <div className="relative overflow-hidden flex flex-col items-center justify-center p-1.5 min-[360px]:p-2 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-500/30 group-hover:border-emerald-400/40 shadow-inner transition-colors">
             <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
-            <span className="text-xl sm:text-2xl md:text-3xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]">
+            <span className="text-base min-[360px]:text-lg sm:text-2xl md:text-3xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]">
               {String(timeLeft.minutes).padStart(2, "0")}
             </span>
-            <span className="text-[8.5px] sm:text-[9px] uppercase font-mono tracking-widest text-emerald-400/80 font-bold mt-1">
+            <span className="text-[8px] sm:text-[9px] uppercase font-mono tracking-widest text-emerald-400/80 font-bold mt-0.5 sm:mt-1">
               Mins
             </span>
           </div>
 
           {/* Seconds (Animated Live Pulse) */}
-          <div className="relative overflow-hidden flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-400/50 shadow-inner transition-colors">
+          <div className="relative overflow-hidden flex flex-col items-center justify-center p-1.5 min-[360px]:p-2 sm:p-3 rounded-2xl bg-[#06100a]/95 border border-emerald-400/50 shadow-inner transition-colors">
             <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
             <span
               key={timeLeft.seconds}
-              className={`text-xl sm:text-2xl md:text-3xl font-black font-mono tracking-tight text-emerald-400 transition-transform duration-200 drop-shadow-[0_0_14px_rgba(16,185,129,0.7)] ${
+              className={`text-base min-[360px]:text-lg sm:text-2xl md:text-3xl font-black font-mono tracking-tight text-emerald-400 transition-transform duration-200 drop-shadow-[0_0_14px_rgba(16,185,129,0.7)] ${
                 isTick ? "scale-105" : "scale-100"
               }`}
             >
               {String(timeLeft.seconds).padStart(2, "0")}
             </span>
-            <span className="text-[8.5px] sm:text-[9px] uppercase font-mono tracking-widest text-emerald-300 font-bold mt-1">
+            <span className="text-[8px] sm:text-[9px] uppercase font-mono tracking-widest text-emerald-300 font-bold mt-0.5 sm:mt-1">
               Secs
             </span>
           </div>

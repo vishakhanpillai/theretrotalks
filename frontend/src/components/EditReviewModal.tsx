@@ -116,12 +116,12 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
       {/* Backdrop click to close */}
       <div className="fixed inset-0" onClick={onClose} />
 
       {/* Large Studio Window Container - Expansive Full Height */}
-      <div className="relative w-[98vw] max-w-7xl h-[96vh] max-h-[1200px] bg-[#090b10] border border-white/[0.12] rounded-2xl sm:rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_60px_rgba(255,85,0,0.12)] overflow-hidden z-10 flex flex-col">
+      <div className="relative w-full max-w-7xl h-[100dvh] sm:h-[96vh] max-h-none sm:max-h-[1200px] bg-[#090b10] border sm:border border-white/[0.12] rounded-none sm:rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_60px_rgba(255,85,0,0.12)] overflow-hidden z-10 flex flex-col">
         
         {/* Header Bar */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5 border-b border-white/[0.08] bg-[#0c0f16]/95 backdrop-blur-md flex-shrink-0">
@@ -209,7 +209,7 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
             </div>
 
             {/* Watched Date Picker */}
-            <div className="w-full sm:w-44">
+            <div className="w-[calc(50%-0.375rem)] sm:w-44">
               <label className="text-[10px] font-inter uppercase tracking-wider text-zinc-400 block mb-1 font-medium flex items-center gap-1">
                 <Calendar className="w-3 h-3 text-[#ff5500]" />
                 <span>Watched Date</span>
@@ -218,7 +218,21 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
                 type="date"
                 value={datePickerValue}
                 onChange={(e) => setDatePickerValue(e.target.value)}
-                className="w-full bg-[#141822] border border-white/[0.08] focus:border-[#ff5500] rounded-xl px-3 py-1.5 text-xs font-inter text-white outline-none cursor-pointer [color-scheme:dark]"
+                className="w-full bg-[#141822] border border-white/[0.08] focus:border-[#ff5500] rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-inter text-white outline-none cursor-pointer [color-scheme:dark]"
+              />
+            </div>
+
+            {/* Year */}
+            <div className="w-[calc(50%-0.375rem)] sm:w-28">
+              <label className="text-[10px] font-inter uppercase tracking-wider text-zinc-400 block mb-1 font-medium">
+                Year
+              </label>
+              <input
+                type="text"
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                placeholder="e.g. 2024"
+                className="w-full bg-[#141822] border border-white/[0.08] focus:border-[#ff5500] rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-inter text-white placeholder-zinc-500 outline-none"
               />
             </div>
 
@@ -232,21 +246,7 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
                 value={director}
                 onChange={(e) => setDirector(e.target.value)}
                 placeholder="Director name"
-                className="w-full bg-[#141822] border border-white/[0.08] focus:border-[#ff5500] rounded-xl px-3 py-1.5 text-xs font-inter text-white placeholder-zinc-500 outline-none"
-              />
-            </div>
-
-            {/* Year */}
-            <div className="w-full sm:w-28">
-              <label className="text-[10px] font-inter uppercase tracking-wider text-zinc-400 block mb-1 font-medium">
-                Year
-              </label>
-              <input
-                type="text"
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-                placeholder="e.g. 2024"
-                className="w-full bg-[#141822] border border-white/[0.08] focus:border-[#ff5500] rounded-xl px-3 py-1.5 text-xs font-inter text-white placeholder-zinc-500 outline-none"
+                className="w-full bg-[#141822] border border-white/[0.08] focus:border-[#ff5500] rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-inter text-white placeholder-zinc-500 outline-none"
               />
             </div>
           </div>
@@ -265,7 +265,7 @@ export const EditReviewModal: React.FC<EditReviewModalProps> = ({
           </div>
 
           {/* Footer Controls */}
-          <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between flex-shrink-0">
+          <div className="sticky bottom-0 z-20 bg-[#090b10] py-3 -mx-3 px-3 sm:-mx-6 sm:px-6 border-t border-white/[0.08] flex items-center justify-between flex-shrink-0">
             <span className="text-xs font-inter text-zinc-500 hidden sm:inline">
               Changes will update the SQLite database immediately.
             </span>

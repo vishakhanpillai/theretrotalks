@@ -40,16 +40,16 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
       <div className="fixed inset-0" onClick={onClose} />
 
       <div
         className={`relative w-full ${
           isAdmin ? "max-w-5xl" : "max-w-3xl"
-        } bg-[#090b0e] border border-white/[0.09] rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.9),0_0_50px_rgba(255,85,0,0.12)] z-10 max-h-[94vh] flex flex-col`}
+        } bg-[#090b0e] border sm:border border-white/[0.09] rounded-none sm:rounded-3xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.9),0_0_50px_rgba(255,85,0,0.12)] z-10 h-[100dvh] sm:h-auto sm:max-h-[94vh] flex flex-col`}
       >
         {/* Backdrop Banner Header */}
-        <div className="relative h-44 sm:h-60 w-full bg-[#101318] overflow-hidden flex-shrink-0">
+        <div className="relative h-36 sm:h-60 w-full bg-[#101318] overflow-hidden flex-shrink-0">
           {backdropUrl && (
             <img
               src={backdropUrl}
@@ -98,7 +98,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="p-4 sm:p-6 md:p-8 overflow-y-auto space-y-5 sm:space-y-6 flex-grow">
+        <div className="p-3.5 sm:p-6 md:p-8 overflow-y-auto space-y-5 sm:space-y-6 flex-grow">
           <div className={isAdmin ? "grid grid-cols-1 lg:grid-cols-12 gap-8" : "space-y-6"}>
             
             {/* Left Column: Review Content & Meta */}
@@ -358,7 +358,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-8 py-4 bg-[#07080a] border-t border-white/[0.07] flex items-center justify-between">
+        <div className="px-4 sm:px-8 py-3 sm:py-4 bg-[#07080a] border-t border-white/[0.07] flex items-center justify-between flex-shrink-0">
           <span className="text-xs font-inter text-zinc-500">
             The Retro Talks Cinema Archive
           </span>

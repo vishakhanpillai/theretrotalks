@@ -25,11 +25,13 @@ import {
   AlignJustify,
   Italic,
   SlidersHorizontal,
+  Eye,
+  LayoutGrid,
 } from "lucide-react";
 import { toPng } from "html-to-image";
 import JSZip from "jszip";
 import type { Review } from "../types";
-import { getBackdropUrl, getPosterUrl } from "../utils/images";
+import { getBackdropUrl, getPosterUrl, toProxyUrl } from "../utils/images";
 import { slugify } from "../utils/slugify";
 import { PosterSelectorModal } from "./PosterSelectorModal";
 import { BackdropSelectorModal } from "./BackdropSelectorModal";
@@ -54,6 +56,7 @@ type TitleSize = "sm" | "base" | "lg" | "xl" | "2xl";
 type TextAlignment = "left" | "center" | "justify";
 type RatingDisplayFormat = "stars_metric" | "stars_minimal";
 type StudioTab = "presets" | "typography" | "artwork" | "spacing" | "branding";
+type MobileViewMode = "split" | "preview" | "controls";
 
 export interface PalettePreset {
   id: string;
@@ -499,6 +502,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
   const [ratingFormat, setRatingFormat] = useState<RatingDisplayFormat>("stars_metric");
   const [showHairlineAccent, setShowHairlineAccent] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<StudioTab>("presets");
+  const [mobileViewMode, setMobileViewMode] = useState<MobileViewMode>("split");
 
   // 1. Palette Accent State (Retro Orange default, Cinematic presets, or Custom Picker)
   const [selectedPaletteId, setSelectedPaletteId] = useState<string>("orange");
@@ -730,10 +734,29 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
       setSummaryFontSize(null);
       setImageBorderMode("website");
       setActiveTab("presets");
+      setMobileViewMode("split");
       setIsExporting(false);
       setExportProgress("");
     }
   }, [isOpen, review.id]);
+
+  const fetchAsDataUrl = useCallback(async (url: string | null): Promise<string> => {
+    if (!url) return "";
+    const proxyUrl = toProxyUrl(url);
+    try {
+      const res = await fetch(proxyUrl);
+      if (!res.ok) return proxyUrl;
+      const blob = await res.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => resolve(proxyUrl);
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return proxyUrl;
+    }
+  }, []);
 
   // Preload poster and backdrop through proxy as base64 for instant, lossless export
   useEffect(() => {
@@ -743,44 +766,25 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
     const rawPoster = getPosterUrl(currentPoster, "w500");
     const rawBackdrop = getBackdropUrl(currentBackdrop, "original");
 
-    const fetchAsDataUrl = async (url: string | null): Promise<string> => {
-      if (!url) return "";
-      try {
-        const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
-        const res = await fetch(proxyUrl);
-        if (!res.ok) return url;
-        const blob = await res.blob();
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = () => resolve(url);
-          reader.readAsDataURL(blob);
-        });
-      } catch (e) {
-        return url;
-      }
-    };
+    setPosterDataUrl("");
+    setBackdropDataUrl("");
 
     if (rawPoster) {
       fetchAsDataUrl(rawPoster).then((data) => {
         if (isMounted) setPosterDataUrl(data);
       });
-    } else {
-      setPosterDataUrl("");
     }
 
     if (rawBackdrop) {
       fetchAsDataUrl(rawBackdrop).then((data) => {
         if (isMounted) setBackdropDataUrl(data);
       });
-    } else {
-      setBackdropDataUrl("");
     }
 
     return () => {
       isMounted = false;
     };
-  }, [isOpen, currentPoster, currentBackdrop]);
+  }, [isOpen, currentPoster, currentBackdrop, fetchAsDataUrl]);
 
   const hasSlide1Callout = showStandoutQuote && Boolean(standoutQuoteText.trim());
   const hasFooter = Boolean(effectiveHandle) || (showGenres && Boolean(review.genres && review.genres.length > 0));
@@ -848,11 +852,23 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
         await document.fonts.ready;
       }
 
+      // Ensure base64 image data URLs are loaded before snapshotting
+      const rawPoster = getPosterUrl(currentPoster, "w500");
+      const rawBackdrop = getBackdropUrl(currentBackdrop, "original");
+      if (!backdropDataUrl && rawBackdrop) {
+        const data = await fetchAsDataUrl(rawBackdrop);
+        if (data) setBackdropDataUrl(data);
+      }
+      if (!posterDataUrl && rawPoster) {
+        const data = await fetchAsDataUrl(rawPoster);
+        if (data) setPosterDataUrl(data);
+      }
+
       const dataUrl = await toPng(cardRef.current, {
         width: 360,
         height: 640,
         pixelRatio: 3,
-        cacheBust: true,
+        cacheBust: false,
         quality: 0.98,
         style: {
           transform: "none",
@@ -888,6 +904,18 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
     const originalIndex = currentSlideIndex;
 
     try {
+      // Ensure base64 image data URLs are loaded before snapshotting slides
+      const rawPoster = getPosterUrl(currentPoster, "w500");
+      const rawBackdrop = getBackdropUrl(currentBackdrop, "original");
+      if (!backdropDataUrl && rawBackdrop) {
+        const data = await fetchAsDataUrl(rawBackdrop);
+        if (data) setBackdropDataUrl(data);
+      }
+      if (!posterDataUrl && rawPoster) {
+        const data = await fetchAsDataUrl(rawPoster);
+        if (data) setPosterDataUrl(data);
+      }
+
       const zip = new JSZip();
 
       for (let i = 0; i < reviewSlides.length; i++) {
@@ -905,7 +933,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
           width: 360,
           height: 640,
           pixelRatio: 3,
-          cacheBust: true,
+          cacheBust: false,
           quality: 0.98,
           style: {
             transform: "none",
@@ -945,9 +973,11 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Formatting helpers
-  const displayBackdrop = backdropDataUrl || getBackdropUrl(currentBackdrop, "original");
-  const displayPoster = posterDataUrl || getPosterUrl(currentPoster, "w500");
+  // Formatting helpers (ensuring all remote images default to CORS-safe proxy to avoid canvas tainting)
+  const rawBackdrop = getBackdropUrl(currentBackdrop, "original");
+  const rawPoster = getPosterUrl(currentPoster, "w500");
+  const displayBackdrop = backdropDataUrl || (rawBackdrop ? toProxyUrl(rawBackdrop) : "");
+  const displayPoster = posterDataUrl || (rawPoster ? toProxyUrl(rawPoster) : "");
   const hasFooterContent = hasFooter;
   const hasReviewContent = Boolean(
     (showStandoutQuote && standoutQuoteText.trim()) ||
@@ -1123,8 +1153,8 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-2 sm:p-3 md:p-5 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-200 select-none">
-      <div className="relative w-full max-w-[1540px] h-[95vh] max-h-[96vh] bg-[#090b0e] border border-white/[0.12] rounded-3xl overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.98),0_0_60px_rgba(255,85,0,0.12)] flex flex-col">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-0 sm:p-3 md:p-5 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-200 select-none">
+      <div className="relative w-full max-w-[1540px] h-[100dvh] sm:h-[95vh] max-h-none sm:max-h-[96vh] bg-[#090b0e] border sm:border border-white/[0.12] rounded-none sm:rounded-3xl overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.98),0_0_60px_rgba(255,85,0,0.12)] flex flex-col">
         
         {/* Modal Top Bar */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5 border-b border-white/[0.08] bg-[#0c0f16]/95 backdrop-blur-md flex-shrink-0">
@@ -1205,7 +1235,13 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                 >
                   <Archive className="w-4 h-4" />
                   <span>
-                    {isExporting ? exportProgress || "ZIP..." : `Export ZIP (${reviewSlides.length})`}
+                    {isExporting ? (
+                      exportProgress || "ZIP..."
+                    ) : (
+                      <>
+                        <span className="hidden sm:inline">Export </span>ZIP ({reviewSlides.length})
+                      </>
+                    )}
                   </span>
                 </button>
 
@@ -1228,7 +1264,15 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                 className="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-inter font-bold text-xs shadow-[0_0_20px_rgba(255,85,0,0.4)] transition-all cursor-pointer disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
-                <span>{isExporting ? exportProgress || "Exporting..." : "Download PNG"}</span>
+                <span>
+                  {isExporting ? (
+                    exportProgress || "Exporting..."
+                  ) : (
+                    <>
+                      <span className="hidden sm:inline">Download </span>PNG
+                    </>
+                  )}
+                </span>
               </button>
             )}
 
@@ -1242,56 +1286,102 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
           </div>
         </div>
 
-        {/* Mobile Mode Switcher (Visible on small screens) */}
-        <div className="flex md:hidden items-center justify-center p-2 border-b border-white/[0.08] bg-[#07080a]">
-          <div className="grid grid-cols-3 bg-[#0c0f16] p-1 rounded-xl border border-white/[0.08] w-full max-w-sm gap-1">
+        {/* Mobile Control Ribbon (Visible on small screens: Mode Switcher + Mobile View Switcher) */}
+        <div className="flex lg:hidden items-center justify-between px-3 py-1.5 border-b border-white/[0.08] bg-[#07080a] gap-2 flex-shrink-0">
+          {/* Format Selector */}
+          <div className="flex items-center bg-[#0c0f16] p-0.5 rounded-xl border border-white/[0.08]">
             <button
               type="button"
               onClick={() => setStudioMode("summary")}
-              className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-poppins transition-all ${
+              className={`px-2 py-1 rounded-lg text-[10.5px] font-poppins transition-all cursor-pointer ${
                 studioMode === "summary"
-                  ? "bg-[#ff5500] text-black font-bold"
-                  : "text-zinc-400"
+                  ? "bg-[#ff5500] text-black font-bold shadow-sm"
+                  : "text-zinc-400 hover:text-white"
               }`}
             >
-              <Sparkles className="w-3 h-3" />
-              <span>Summary</span>
+              Summary
             </button>
-
             <button
               type="button"
               onClick={() => setStudioMode("rating")}
-              className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-poppins transition-all ${
+              className={`px-2 py-1 rounded-lg text-[10.5px] font-poppins transition-all cursor-pointer ${
                 studioMode === "rating"
-                  ? "bg-[#ff5500] text-black font-bold"
-                  : "text-zinc-400"
+                  ? "bg-[#ff5500] text-black font-bold shadow-sm"
+                  : "text-zinc-400 hover:text-white"
               }`}
             >
-              <Star className="w-3 h-3" />
-              <span>Rating</span>
+              Rating
             </button>
-
             <button
               type="button"
               onClick={() => setStudioMode("full_set")}
-              className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-poppins transition-all ${
+              className={`px-2 py-1 rounded-lg text-[10.5px] font-poppins transition-all cursor-pointer ${
                 studioMode === "full_set"
-                  ? "bg-[#ff5500] text-black font-bold"
-                  : "text-zinc-400"
+                  ? "bg-[#ff5500] text-black font-bold shadow-sm"
+                  : "text-zinc-400 hover:text-white"
               }`}
             >
-              <Layers className="w-3 h-3" />
-              <span>Full Set</span>
+              Full Set
+            </button>
+          </div>
+
+          {/* View Mode Switcher */}
+          <div className="flex items-center bg-[#0c0f16] p-0.5 rounded-xl border border-white/[0.08]">
+            <button
+              type="button"
+              onClick={() => setMobileViewMode("split")}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10.5px] font-poppins transition-all cursor-pointer ${
+                mobileViewMode === "split"
+                  ? "bg-white/[0.15] text-white font-bold shadow-sm"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+              title="Split View: Miniature Card + Controls"
+            >
+              <LayoutGrid className="w-3 h-3" />
+              <span>Split</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileViewMode("preview")}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10.5px] font-poppins transition-all cursor-pointer ${
+                mobileViewMode === "preview"
+                  ? "bg-white/[0.15] text-white font-bold shadow-sm"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+              title="Full Card Preview"
+            >
+              <Eye className="w-3 h-3" />
+              <span>Card</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileViewMode("controls")}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10.5px] font-poppins transition-all cursor-pointer ${
+                mobileViewMode === "controls"
+                  ? "bg-white/[0.15] text-white font-bold shadow-sm"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+              title="Full Controls View"
+            >
+              <SlidersHorizontal className="w-3 h-3" />
+              <span>Edit</span>
             </button>
           </div>
         </div>
 
         {/* Modal Content: Dual Column Workspace */}
-        <div className="flex flex-col lg:flex-row flex-grow overflow-y-auto lg:overflow-hidden min-h-0">
+        <div className="flex flex-col lg:flex-row flex-grow overflow-hidden min-h-0">
           
           {/* Left Column: Live 9:16 Story Card Viewport & Cinema Stage */}
-          <div className="w-full lg:w-[480px] xl:w-[540px] 2xl:w-[580px] flex-shrink-0 bg-[#060709] p-3 sm:p-5 lg:p-6 flex flex-col items-center justify-between border-b lg:border-b-0 lg:border-r border-white/[0.08] relative overflow-hidden">
-            
+          <div
+            className={`w-full flex-shrink-0 bg-[#060709] border-b lg:border-b-0 lg:border-r border-white/[0.08] relative overflow-hidden transition-all duration-200 ${
+              mobileViewMode === "split"
+                ? "h-[33vh] sm:h-[36vh] max-h-[280px] p-2 flex flex-col items-center justify-center lg:h-auto lg:max-h-none lg:w-[480px] xl:w-[540px] 2xl:w-[580px] lg:p-6 lg:justify-between"
+                : mobileViewMode === "preview"
+                ? "flex-1 min-h-0 p-3 sm:p-5 flex flex-col items-center justify-between lg:w-[480px] xl:w-[540px] 2xl:w-[580px] lg:p-6"
+                : "absolute opacity-0 pointer-events-none -left-[9999px] lg:static lg:opacity-100 lg:pointer-events-auto lg:left-0 lg:w-[480px] xl:w-[540px] 2xl:w-[580px] lg:p-6 lg:flex lg:flex-col lg:items-center lg:justify-between"
+            }`}
+          >
             {/* Ambient Lighting & Glow */}
             <div
               className="absolute inset-0 pointer-events-none transition-all duration-700 opacity-25 blur-3xl"
@@ -1300,14 +1390,27 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
               }}
             />
 
+            {/* Split Mode Tap-to-Expand Badge (Mobile only) */}
+            {mobileViewMode === "split" && (
+              <button
+                type="button"
+                onClick={() => setMobileViewMode("preview")}
+                className="lg:hidden absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/80 hover:bg-[#ff5500] hover:text-black border border-white/20 text-zinc-300 text-[10px] font-mono backdrop-blur-md shadow-lg transition-all cursor-pointer"
+                title="Expand to Full Card Preview"
+              >
+                <Eye className="w-2.5 h-2.5 text-[#ff5500]" />
+                <span>Expand</span>
+              </button>
+            )}
+
             {/* Top Preview Controls / Slide Navigator */}
             {studioMode === "full_set" ? (
-              <div className="flex items-center justify-between w-full max-w-[380px] mb-2 px-1 z-10">
+              <div className={`flex items-center justify-between w-full max-w-[380px] px-1 z-10 ${mobileViewMode === "split" ? "mb-1 scale-90 sm:scale-100 origin-top" : "mb-2"}`}>
                 <button
                   type="button"
                   disabled={activeSlideIndex === 0}
                   onClick={() => setCurrentSlideIndex((prev) => Math.max(0, prev - 1))}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-poppins text-white transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed border border-white/10"
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-poppins text-white transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed border border-white/10"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                   <span>Prev</span>
@@ -1319,7 +1422,7 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                       key={idx}
                       type="button"
                       onClick={() => setCurrentSlideIndex(idx)}
-                      className={`w-7 h-7 rounded-lg text-xs font-mono font-bold flex items-center justify-center transition-all cursor-pointer ${
+                      className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg text-xs font-mono font-bold flex items-center justify-center transition-all cursor-pointer ${
                         activeSlideIndex === idx
                           ? "bg-[#ff5500] text-black shadow-[0_0_12px_rgba(255,85,0,0.5)] scale-105"
                           : "bg-white/[0.05] text-zinc-400 hover:text-white border border-white/5"
@@ -1334,14 +1437,14 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                   type="button"
                   disabled={activeSlideIndex >= reviewSlides.length - 1}
                   onClick={() => setCurrentSlideIndex((prev) => Math.min(reviewSlides.length - 1, prev + 1))}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-poppins text-white transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed border border-white/10"
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-poppins text-white transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed border border-white/10"
                 >
                   <span>Next</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             ) : (
-              <div className="z-10 text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-2 flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08]">
+              <div className={`z-10 text-[11px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] ${mobileViewMode === "split" ? "mb-1 scale-90 sm:scale-100 origin-top" : "mb-2"}`}>
                 <span className="w-2 h-2 rounded-full shadow-[0_0_6px_#ff5500]" style={{ backgroundColor: activePalette.primary }} />
                 <span>Live Canvas · 1080×1920 (9:16 UHD)</span>
               </div>
@@ -1349,7 +1452,18 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
 
             {/* THE INSTAGRAM STORY CANVAS (Strict 9:16 Aspect Ratio: 360 x 640 displayed, exports at 3x: 1080 x 1920) */}
             <div className="w-full flex-1 flex items-center justify-center overflow-hidden py-1 z-10">
-              <div className="transform scale-[0.80] sm:scale-[0.88] xl:scale-100 origin-center flex-shrink-0 transition-transform duration-200">
+              <div
+                onClick={() => {
+                  if (!isCroppingBackdrop && typeof window !== "undefined" && window.innerWidth < 1024 && mobileViewMode === "split") {
+                    setMobileViewMode("preview");
+                  }
+                }}
+                className={`transform origin-center flex-shrink-0 transition-transform duration-200 ${
+                  mobileViewMode === "split"
+                    ? "scale-[0.36] min-[380px]:scale-[0.40] min-[420px]:scale-[0.44] cursor-pointer lg:scale-[0.76] xl:scale-100 lg:cursor-default"
+                    : "scale-[0.72] min-[360px]:scale-[0.78] min-[410px]:scale-[0.84] sm:scale-[0.88] xl:scale-100"
+                }`}
+              >
                 <div
                   ref={cardRef}
                   style={{ width: "360px", height: "640px" }}
@@ -2145,20 +2259,55 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
             </div>
               </div>
             </div>
+
+            {/* Mobile-Only Action Bar at Bottom of Full Card Preview */}
+            {mobileViewMode === "preview" && (
+              <div className="lg:hidden w-full flex items-center justify-between gap-2 pt-2 px-1 z-20 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setMobileViewMode("split")}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-white/[0.08] hover:bg-white/[0.15] border border-white/15 text-white font-poppins text-xs font-semibold transition-all cursor-pointer shadow-md"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-[#ff5500]" />
+                  <span>Edit Settings</span>
+                </button>
+                {studioMode === "full_set" ? (
+                  <button
+                    type="button"
+                    onClick={handleDownloadZip}
+                    disabled={isExporting || reviewSlides.length === 0}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-poppins text-xs font-bold shadow-[0_0_15px_rgba(255,85,0,0.35)] transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <Archive className="w-3.5 h-3.5" />
+                    <span>{isExporting ? exportProgress || "ZIP..." : `Export ZIP (${reviewSlides.length})`}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleDownloadSingle}
+                    disabled={isExporting}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-poppins text-xs font-bold shadow-[0_0_15px_rgba(255,85,0,0.35)] transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>{isExporting ? exportProgress || "Export..." : "Download PNG"}</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Right Column: Customization Controls Panel */}
-          <div className="w-full lg:flex-1 flex flex-col min-h-0 bg-[#080a0f] overflow-hidden">
+          <div className={`${mobileViewMode === "preview" ? "hidden lg:flex" : "flex"} w-full lg:flex-1 flex-col min-h-0 bg-[#080a0f] overflow-hidden`}>
             
             {/* Studio Navigation Tab Bar (Sticky at top of right panel) */}
-            <div className="flex-shrink-0 px-4 sm:px-6 pt-4 pb-3 border-b border-white/[0.08] bg-[#080a0f]/95 backdrop-blur-xl z-20">
-              <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#0c0f16] border border-white/[0.08] overflow-x-auto scrollbar-none">
+            <div className="flex-shrink-0 px-3 sm:px-6 pt-3 sm:pt-4 pb-2.5 sm:pb-3 border-b border-white/[0.08] bg-[#080a0f]/95 backdrop-blur-xl z-20">
+              <div className="flex items-center gap-1 sm:gap-1.5 p-1 rounded-2xl bg-[#0c0f16] border border-white/[0.08] overflow-x-auto scrollbar-none">
                 {[
-                  { id: "presets", label: "Presets", icon: Layout },
-                  { id: "typography", label: "Typography", icon: Type },
-                  { id: "artwork", label: "Artwork", icon: ImageIcon },
-                  { id: "spacing", label: "Fine Spacing", icon: SlidersHorizontal },
-                  { id: "branding", label: "Branding & Export", icon: Sparkles },
+                  { id: "presets", label: "Presets", shortLabel: "Presets", icon: Layout },
+                  { id: "typography", label: "Typography", shortLabel: "Type", icon: Type },
+                  { id: "artwork", label: "Artwork", shortLabel: "Artwork", icon: ImageIcon },
+                  { id: "spacing", label: "Fine Spacing", shortLabel: "Spacing", icon: SlidersHorizontal },
+                  { id: "branding", label: "Branding & Export", shortLabel: "Branding", icon: Sparkles },
                 ].map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -2167,14 +2316,15 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
                       key={tab.id}
                       type="button"
                       onClick={() => setActiveTab(tab.id as StudioTab)}
-                      className={`flex-1 min-w-[90px] sm:min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-3 rounded-xl text-xs font-poppins font-semibold transition-all cursor-pointer select-none ${
+                      className={`flex-1 min-w-[68px] sm:min-w-0 flex items-center justify-center gap-1 sm:gap-2 py-1.5 sm:py-2 px-1.5 sm:px-3 rounded-xl text-[11px] sm:text-xs font-poppins font-semibold transition-all cursor-pointer select-none ${
                         isActive
                           ? "bg-[#ff5500] text-black shadow-[0_0_16px_rgba(255,85,0,0.4)]"
                           : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">{tab.label}</span>
+                      <span className="truncate sm:hidden">{tab.shortLabel}</span>
+                      <span className="truncate hidden sm:inline">{tab.label}</span>
                     </button>
                   );
                 })}
@@ -3937,37 +4087,50 @@ export const StoryCardBuilderModal: React.FC<StoryCardBuilderModalProps> = ({
             </div>
 
             {/* Quick Export Footer Bar (Sticky at bottom of right panel) */}
-            <div className="flex-shrink-0 px-4 sm:px-6 py-3.5 border-t border-white/[0.08] bg-[#07080a]/95 backdrop-blur-xl flex items-center justify-between gap-3">
+            <div className="flex-shrink-0 px-3 sm:px-6 py-2.5 sm:py-3.5 border-t border-white/[0.08] bg-[#07080a]/95 backdrop-blur-xl flex items-center justify-between gap-2 sm:gap-3">
               <div className="flex items-center gap-2 text-xs font-inter text-zinc-400">
                 <span className="w-2 h-2 rounded-full bg-[#ff5500] shadow-[0_0_8px_#ff5500]" />
-                <span className="font-poppins font-medium text-white">
-                  {studioMode === "full_set" ? `Full Set (${reviewSlides.length} Slides)` : studioMode === "rating" ? "Rating Card" : "Summary Card"}
+                <span className="font-poppins font-medium text-white truncate max-w-[110px] sm:max-w-none text-[11px] sm:text-xs">
+                  {studioMode === "full_set" ? `Full Set (${reviewSlides.length})` : studioMode === "rating" ? "Rating Card" : "Summary Card"}
                 </span>
                 <span className="hidden sm:inline text-zinc-600">·</span>
                 <span className="hidden sm:inline font-mono text-[11px] text-zinc-500">1080×1920 UHD</span>
               </div>
 
-              {studioMode === "full_set" ? (
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                {/* Mobile View Toggle button to easily jump to full card */}
                 <button
                   type="button"
-                  onClick={handleDownloadZip}
-                  disabled={isExporting || reviewSlides.length === 0}
-                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-poppins font-bold text-xs shadow-[0_0_16px_rgba(255,85,0,0.4)] transition-all cursor-pointer disabled:opacity-50"
+                  onClick={() => setMobileViewMode(mobileViewMode === "split" ? "preview" : "split")}
+                  className="lg:hidden flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.15] border border-white/10 text-[11px] font-poppins text-white transition-all cursor-pointer"
+                  title="Toggle card view mode"
                 >
-                  <Archive className="w-3.5 h-3.5" />
-                  <span>{isExporting ? exportProgress || "Generating ZIP..." : "Download ZIP"}</span>
+                  <Eye className="w-3.5 h-3.5 text-[#ff5500]" />
+                  <span>{mobileViewMode === "split" ? "Full Card" : "Split View"}</span>
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleDownloadSingle}
-                  disabled={isExporting}
-                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-poppins font-bold text-xs shadow-[0_0_16px_rgba(255,85,0,0.4)] transition-all cursor-pointer disabled:opacity-50"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>{isExporting ? exportProgress || "Exporting..." : "Download PNG"}</span>
-                </button>
-              )}
+
+                {studioMode === "full_set" ? (
+                  <button
+                    type="button"
+                    onClick={handleDownloadZip}
+                    disabled={isExporting || reviewSlides.length === 0}
+                    className="flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-poppins font-bold text-xs shadow-[0_0_16px_rgba(255,85,0,0.4)] transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                  >
+                    <Archive className="w-3.5 h-3.5" />
+                    <span>{isExporting ? exportProgress || "ZIP..." : "Export ZIP"}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleDownloadSingle}
+                    disabled={isExporting}
+                    className="flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-poppins font-bold text-xs shadow-[0_0_16px_rgba(255,85,0,0.4)] transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>{isExporting ? exportProgress || "PNG..." : "Download PNG"}</span>
+                  </button>
+                )}
+              </div>
             </div>
 
           </div>

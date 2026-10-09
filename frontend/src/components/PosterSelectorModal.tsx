@@ -60,28 +60,28 @@ export const PosterSelectorModal: React.FC<PosterSelectorModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-0 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
       {/* Click outside backdrop */}
       <div className="fixed inset-0" onClick={onClose} />
 
       {/* Modal Card */}
-      <div className="relative w-full max-w-4xl bg-[#0a0c10] border border-white/[0.12] rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.9),0_0_50px_rgba(255,85,0,0.15)] z-10 max-h-[92vh] flex flex-col">
+      <div className="relative w-full max-w-4xl h-[100dvh] sm:h-auto sm:max-h-[92vh] bg-[#0a0c10] border sm:border border-white/[0.12] rounded-none sm:rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.9),0_0_50px_rgba(255,85,0,0.15)] z-10 flex flex-col">
         
         {/* Header */}
-        <div className="p-4 sm:p-6 bg-[#0e1117] border-b border-white/[0.08] flex items-center justify-between">
-          <div className="space-y-1">
+        <div className="px-4 py-3.5 sm:p-6 bg-[#0e1117] border-b border-white/[0.08] flex items-center justify-between flex-shrink-0">
+          <div className="space-y-0.5 sm:space-y-1 min-w-0 pr-2">
             <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-inter uppercase tracking-wider text-[#ff7a29]">
-              <Sparkles className="w-3.5 h-3.5 text-[#ff5500]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#ff5500] shrink-0" />
               <span>Official TMDB Artwork Gallery</span>
             </div>
-            <h3 className="text-base sm:text-xl font-poppins font-bold text-white tracking-tight">
+            <h3 className="text-sm sm:text-xl font-poppins font-bold text-white tracking-tight truncate">
               Choose Poster for <span className="text-[#ff7a29]">"{movieTitle}"</span>
             </h3>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 sm:p-2 rounded-full bg-white/[0.04] hover:bg-[#ff5500] text-zinc-400 hover:text-black border border-white/[0.08] hover:border-[#ff5500] transition-all"
+            className="p-1.5 sm:p-2 rounded-full bg-white/[0.04] hover:bg-[#ff5500] text-zinc-400 hover:text-black border border-white/[0.08] hover:border-[#ff5500] transition-all cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -114,12 +114,12 @@ export const PosterSelectorModal: React.FC<PosterSelectorModalProps> = ({
 
           {!loading && posters.length > 0 && (
             <div>
-              <div className="flex items-center justify-between mb-4 text-xs font-inter text-zinc-500">
-                <span>{posters.length} official posters available</span>
-                <span>Click any artwork to apply to your review</span>
+              <div className="flex items-center justify-between mb-3 text-[11px] sm:text-xs font-inter text-zinc-500">
+                <span>{posters.length} posters available</span>
+                <span className="hidden sm:inline">Click any artwork to apply to your review</span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-4">
                 {posters.map((poster, index) => {
                   const isCurrent =
                     currentPosterUrl?.includes(poster.filePath) ||
@@ -173,11 +173,11 @@ export const PosterSelectorModal: React.FC<PosterSelectorModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 bg-[#0e1117] border-t border-white/[0.08] flex items-center justify-between text-xs font-inter text-zinc-500">
+        <div className="px-4 sm:px-6 py-3 sm:py-3.5 bg-[#0e1117] border-t border-white/[0.08] flex items-center justify-between text-xs font-inter text-zinc-500 flex-shrink-0">
           <span>TMDB Image API</span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] transition-all"
+            className="px-4 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] transition-all cursor-pointer"
           >
             Cancel
           </button>

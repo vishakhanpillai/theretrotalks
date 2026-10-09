@@ -90,12 +90,12 @@ export const CinemaSearchModal: React.FC<CinemaSearchModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-20 p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-4 sm:pt-20 p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
       {/* Click outside backdrop */}
       <div className="fixed inset-0" onClick={onClose} />
 
       {/* Search Palette Container */}
-      <div className="relative w-full max-w-2xl bg-[#090b0e] border border-white/[0.14] rounded-2xl sm:rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_50px_rgba(255,85,0,0.15)] overflow-hidden z-10 flex flex-col max-h-[82vh] animate-in zoom-in-95 duration-150">
+      <div className="relative w-full max-w-2xl bg-[#090b0e] border border-white/[0.14] rounded-2xl sm:rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_50px_rgba(255,85,0,0.15)] overflow-hidden z-10 flex flex-col max-h-[92vh] sm:max-h-[82vh] animate-in zoom-in-95 duration-150">
         
         {/* Search Header Bar */}
         <div className="relative p-3 sm:p-4 border-b border-white/[0.08] bg-[#0c0e13]">

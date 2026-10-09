@@ -133,15 +133,15 @@ export const MovieModal: React.FC<MovieModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
       {/* Click outside backdrop */}
       <div className="fixed inset-0" onClick={onClose} />
 
       {/* Modal Card */}
-      <div className="relative w-full max-w-4xl bg-[#090b0e] border border-white/[0.09] rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.9),0_0_50px_rgba(255,85,0,0.12)] z-10 max-h-[92vh] flex flex-col">
+      <div className="relative w-full max-w-4xl h-[100dvh] sm:h-auto sm:max-h-[92vh] bg-[#090b0e] border sm:border border-white/[0.09] rounded-none sm:rounded-3xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.9),0_0_50px_rgba(255,85,0,0.12)] z-10 flex flex-col">
         
         {/* Backdrop Banner Header */}
-        <div className="relative h-44 sm:h-64 w-full bg-[#101318] overflow-hidden flex-shrink-0">
+        <div className="relative h-36 sm:h-64 w-full bg-[#101318] overflow-hidden flex-shrink-0">
           {backdropUrl ? (
             <img
               src={backdropUrl}
@@ -159,19 +159,19 @@ export const MovieModal: React.FC<MovieModalProps> = ({
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 sm:top-5 right-4 sm:right-5 p-2 sm:p-2.5 rounded-full bg-black/60 hover:bg-[#ff5500] text-zinc-300 hover:text-black border border-white/10 hover:border-[#ff5500] transition-all duration-200 shadow-xl group z-20"
+            className="absolute top-3 sm:top-5 right-3 sm:right-5 p-1.5 sm:p-2.5 rounded-full bg-black/60 hover:bg-[#ff5500] text-zinc-300 hover:text-black border border-white/10 hover:border-[#ff5500] transition-all duration-200 shadow-xl group z-20 cursor-pointer"
           >
             <X className="w-4 h-4 transition-transform group-hover:rotate-90" />
           </button>
 
           {/* Title, tagline & Play Trailer Action */}
-          <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 z-10">
-            <div className="space-y-1 max-w-xl">
-              <h2 className="text-xl sm:text-3xl md:text-4xl font-poppins font-bold text-white tracking-tight leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+          <div className="absolute bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 sm:gap-4 z-10">
+            <div className="space-y-0.5 sm:space-y-1 max-w-xl min-w-0">
+              <h2 className="text-lg sm:text-3xl md:text-4xl font-poppins font-bold text-white tracking-tight leading-tight truncate sm:whitespace-normal drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
                 {current.title}
               </h2>
               {current.tagline && (
-                <p className="text-xs sm:text-sm text-zinc-300 italic font-inter drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                <p className="text-[11px] sm:text-sm text-zinc-300 italic font-inter truncate sm:whitespace-normal drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
                   "{current.tagline}"
                 </p>
               )}
@@ -191,7 +191,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
                   );
                 }
               }}
-              className="self-start sm:self-auto inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-poppins font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-[0_0_25px_rgba(255,85,0,0.45)] hover:shadow-[0_0_30px_rgba(255,85,0,0.6)] active:scale-95 flex-shrink-0"
+              className="self-start sm:self-auto inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-poppins font-bold text-[11px] sm:text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-[0_0_25px_rgba(255,85,0,0.45)] hover:shadow-[0_0_30px_rgba(255,85,0,0.6)] active:scale-95 flex-shrink-0"
               title="Play official trailer"
             >
               <Play className="w-3.5 h-3.5 fill-black" />
@@ -201,7 +201,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="p-4 sm:p-6 md:p-8 overflow-y-auto space-y-5 sm:space-y-6 flex-grow">
+        <div className="p-3.5 sm:p-6 md:p-8 overflow-y-auto space-y-4 sm:space-y-6 flex-grow">
           {/* Embedded YouTube Trailer Player */}
           {isPlayingTrailer && (
             <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black border border-[#ff5500]/30 shadow-[0_15px_40px_rgba(0,0,0,0.85)]">
@@ -318,14 +318,14 @@ export const MovieModal: React.FC<MovieModalProps> = ({
                   <h4 className="text-[10px] uppercase tracking-widest font-inter text-zinc-400 font-medium">
                     Key Cast
                   </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                     {current.cast.slice(0, 6).map((member) => (
                       <div
                         key={member.id}
-                        className="flex items-center gap-2.5 min-w-0"
+                        className="flex items-center gap-2 sm:gap-2.5 min-w-0"
                         title={`${member.name} as ${member.character || "Cast"}`}
                       >
-                        <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 ring-1 ring-white/[0.1] shadow-sm">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 ring-1 ring-white/[0.1] shadow-sm">
                           {member.picture ? (
                             <img
                               src={member.picture}
@@ -359,14 +359,14 @@ export const MovieModal: React.FC<MovieModalProps> = ({
                   <h4 className="text-[10px] uppercase tracking-widest font-inter text-zinc-400 font-medium">
                     Key Crew
                   </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                     {current.crew.slice(0, 6).map((member, idx) => (
                       <div
                         key={`${member.id}-${idx}`}
-                        className="flex items-center gap-2.5 min-w-0"
+                        className="flex items-center gap-2 sm:gap-2.5 min-w-0"
                         title={`${member.name} — ${member.job || "Crew"}`}
                       >
-                        <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 ring-1 ring-white/[0.1] shadow-sm">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 ring-1 ring-white/[0.1] shadow-sm">
                           {member.picture ? (
                             <img
                               src={member.picture}
@@ -396,7 +396,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
 
               {/* Personal Review Composer Form (Admin Only when onSaveReview is supplied) */}
               {isAdmin && onSaveReview && (
-                <form onSubmit={handleSaveToDiary} className="p-5 rounded-2xl bg-[#0e1117] border border-white/[0.08] space-y-4 shadow-xl mt-4">
+                <form onSubmit={handleSaveToDiary} className="p-4 sm:p-5 rounded-2xl bg-[#0e1117] border border-white/[0.08] space-y-4 shadow-xl mt-4">
                   <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
                     <div className="flex items-center gap-2">
                       <Bookmark className="w-4 h-4 text-[#ff5500]" />
@@ -485,7 +485,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-8 py-4 bg-[#07080a] border-t border-white/[0.07] flex items-center justify-between">
+        <div className="px-4 sm:px-8 py-3 sm:py-4 bg-[#07080a] border-t border-white/[0.07] flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2 text-xs font-inter text-zinc-500">
             <span className={`w-1.5 h-1.5 rounded-full ${loading ? "bg-amber-400 animate-pulse" : "bg-[#ff5500]"}`} />
             <span>{loading ? "Syncing details..." : `TMDB #${current.id}`}</span>
@@ -493,7 +493,7 @@ export const MovieModal: React.FC<MovieModalProps> = ({
 
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-inter uppercase tracking-wider text-zinc-300 hover:text-white border border-white/[0.08] transition-all"
+            className="px-4 sm:px-5 py-1.5 sm:py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-inter uppercase tracking-wider text-zinc-300 hover:text-white border border-white/[0.08] transition-all cursor-pointer"
           >
             Close
           </button>

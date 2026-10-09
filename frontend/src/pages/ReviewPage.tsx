@@ -7,6 +7,8 @@ import { PosterSelectorModal } from "../components/PosterSelectorModal";
 import { BackdropSelectorModal } from "../components/BackdropSelectorModal";
 import { BackdropFramingModal } from "../components/BackdropFramingModal";
 import { FormattedReviewText } from "../components/FormattedReviewText";
+import { FilmScorePlayer } from "../components/FilmScorePlayer";
+import { WatchProvidersWidget } from "../components/WatchProvidersWidget";
 import { Footer } from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 import { useReviews } from "../context/ReviewsContext";
@@ -229,6 +231,13 @@ export const ReviewPage: React.FC<ReviewPageProps> = (props) => {
 
   const castList = review.cast || [];
   const crewList = review.crew || [];
+  const composer = crewList.find(
+    (c) =>
+      c.job === "Original Music Composer" ||
+      c.job === "Music" ||
+      c.job === "Composer" ||
+      c.job === "Music Director"
+  )?.name;
 
   return (
     <div className="min-h-screen bg-[#07080a] text-[#ededed] flex flex-col font-poppins selection:bg-[#ff5500] selection:text-black">
@@ -293,14 +302,13 @@ export const ReviewPage: React.FC<ReviewPageProps> = (props) => {
       <section
         style={{
           height: review.backdropFraming?.height ? `${review.backdropFraming.height}vh` : undefined,
-          minHeight: "420px",
           maxHeight: review.backdropFraming?.height ? `${Math.round(review.backdropFraming.height * 11)}px` : undefined,
         }}
         className={`relative w-full ${
           !review.backdropFraming?.height
-            ? "h-[55vh] sm:h-[62vh] md:h-[70vh] lg:h-[74vh] max-h-[760px]"
+            ? "h-[45vh] sm:h-[62vh] md:h-[70vh] lg:h-[74vh] max-h-[760px]"
             : ""
-        } overflow-hidden bg-[#07080a] mt-0 transition-[height] duration-300`}
+        } min-h-[280px] sm:min-h-[420px] overflow-hidden bg-[#07080a] mt-0 transition-[height] duration-300`}
       >
         {backdropUrl ? (
           <img
@@ -331,7 +339,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = (props) => {
 
         {/* Admin Action Buttons on Backdrop */}
         {isAdmin && (
-          <div className="absolute top-16 sm:top-20 right-4 sm:right-6 lg:right-10 xl:right-14 z-20 flex flex-wrap justify-end items-center gap-1.5 sm:gap-2">
+          <div className="absolute top-16 sm:top-20 right-3 sm:right-6 lg:right-10 xl:right-14 z-20 flex flex-wrap justify-end items-center gap-1.5 sm:gap-2">
             {backdropUrl && (
               <button
                 type="button"
@@ -376,9 +384,9 @@ export const ReviewPage: React.FC<ReviewPageProps> = (props) => {
         <div className="flex flex-col lg:flex-row gap-8 xl:gap-10 items-start">
           
           {/* ======================================================== */}
-          {/* LEFT SIDEBAR: Poster & Metadata (Sticky)                 */}
+          {/* LEFT SIDEBAR: Poster, Score, Metadata & Where to Watch   */}
           {/* ======================================================== */}
-          <div className="w-full lg:w-64 xl:w-72 flex-shrink-0 space-y-5 lg:sticky lg:top-20">
+          <div className="w-full lg:w-64 xl:w-72 flex-shrink-0 space-y-5">
             
             {/* The Poster */}
             <div className="relative group max-w-[220px] sm:max-w-[260px] lg:max-w-none mx-auto lg:mx-0">
@@ -410,6 +418,12 @@ export const ReviewPage: React.FC<ReviewPageProps> = (props) => {
                 </button>
               )}
             </div>
+
+            {/* 30-Second Film Score / Soundtrack Vinyl Player */}
+            <FilmScorePlayer
+              movieTitle={review.title}
+              composer={composer}
+            />
 
             {/* Movie Synopsis Card */}
             {(synopsis || synopsisLoading) && (
@@ -471,6 +485,17 @@ export const ReviewPage: React.FC<ReviewPageProps> = (props) => {
               )}
             </div>
 
+            {/* Where to Stream / Watch Providers (TMDB JustWatch API) - Desktop in Left Sidebar */}
+            {review.tmdbId && (
+              <div className="hidden lg:block">
+                <WatchProvidersWidget
+                  tmdbId={review.tmdbId}
+                  mediaType={review.mediaType}
+                  movieTitle={review.title}
+                />
+              </div>
+            )}
+
           </div>
 
           {/* ======================================================== */}
@@ -505,19 +530,19 @@ export const ReviewPage: React.FC<ReviewPageProps> = (props) => {
               <div className="relative z-10 py-3 space-y-3">
                 {/* Movie Title & Year */}
                 <div className="space-y-1">
-                  <div className="flex items-baseline gap-3 flex-wrap">
-                    <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-medium font-poppins text-white tracking-tight leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                  <div className="flex items-baseline gap-2.5 sm:gap-3 flex-wrap">
+                    <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-medium font-poppins text-white tracking-tight leading-tight break-words drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                       {review.title}
                     </h1>
                     {review.year && (
-                      <span className="text-lg sm:text-2xl md:text-3xl font-inter text-zinc-300 font-normal drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+                      <span className="text-base sm:text-2xl md:text-3xl font-inter text-zinc-300 font-normal drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
                         {review.year}
                       </span>
                     )}
                   </div>
 
                   {/* Directed by / Created by */}
-                  <p className="text-sm sm:text-base md:text-lg text-zinc-200 font-normal drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+                  <p className="text-xs sm:text-base md:text-lg text-zinc-200 font-normal drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
                     {review.mediaType === "tv" ? "Created by" : "Directed by"}{" "}
                     <strong className="text-white font-medium drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">{review.director}</strong>
                   </p>
@@ -534,7 +559,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = (props) => {
                 </div>
 
                 {/* Review by Vishakhan Pillai V P · Date */}
-                <div className="flex items-center justify-between text-xs sm:text-sm text-zinc-300 font-inter drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] pt-3 border-t border-white/[0.08]">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm text-zinc-300 font-inter drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] pt-2.5 sm:pt-3 border-t border-white/[0.08]">
                   <span>Review by Vishakhan Pillai V P</span>
                   <span>{review.watchedDate}</span>
                 </div>
@@ -545,7 +570,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = (props) => {
             <div className="pt-2">
               <FormattedReviewText
                 content={review.review}
-                className="font-poppins text-justify selection:bg-[#ff5500] selection:text-black w-full"
+                className="font-poppins text-left sm:text-justify selection:bg-[#ff5500] selection:text-black w-full break-words"
               />
             </div>
 
@@ -664,6 +689,17 @@ export const ReviewPage: React.FC<ReviewPageProps> = (props) => {
                 )}
 
               </div>
+            </div>
+          )}
+
+          {/* Where to Stream / Watch Providers (TMDB JustWatch API) - Mobile only, after Cast & Crew */}
+          {review.tmdbId && (
+            <div className="w-full sm:w-80 md:w-88 flex-shrink-0 mx-auto block lg:hidden">
+              <WatchProvidersWidget
+                tmdbId={review.tmdbId}
+                mediaType={review.mediaType}
+                movieTitle={review.title}
+              />
             </div>
           )}
 

@@ -61,28 +61,28 @@ export const BackdropSelectorModal: React.FC<BackdropSelectorModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-0 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
       {/* Click outside backdrop */}
       <div className="fixed inset-0" onClick={onClose} />
 
       {/* Modal Card */}
-      <div className="relative w-full max-w-5xl bg-[#0a0c10] border border-white/[0.12] rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.9),0_0_50px_rgba(255,85,0,0.15)] z-10 max-h-[92vh] flex flex-col font-poppins">
+      <div className="relative w-full max-w-5xl h-[100dvh] sm:h-auto sm:max-h-[92vh] bg-[#0a0c10] border sm:border border-white/[0.12] rounded-none sm:rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.9),0_0_50px_rgba(255,85,0,0.15)] z-10 flex flex-col font-poppins">
         
         {/* Header */}
-        <div className="p-4 sm:p-6 bg-[#0e1117] border-b border-white/[0.08] flex items-center justify-between">
-          <div className="space-y-1">
+        <div className="px-4 py-3.5 sm:p-6 bg-[#0e1117] border-b border-white/[0.08] flex items-center justify-between flex-shrink-0">
+          <div className="space-y-0.5 sm:space-y-1 min-w-0 pr-2">
             <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-inter uppercase tracking-wider text-[#ff7a29]">
-              <Sparkles className="w-3.5 h-3.5 text-[#ff5500]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#ff5500] shrink-0" />
               <span>Official TMDB Film Stills & Backdrops</span>
             </div>
-            <h3 className="text-base sm:text-xl font-bold text-white tracking-tight">
+            <h3 className="text-sm sm:text-xl font-bold text-white tracking-tight truncate">
               Choose Backdrop for <span className="text-[#ff7a29]">"{movieTitle}"</span>
             </h3>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 sm:p-2 rounded-full bg-white/[0.04] hover:bg-[#ff5500] text-zinc-400 hover:text-black border border-white/[0.08] hover:border-[#ff5500] transition-all cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-full bg-white/[0.04] hover:bg-[#ff5500] text-zinc-400 hover:text-black border border-white/[0.08] hover:border-[#ff5500] transition-all cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -115,12 +115,12 @@ export const BackdropSelectorModal: React.FC<BackdropSelectorModalProps> = ({
 
           {!loading && backdrops.length > 0 && (
             <div>
-              <div className="flex items-center justify-between mb-4 text-xs font-inter text-zinc-500">
-                <span>{backdrops.length} official backdrops available</span>
-                <span>Click any image to set as your review banner</span>
+              <div className="flex items-center justify-between mb-3 text-[11px] sm:text-xs font-inter text-zinc-500">
+                <span>{backdrops.length} backdrops available</span>
+                <span className="hidden sm:inline">Click any image to set as your review banner</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
                 {backdrops.map((b, index) => {
                   const isCurrent =
                     currentBackdropUrl?.includes(b.filePath) ||
@@ -155,7 +155,7 @@ export const BackdropSelectorModal: React.FC<BackdropSelectorModalProps> = ({
                       )}
 
                       {/* Dimensions or language */}
-                      <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md text-[9px] font-inter text-zinc-300 border border-white/10 uppercase">
+                      <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md text-[9px] font-mono text-zinc-300 border border-white/10 uppercase">
                         {b.width}x{b.height} {b.language ? `· ${b.language}` : ""}
                       </div>
 
@@ -175,7 +175,7 @@ export const BackdropSelectorModal: React.FC<BackdropSelectorModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 bg-[#0e1117] border-t border-white/[0.08] flex items-center justify-between text-xs font-inter text-zinc-500">
+        <div className="px-4 sm:px-6 py-3 sm:py-3.5 bg-[#0e1117] border-t border-white/[0.08] flex items-center justify-between text-xs font-inter text-zinc-500 flex-shrink-0">
           <span>TMDB High-Resolution Imagery</span>
           <button
             onClick={onClose}

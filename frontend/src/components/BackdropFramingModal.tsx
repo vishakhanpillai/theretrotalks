@@ -120,8 +120,8 @@ export const BackdropFramingModal: React.FC<BackdropFramingModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-2 sm:p-5 md:p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200 select-none">
-      <div className="relative w-full max-w-5xl bg-[#090b0e] border border-white/[0.12] rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.95),0_0_50px_rgba(255,85,0,0.15)] flex flex-col max-h-[96vh]">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-0 sm:p-5 md:p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200 select-none">
+      <div className="relative w-full max-w-5xl bg-[#090b0e] border sm:border border-white/[0.12] rounded-none sm:rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.95),0_0_50px_rgba(255,85,0,0.15)] flex flex-col h-[100dvh] sm:h-auto max-h-none sm:max-h-[96vh]">
         
         {/* Header Bar */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/[0.08] bg-[#0c0f16]/90 backdrop-blur-md">
@@ -390,22 +390,22 @@ export const BackdropFramingModal: React.FC<BackdropFramingModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-white/[0.08] bg-[#0c0f16]/90 backdrop-blur-md">
+        <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-t border-white/[0.08] bg-[#0c0f16]/90 backdrop-blur-md flex-wrap sm:flex-nowrap gap-2">
           <button
             type="button"
             onClick={handleReset}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-inter text-zinc-300 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-inter text-zinc-300 transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
-            <span>Reset Defaults</span>
+            <span>Reset<span className="hidden sm:inline"> Defaults</span></span>
           </button>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5 ml-auto sm:ml-0">
             <button
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-inter text-zinc-300 hover:text-white transition-colors cursor-pointer"
+              className="px-3.5 sm:px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-inter text-zinc-300 hover:text-white transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -413,10 +413,10 @@ export const BackdropFramingModal: React.FC<BackdropFramingModalProps> = ({
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-inter font-bold text-xs shadow-[0_0_20px_rgba(255,85,0,0.4)] transition-all cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] text-black font-inter font-bold text-xs shadow-[0_0_20px_rgba(255,85,0,0.4)] transition-all cursor-pointer disabled:opacity-50"
             >
               <Check className="w-4 h-4 stroke-[2.5]" />
-              <span>{isSaving ? "Saving Framing..." : "Apply & Save Framing"}</span>
+              <span>{isSaving ? "Saving..." : <><span className="hidden sm:inline">Apply & </span>Save Framing</>}</span>
             </button>
           </div>
         </div>

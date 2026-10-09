@@ -13,3 +13,11 @@ export function getBackdropUrl(backdrop: string | null | undefined, size: "w780"
   const clean = backdrop.startsWith("/") ? backdrop : `/${backdrop}`;
   return `${TMDB_IMAGE_BASE}/${size}${clean}`;
 }
+
+export function toProxyUrl(url: string | null | undefined): string {
+  if (!url) return "";
+  if (url.startsWith("data:") || url.startsWith("blob:")) return url;
+  if (url.startsWith("/api/proxy-image")) return url;
+  return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+}
+

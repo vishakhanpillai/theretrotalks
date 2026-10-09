@@ -605,62 +605,62 @@ export const AdminPage: React.FC<AdminPageProps> = (props) => {
         <main className="flex-grow p-4 sm:p-6 lg:p-8 space-y-6">
           
           {/* ARCHIVE INTELLIGENCE RIBBON (Editorial stats overview) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3">
             {/* Stat 1: Total Catalog */}
-            <div className="p-3.5 rounded-2xl bg-[#090b0e] border border-white/[0.07] flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-zinc-300">
-                <Layers className="w-5 h-5 text-[#ff5500]" />
+            <div className="p-2.5 sm:p-3.5 rounded-2xl bg-[#090b0e] border border-white/[0.07] flex items-center gap-2.5 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-zinc-300 shrink-0">
+                <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-[#ff5500]" />
               </div>
               <div className="min-w-0">
                 <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-bold block truncate">
                   Total Catalog
                 </span>
-                <span className="text-lg font-bold font-poppins text-white leading-tight">
+                <span className="text-base sm:text-lg font-bold font-poppins text-white leading-tight">
                   {totalReviews} <span className="text-xs font-inter font-normal text-zinc-400">titles</span>
                 </span>
               </div>
             </div>
 
             {/* Stat 2: Feature Films */}
-            <div className="p-3.5 rounded-2xl bg-[#090b0e] border border-white/[0.07] flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-zinc-300">
-                <Film className="w-5 h-5 text-zinc-300" />
+            <div className="p-2.5 sm:p-3.5 rounded-2xl bg-[#090b0e] border border-white/[0.07] flex items-center gap-2.5 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-zinc-300 shrink-0">
+                <Film className="w-4 h-4 sm:w-5 sm:h-5 text-zinc-300" />
               </div>
               <div className="min-w-0">
                 <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-bold block truncate">
                   Feature Films
                 </span>
-                <span className="text-lg font-bold font-poppins text-white leading-tight">
+                <span className="text-base sm:text-lg font-bold font-poppins text-white leading-tight">
                   {movieCount} <span className="text-xs font-inter font-normal text-zinc-400">films</span>
                 </span>
               </div>
             </div>
 
             {/* Stat 3: Average Rating */}
-            <div className="p-3.5 rounded-2xl bg-[#090b0e] border border-white/[0.07] flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-amber-400">
-                <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
+            <div className="p-2.5 sm:p-3.5 rounded-2xl bg-[#090b0e] border border-white/[0.07] flex items-center gap-2.5 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-amber-400 shrink-0">
+                <Star className="w-4 h-4 sm:w-5 sm:h-5 fill-amber-400 text-amber-400" />
               </div>
               <div className="min-w-0">
                 <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-bold block truncate">
                   Mean Rating
                 </span>
-                <span className="text-lg font-bold font-poppins text-white leading-tight">
+                <span className="text-base sm:text-lg font-bold font-poppins text-white leading-tight">
                   {avgRating} <span className="text-xs font-inter font-normal text-zinc-400">/ 5.0</span>
                 </span>
               </div>
             </div>
 
             {/* Stat 4: Masterpieces */}
-            <div className="p-3.5 rounded-2xl bg-[#090b0e] border border-white/[0.07] flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-orange-400">
-                <Award className="w-5 h-5 text-orange-400" />
+            <div className="p-2.5 sm:p-3.5 rounded-2xl bg-[#090b0e] border border-white/[0.07] flex items-center gap-2.5 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-orange-400 shrink-0">
+                <Award className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400" />
               </div>
               <div className="min-w-0">
                 <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-bold block truncate">
                   5★ Masterpieces
                 </span>
-                <span className="text-lg font-bold font-poppins text-white leading-tight">
+                <span className="text-base sm:text-lg font-bold font-poppins text-white leading-tight">
                   {fiveStarCount} <span className="text-xs font-inter font-normal text-zinc-400">logged</span>
                 </span>
               </div>
@@ -668,7 +668,7 @@ export const AdminPage: React.FC<AdminPageProps> = (props) => {
 
             {/* Stat 5: Cloud Status */}
             <div className="hidden lg:flex p-3.5 rounded-2xl bg-[#090b0e] border border-white/[0.07] items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
                 <HardDrive className="w-5 h-5 text-emerald-400" />
               </div>
               <div className="min-w-0">
@@ -683,7 +683,7 @@ export const AdminPage: React.FC<AdminPageProps> = (props) => {
           </div>
 
           {/* CONTROLS BAR: Filters, Search, and Sort */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-[#090b0e] border border-white/[0.08] flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="p-3.5 sm:p-5 rounded-2xl bg-[#090b0e] border border-white/[0.08] flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
             
             {/* Filter Tabs */}
             <div className="flex items-center gap-1 p-1 rounded-xl bg-[#0e1118] border border-white/[0.08] overflow-x-auto no-scrollbar max-w-full flex-nowrap shrink-0">
@@ -763,10 +763,10 @@ export const AdminPage: React.FC<AdminPageProps> = (props) => {
             </div>
 
             {/* Quick Search, Sort & Reorder Controls */}
-            <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap w-full md:w-auto">
               
               {/* Grid Text Search */}
-              <div className="relative flex-1 sm:w-60 min-w-[150px]">
+              <div className="relative flex-1 min-w-[130px] sm:w-60">
                 <input
                   type="text"
                   value={gridSearch}
@@ -787,12 +787,12 @@ export const AdminPage: React.FC<AdminPageProps> = (props) => {
               </div>
 
               {/* Sort By Dropdown */}
-              <div className="flex items-center gap-1.5 bg-[#0e1118] border border-white/[0.08] rounded-xl px-2.5 py-2 text-xs font-inter text-zinc-300">
+              <div className="flex items-center gap-1.5 bg-[#0e1118] border border-white/[0.08] rounded-xl px-2.5 py-2 text-xs font-inter text-zinc-300 shrink-0">
                 <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="bg-transparent text-white outline-none cursor-pointer text-xs font-inter pr-1"
+                  className="bg-transparent text-white outline-none cursor-pointer text-xs font-inter pr-1 max-w-[125px] sm:max-w-none truncate"
                 >
                   <option value="custom" className="bg-[#0e1118] text-[#ff7a29]">Site Display Order</option>
                   <option value="newest" className="bg-[#0e1118] text-white">Date Added (Newest)</option>
@@ -805,7 +805,7 @@ export const AdminPage: React.FC<AdminPageProps> = (props) => {
               </div>
 
               {/* Mobile View Toggle */}
-              <div className="flex sm:hidden items-center p-1 rounded-xl bg-[#0e1118] border border-white/[0.08]">
+              <div className="flex sm:hidden items-center p-1 rounded-xl bg-[#0e1118] border border-white/[0.08] shrink-0">
                 <button
                   type="button"
                   onClick={() => handleSetViewMode("grid")}
@@ -834,7 +834,7 @@ export const AdminPage: React.FC<AdminPageProps> = (props) => {
                     setFilterTab("all");
                   }
                 }}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-inter font-medium transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-inter font-medium transition-all cursor-pointer shrink-0 ${
                   isReorderMode
                     ? "bg-[#ff5500] text-black border-[#ff5500] font-bold shadow-[0_0_15px_rgba(255,85,0,0.35)]"
                     : "bg-[#0e1118] border-white/[0.08] text-zinc-300 hover:text-white"
@@ -863,7 +863,7 @@ export const AdminPage: React.FC<AdminPageProps> = (props) => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center flex-wrap gap-2">
                 {hasPendingReorder && (
                   <button
                     type="button"
@@ -1217,194 +1217,358 @@ export const AdminPage: React.FC<AdminPageProps> = (props) => {
               </div>
             ) : (
               /* VIEW MODE 2: CINEMA LEDGER (Table View) */
-              <div className="rounded-2xl border border-white/[0.08] bg-[#090b0e] overflow-hidden shadow-xl">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs font-inter border-collapse">
-                    <thead>
-                      <tr className="border-b border-white/[0.08] bg-white/[0.02] text-zinc-400 text-[11px] font-mono uppercase tracking-wider">
-                        <th className="py-3 px-4 w-12 text-center">#</th>
-                        <th className="py-3 px-4 w-16">Poster</th>
-                        <th className="py-3 px-4 min-w-[200px]">Cinema Title</th>
-                        <th className="py-3 px-4 min-w-[180px]">Direction & Genres</th>
-                        <th className="py-3 px-4 w-28">Rating</th>
-                        <th className="py-3 px-4 w-32">Watched</th>
-                        <th className="py-3 px-4 w-44 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.04]">
-                      {displayedReviews.map((rev, idx) => {
-                        const poster = getPosterUrl(rev.poster, "w500");
-                        return (
-                          <tr
-                            key={rev.id}
-                            draggable={isReorderMode}
-                            onDragStart={(e) => {
-                              if (!isReorderMode) return;
-                              e.dataTransfer.setData("text/plain", String(idx));
-                              e.dataTransfer.effectAllowed = "move";
-                            }}
-                            onDragOver={(e) => {
-                              if (!isReorderMode) return;
-                              e.preventDefault();
-                              e.dataTransfer.dropEffect = "move";
-                              if (dragOverIndex !== idx) setDragOverIndex(idx);
-                            }}
-                            onDragLeave={() => {
-                              if (dragOverIndex === idx) setDragOverIndex(null);
-                            }}
-                            onDrop={(e) => {
-                              if (!isReorderMode) return;
-                              e.preventDefault();
-                              setDragOverIndex(null);
-                              const from = Number(e.dataTransfer.getData("text/plain"));
-                              if (!isNaN(from) && from !== idx) {
-                                moveReview(from, idx);
-                              }
-                            }}
-                            className={`group hover:bg-white/[0.03] transition-colors ${
-                              isReorderMode
-                                ? dragOverIndex === idx
-                                  ? "bg-[#ff5500]/15"
-                                  : "cursor-grab active:cursor-grabbing"
-                                : ""
-                            }`}
-                          >
-                            {/* Sequence number / drag handle */}
-                            <td className="py-3 px-4 text-center">
-                              {isReorderMode ? (
-                                <div className="flex items-center justify-center gap-1 font-mono font-bold text-[#ff5500]">
-                                  <GripVertical className="w-3.5 h-3.5" />
-                                  <span>{idx + 1}</span>
-                                </div>
-                              ) : (
-                                <span className="font-mono text-zinc-500">#{idx + 1}</span>
-                              )}
-                            </td>
+              <div className="space-y-3">
+                {/* Mobile Stacked Ledger View (md:hidden) */}
+                <div className="md:hidden space-y-3">
+                  {displayedReviews.map((rev, idx) => {
+                    const poster = getPosterUrl(rev.poster, "w500");
+                    return (
+                      <div
+                        key={rev.id}
+                        className={`p-3.5 rounded-2xl border bg-[#090b0e] space-y-3 transition-colors ${
+                          isReorderMode
+                            ? dragOverIndex === idx
+                              ? "border-[#ff5500] bg-[#ff5500]/10"
+                              : "border-white/[0.12]"
+                            : "border-white/[0.08]"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          {/* Thumbnail Poster */}
+                          <div className="w-12 h-16 rounded-xl bg-[#141720] overflow-hidden border border-white/[0.08] relative shrink-0">
+                            {poster ? (
+                              <img src={poster} alt={rev.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <Film className="w-5 h-5 m-auto text-zinc-600" />
+                            )}
+                          </div>
 
-                            {/* Thumbnail Poster */}
-                            <td className="py-3 px-4">
-                              <div className="w-10 h-14 rounded-lg bg-[#141720] overflow-hidden border border-white/[0.08] relative shrink-0">
-                                {poster ? (
-                                  <img src={poster} alt={rev.title} className="w-full h-full object-cover" />
-                                ) : (
-                                  <Film className="w-4 h-4 m-auto text-zinc-600" />
-                                )}
-                              </div>
-                            </td>
-
-                            {/* Title & Media Type */}
-                            <td className="py-3 px-4">
-                              <div className="flex flex-col">
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    onClick={() => setEditReviewTarget(rev)}
-                                    className="font-semibold text-white group-hover:text-[#ff7a29] transition-colors cursor-pointer text-sm"
-                                  >
-                                    {rev.title}
-                                  </span>
-                                  {rev.mediaType === "tv" && (
-                                    <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase font-bold bg-purple-900/60 text-purple-300 border border-purple-500/30">
-                                      TV
-                                    </span>
-                                  )}
-                                  {rev.isFavorite && (
-                                    <Heart className="w-3 h-3 fill-rose-500 text-rose-500 shrink-0" />
-                                  )}
-                                </div>
-                                <span className="text-[11px] text-zinc-400 mt-0.5 font-mono">
-                                  {rev.year || "N/A"}
-                                </span>
-                              </div>
-                            </td>
-
-                            {/* Director & Genres */}
-                            <td className="py-3 px-4 text-zinc-400">
-                              <div className="truncate max-w-xs">
-                                <span className="text-zinc-200">
-                                  {rev.mediaType === "tv" ? "Created by " : "Dir. "}
-                                  {rev.director}
-                                </span>
-                                {rev.genres && rev.genres.length > 0 && (
-                                  <div className="text-[11px] text-zinc-400 truncate mt-0.5">
-                                    {rev.genres.slice(0, 3).join(", ")}
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-
-                            {/* Rating */}
-                            <td className="py-3 px-4">
-                              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-black/60 border border-white/[0.08] text-[#ff7a29] font-bold">
+                          {/* Info */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-mono text-[11px] text-zinc-500 font-semibold">#{idx + 1}</span>
+                              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/60 border border-white/[0.08] text-[#ff7a29] font-bold text-xs shrink-0">
                                 <Star className="w-3 h-3 fill-[#ff5500] text-[#ff5500]" />
                                 <span>{formatRating(rev.rating)}</span>
                               </div>
-                            </td>
+                            </div>
 
-                            {/* Watched Date */}
-                            <td className="py-3 px-4 text-zinc-400 text-[11px]">
-                              <div className="flex items-center gap-1.5 font-mono">
-                                <Clock className="w-3 h-3 text-zinc-600" />
-                                <span>{rev.watchedDate || "Not set"}</span>
-                              </div>
-                            </td>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <h4
+                                onClick={() => setEditReviewTarget(rev)}
+                                className="font-semibold text-white text-sm hover:text-[#ff7a29] transition-colors cursor-pointer truncate"
+                              >
+                                {rev.title}
+                              </h4>
+                              {rev.mediaType === "tv" && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase font-bold bg-purple-900/60 text-purple-300 border border-purple-500/30 shrink-0">
+                                  TV
+                                </span>
+                              )}
+                              {rev.isFavorite && (
+                                <Heart className="w-3 h-3 fill-rose-500 text-rose-500 shrink-0" />
+                              )}
+                            </div>
 
-                            {/* Action Buttons */}
-                            <td className="py-3 px-4 text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => setEditReviewTarget(rev)}
-                                  className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black transition-colors"
-                                  title="Edit Review"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setStoryStudioReview(rev)}
-                                  className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black transition-colors"
-                                  title="Story Studio"
-                                >
-                                  <Sparkles className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setFramingEditReview(rev)}
-                                  className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black transition-colors"
-                                  title="Frame Backdrop"
-                                >
-                                  <Crop className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const target = rev.slug || slugify(rev.title) || rev.id;
-                                    if (onNavigateToReview) {
-                                      onNavigateToReview(target);
-                                    } else {
-                                      window.open(`/review/${target}`, "_blank");
-                                    }
-                                  }}
-                                  className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black transition-colors"
-                                  title="View Public Page"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setDeleteReviewTarget(rev)}
-                                  className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors"
-                                  title="Delete Review"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                            <p className="text-xs text-zinc-400 truncate mt-0.5 font-inter">
+                              {rev.year && <span className="text-zinc-500">{rev.year} · </span>}
+                              <span>{rev.mediaType === "tv" ? "Created by " : "Dir. "}{rev.director}</span>
+                            </p>
+
+                            <div className="flex items-center gap-2 mt-1 text-[11px] text-zinc-500 font-mono">
+                              <Clock className="w-3 h-3 text-zinc-600 shrink-0" />
+                              <span className="truncate">{rev.watchedDate || "Date not set"}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* If in Reorder Mode, show Tap-to-move controls */}
+                        {isReorderMode ? (
+                          <div className="pt-2 border-t border-white/[0.06] flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => moveReview(idx, 0)}
+                              disabled={idx === 0}
+                              title="Move to top"
+                              className="flex-1 py-1.5 rounded-lg bg-white/[0.06] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-25 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
+                            >
+                              <ChevronsLeft className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveReview(idx, idx - 1)}
+                              disabled={idx === 0}
+                              title="Move up"
+                              className="flex-1 py-1.5 rounded-lg bg-white/[0.06] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-25 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
+                            >
+                              ↑
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveReview(idx, idx + 1)}
+                              disabled={idx === displayedReviews.length - 1}
+                              title="Move down"
+                              className="flex-1 py-1.5 rounded-lg bg-white/[0.06] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-25 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
+                            >
+                              ↓
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveReview(idx, displayedReviews.length - 1)}
+                              disabled={idx === displayedReviews.length - 1}
+                              title="Move to bottom"
+                              className="flex-1 py-1.5 rounded-lg bg-white/[0.06] hover:bg-[#ff5500] hover:text-black text-zinc-300 disabled:opacity-25 text-xs font-bold transition-colors flex items-center justify-center cursor-pointer"
+                            >
+                              <ChevronsRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          /* Standard Mobile Action Toolbar */
+                          <div className="flex items-center justify-between gap-1 pt-2 border-t border-white/[0.06]">
+                            <button
+                              type="button"
+                              onClick={() => setEditReviewTarget(rev)}
+                              className="flex-1 py-1.5 px-2 rounded-lg bg-[#ff5500]/15 hover:bg-[#ff5500] text-[#ff7a29] hover:text-black font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setStoryStudioReview(rev)}
+                              className="p-2 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black transition-colors cursor-pointer"
+                              title="Story Studio"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFramingEditReview(rev)}
+                              className="p-2 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black transition-colors cursor-pointer"
+                              title="Frame Backdrop"
+                            >
+                              <Crop className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const target = rev.slug || slugify(rev.title) || rev.id;
+                                if (onNavigateToReview) {
+                                  onNavigateToReview(target);
+                                } else {
+                                  window.open(`/review/${target}`, "_blank");
+                                }
+                              }}
+                              className="p-2 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black transition-colors cursor-pointer"
+                              title="View Public Page"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteReviewTarget(rev)}
+                              className="p-2 rounded-lg bg-white/[0.04] hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors cursor-pointer"
+                              title="Delete Review"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop Cinema Ledger (Table View) */}
+                <div className="hidden md:block rounded-2xl border border-white/[0.08] bg-[#090b0e] overflow-hidden shadow-xl">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs font-inter border-collapse">
+                      <thead>
+                        <tr className="border-b border-white/[0.08] bg-white/[0.02] text-zinc-400 text-[11px] font-mono uppercase tracking-wider">
+                          <th className="py-3 px-4 w-12 text-center">#</th>
+                          <th className="py-3 px-4 w-16">Poster</th>
+                          <th className="py-3 px-4 min-w-[200px]">Cinema Title</th>
+                          <th className="py-3 px-4 min-w-[180px]">Direction & Genres</th>
+                          <th className="py-3 px-4 w-28">Rating</th>
+                          <th className="py-3 px-4 w-32">Watched</th>
+                          <th className="py-3 px-4 w-44 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/[0.04]">
+                        {displayedReviews.map((rev, idx) => {
+                          const poster = getPosterUrl(rev.poster, "w500");
+                          return (
+                            <tr
+                              key={rev.id}
+                              draggable={isReorderMode}
+                              onDragStart={(e) => {
+                                if (!isReorderMode) return;
+                                e.dataTransfer.setData("text/plain", String(idx));
+                                e.dataTransfer.effectAllowed = "move";
+                              }}
+                              onDragOver={(e) => {
+                                if (!isReorderMode) return;
+                                e.preventDefault();
+                                e.dataTransfer.dropEffect = "move";
+                                if (dragOverIndex !== idx) setDragOverIndex(idx);
+                              }}
+                              onDragLeave={() => {
+                                if (dragOverIndex === idx) setDragOverIndex(null);
+                              }}
+                              onDrop={(e) => {
+                                if (!isReorderMode) return;
+                                e.preventDefault();
+                                setDragOverIndex(null);
+                                const from = Number(e.dataTransfer.getData("text/plain"));
+                                if (!isNaN(from) && from !== idx) {
+                                  moveReview(from, idx);
+                                }
+                              }}
+                              className={`group hover:bg-white/[0.03] transition-colors ${
+                                isReorderMode
+                                  ? dragOverIndex === idx
+                                    ? "bg-[#ff5500]/15"
+                                    : "cursor-grab active:cursor-grabbing"
+                                  : ""
+                              }`}
+                            >
+                              {/* Sequence number / drag handle */}
+                              <td className="py-3 px-4 text-center">
+                                {isReorderMode ? (
+                                  <div className="flex items-center justify-center gap-1 font-mono font-bold text-[#ff5500]">
+                                    <GripVertical className="w-3.5 h-3.5" />
+                                    <span>{idx + 1}</span>
+                                  </div>
+                                ) : (
+                                  <span className="font-mono text-zinc-500">#{idx + 1}</span>
+                                )}
+                              </td>
+
+                              {/* Thumbnail Poster */}
+                              <td className="py-3 px-4">
+                                <div className="w-10 h-14 rounded-lg bg-[#141720] overflow-hidden border border-white/[0.08] relative shrink-0">
+                                  {poster ? (
+                                    <img src={poster} alt={rev.title} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <Film className="w-4 h-4 m-auto text-zinc-600" />
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* Title & Media Type */}
+                              <td className="py-3 px-4">
+                                <div className="flex flex-col">
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      onClick={() => setEditReviewTarget(rev)}
+                                      className="font-semibold text-white group-hover:text-[#ff7a29] transition-colors cursor-pointer text-sm"
+                                    >
+                                      {rev.title}
+                                    </span>
+                                    {rev.mediaType === "tv" && (
+                                      <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase font-bold bg-purple-900/60 text-purple-300 border border-purple-500/30">
+                                        TV
+                                      </span>
+                                    )}
+                                    {rev.isFavorite && (
+                                      <Heart className="w-3 h-3 fill-rose-500 text-rose-500 shrink-0" />
+                                    )}
+                                  </div>
+                                  <span className="text-[11px] text-zinc-400 mt-0.5 font-mono">
+                                    {rev.year || "N/A"}
+                                  </span>
+                                </div>
+                              </td>
+
+                              {/* Director & Genres */}
+                              <td className="py-3 px-4 text-zinc-400">
+                                <div className="truncate max-w-xs">
+                                  <span className="text-zinc-200">
+                                    {rev.mediaType === "tv" ? "Created by " : "Dir. "}
+                                    {rev.director}
+                                  </span>
+                                  {rev.genres && rev.genres.length > 0 && (
+                                    <div className="text-[11px] text-zinc-400 truncate mt-0.5">
+                                      {rev.genres.slice(0, 3).join(", ")}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* Rating */}
+                              <td className="py-3 px-4">
+                                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-black/60 border border-white/[0.08] text-[#ff7a29] font-bold">
+                                  <Star className="w-3 h-3 fill-[#ff5500] text-[#ff5500]" />
+                                  <span>{formatRating(rev.rating)}</span>
+                                </div>
+                              </td>
+
+                              {/* Watched Date */}
+                              <td className="py-3 px-4 text-zinc-400 text-[11px]">
+                                <div className="flex items-center gap-1.5 font-mono">
+                                  <Clock className="w-3 h-3 text-zinc-600" />
+                                  <span>{rev.watchedDate || "Not set"}</span>
+                                </div>
+                              </td>
+
+                              {/* Action Buttons */}
+                              <td className="py-3 px-4 text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditReviewTarget(rev)}
+                                    className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black transition-colors"
+                                    title="Edit Review"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setStoryStudioReview(rev)}
+                                    className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black transition-colors"
+                                    title="Story Studio"
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setFramingEditReview(rev)}
+                                    className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black transition-colors"
+                                    title="Frame Backdrop"
+                                  >
+                                    <Crop className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const target = rev.slug || slugify(rev.title) || rev.id;
+                                      if (onNavigateToReview) {
+                                        onNavigateToReview(target);
+                                      } else {
+                                        window.open(`/review/${target}`, "_blank");
+                                      }
+                                    }}
+                                    className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-[#ff5500] text-zinc-300 hover:text-black transition-colors"
+                                    title="View Public Page"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeleteReviewTarget(rev)}
+                                    className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors"
+                                    title="Delete Review"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )

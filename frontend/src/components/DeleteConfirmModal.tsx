@@ -39,7 +39,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
       <div className="fixed inset-0" onClick={onClose} />
 
-      <div className="relative w-full max-w-md bg-[#0d090a] border border-red-500/30 rounded-3xl p-6 sm:p-7 shadow-[0_25px_80px_rgba(0,0,0,0.95),0_0_50px_rgba(239,68,68,0.15)] z-10 space-y-6">
+      <div className="relative w-full max-w-md bg-[#0d090a] border border-red-500/30 rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-[0_25px_80px_rgba(0,0,0,0.95),0_0_50px_rgba(239,68,68,0.15)] z-10 space-y-4 sm:space-y-6">
         {/* Top Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -95,12 +95,12 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
         </p>
 
         {/* Action buttons */}
-        <div className="flex items-center justify-end gap-3 pt-2">
+        <div className="flex items-center justify-end gap-2.5 sm:gap-3 pt-2">
           <button
             type="button"
             onClick={onClose}
             disabled={deleting}
-            className="px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-inter text-zinc-300 hover:text-white transition-colors cursor-pointer font-medium"
+            className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-inter text-zinc-300 hover:text-white transition-colors cursor-pointer font-medium text-center"
           >
             Cancel
           </button>
@@ -109,7 +109,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-inter font-bold transition-all shadow-[0_0_20px_rgba(239,68,68,0.3)] flex items-center gap-2 cursor-pointer"
+            className="flex-1 sm:flex-initial px-4 sm:px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-inter font-bold transition-all shadow-[0_0_20px_rgba(239,68,68,0.3)] flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
           >
             {deleting ? (
               <>

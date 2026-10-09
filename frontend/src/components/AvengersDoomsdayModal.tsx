@@ -109,7 +109,7 @@ export const AvengersDoomsdayModal: React.FC<AvengersDoomsdayModalProps> = ({
         <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-400 to-transparent z-20" />
 
         {/* Backdrop Banner Header */}
-        <div className="relative h-44 sm:h-64 md:h-72 w-full bg-[#030604] overflow-hidden flex-shrink-0">
+        <div className="relative h-36 sm:h-64 md:h-72 w-full bg-[#030604] overflow-hidden flex-shrink-0">
           <img
             src="/images/avengers-doomsday-backdrop.webp"
             alt="Avengers: Doomsday Backdrop"
@@ -124,23 +124,23 @@ export const AvengersDoomsdayModal: React.FC<AvengersDoomsdayModalProps> = ({
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 sm:top-5 sm:right-5 p-2 sm:p-2.5 rounded-full bg-black/70 hover:bg-emerald-500 text-zinc-300 hover:text-black border border-emerald-500/30 hover:border-emerald-400 transition-all duration-200 shadow-xl cursor-pointer group z-20"
+            className="absolute top-3 right-3 sm:top-5 sm:right-5 p-1.5 sm:p-2.5 rounded-full bg-black/70 hover:bg-emerald-500 text-zinc-300 hover:text-black border border-emerald-500/30 hover:border-emerald-400 transition-all duration-200 shadow-xl cursor-pointer group z-20"
             title="Close"
           >
             <X className="w-4 h-4 transition-transform group-hover:rotate-90" />
           </button>
 
           {/* Header Info & Actions */}
-          <div className="absolute bottom-3.5 left-3.5 right-3.5 sm:bottom-6 sm:left-6 sm:right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 z-10">
-            <div className="space-y-1 sm:space-y-1.5 max-w-xl">
+          <div className="absolute bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 sm:gap-4 z-10">
+            <div className="space-y-0.5 sm:space-y-1.5 max-w-xl min-w-0">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-500/30 text-[9px] sm:text-[10px] font-mono uppercase tracking-wider text-emerald-300 font-bold">
                 <Sparkles className="w-3 h-3 text-emerald-400" />
                 <span>Marvel Studios • Phase 6</span>
               </div>
-              <h2 className="text-xl sm:text-3xl md:text-4xl font-poppins font-black text-white tracking-tight leading-tight drop-shadow-[0_2px_15px_rgba(0,0,0,0.9)]">
+              <h2 className="text-lg sm:text-3xl md:text-4xl font-poppins font-black text-white tracking-tight leading-tight truncate sm:whitespace-normal drop-shadow-[0_2px_15px_rgba(0,0,0,0.9)]">
                 Avengers: Doomsday
               </h2>
-              <p className="text-xs sm:text-sm text-emerald-300/80 italic font-inter drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+              <p className="text-[11px] sm:text-sm text-emerald-300/80 italic font-inter truncate sm:whitespace-normal drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
                 "All hope lies in Doom."
               </p>
             </div>
@@ -166,7 +166,7 @@ export const AvengersDoomsdayModal: React.FC<AvengersDoomsdayModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="p-4 sm:p-6 md:p-8 overflow-y-auto space-y-6 flex-grow">
+        <div className="p-3.5 sm:p-6 md:p-8 overflow-y-auto space-y-5 sm:space-y-6 flex-grow">
           
           <div className="flex flex-col sm:flex-row gap-6">
             
@@ -303,6 +303,21 @@ export const AvengersDoomsdayModal: React.FC<AvengersDoomsdayModalProps> = ({
 
           </div>
 
+        </div>
+
+        {/* Modal Footer */}
+        <div className="px-4 sm:px-8 py-3 sm:py-4 bg-[#050b07] border-t border-emerald-500/20 flex items-center justify-between text-xs text-zinc-400 flex-shrink-0">
+          <div className="flex items-center gap-2 font-mono text-[10px] sm:text-[11px] text-emerald-400/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+            <span>Marvel Cinematic Universe • Phase 6</span>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="px-4 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-500 hover:text-black text-emerald-300 border border-emerald-500/30 transition-colors cursor-pointer font-inter text-xs"
+          >
+            Close
+          </button>
         </div>
 
       </div>

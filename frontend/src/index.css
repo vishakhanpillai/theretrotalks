@@ -172,4 +172,13 @@
   box-shadow: 0 0 35px -5px rgba(16, 185, 129, 0.45);
 }
 
+/* Cross-browser no-scrollbar utility for mobile touch carousels and tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 

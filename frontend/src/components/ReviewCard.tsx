@@ -72,7 +72,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       )}
 
       {/* Left Column: Film Poster (Cinema banner crop on mobile, strict 2:3 ratio on tablet/desktop) */}
-      <div className="relative w-full h-64 sm:h-72 md:h-auto md:w-64 lg:w-72 xl:w-80 md:aspect-[2/3] flex-shrink-0 bg-[#07090e] overflow-hidden flex items-center justify-center">
+      <div className="relative w-full h-52 sm:h-72 md:h-auto md:w-64 lg:w-72 xl:w-80 md:aspect-[2/3] flex-shrink-0 bg-[#07090e] overflow-hidden flex items-center justify-center">
         {posterUrl && !imageError ? (
           <img
             src={posterUrl}
@@ -94,7 +94,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/80 md:from-transparent via-transparent to-transparent pointer-events-none opacity-80 group-hover:opacity-50 transition-opacity" />
 
         {/* Floating Poster Badges */}
-        <div className="absolute top-3 left-3 sm:top-3.5 sm:left-3.5 flex items-center pointer-events-none z-10">
+        <div className="absolute top-2.5 left-2.5 sm:top-3.5 sm:left-3.5 flex items-center pointer-events-none z-10">
           {/* Star Rating Badge */}
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/80 backdrop-blur-md border border-white/[0.12] text-xs font-inter font-bold text-[#ff7a29] shadow-lg">
             <Star className="w-3.5 h-3.5 fill-[#ff5500] text-[#ff5500]" />
@@ -103,7 +103,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         </div>
 
         {/* Mobile Release Year Pill */}
-        <div className="absolute bottom-3 left-3 md:hidden z-10">
+        <div className="absolute bottom-2.5 left-2.5 md:hidden z-10">
           <span className="bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-inter text-zinc-200 border border-white/[0.1] shadow-md">
             {review.year}
           </span>
@@ -111,12 +111,12 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       </div>
 
       {/* Right Column: Review Details & Information Body */}
-      <div className="p-4 sm:p-6 lg:p-7 flex flex-col justify-between flex-grow space-y-3.5 min-w-0 relative z-10">
+      <div className="p-3.5 sm:p-6 lg:p-7 flex flex-col justify-between flex-grow space-y-3 sm:space-y-3.5 min-w-0 relative z-10">
         
         <div className="space-y-3 sm:space-y-3.5">
           
           {/* Top Row: Year, Genres & Star Rating Component */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-white/[0.06]">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2 border-b border-white/[0.06]">
             <div className="flex flex-wrap items-center gap-2">
               <span className="hidden md:inline-block bg-white/[0.05] px-2.5 py-0.5 rounded-lg text-xs font-inter font-medium text-zinc-200 border border-white/[0.08]">
                 {review.year}
@@ -138,14 +138,14 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
             </div>
 
             {/* Precision Star Rating */}
-            <div className="flex items-center bg-[#0d1017] px-3 py-1 rounded-xl border border-white/[0.08] shadow-sm ml-auto sm:ml-0">
+            <div className="flex items-center bg-[#0d1017] px-2.5 sm:px-3 py-1 rounded-xl border border-white/[0.08] shadow-sm ml-auto sm:ml-0">
               <StarRating rating={review.rating} readonly size="sm" showValue={true} />
             </div>
           </div>
 
           {/* Title & Director Byline */}
           <div className="space-y-0.5">
-            <h3 className="font-poppins font-bold text-xl sm:text-2xl lg:text-3xl text-white group-hover:text-[#ff7a29] transition-colors leading-tight tracking-tight">
+            <h3 className="font-poppins font-bold text-lg sm:text-2xl lg:text-3xl text-white group-hover:text-[#ff7a29] transition-colors leading-snug tracking-tight break-words">
               {review.title}
             </h3>
             <p className="text-xs sm:text-sm text-zinc-400 font-inter">
@@ -184,7 +184,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                         title={`${member.name} as ${member.character || "Cast"}`}
                       >
                         {/* Avatar */}
-                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 ring-1 ring-white/[0.1] shadow-sm">
+                        <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 ring-1 ring-white/[0.1] shadow-sm">
                           {member.picture ? (
                             <img
                               src={member.picture}
@@ -229,7 +229,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                         title={`${member.name} — ${member.job || "Crew"}`}
                       >
                         {/* Avatar */}
-                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 ring-1 ring-white/[0.1] shadow-sm">
+                        <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 ring-1 ring-white/[0.1] shadow-sm">
                           {member.picture ? (
                             <img
                               src={member.picture}
@@ -264,20 +264,20 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         </div>
 
         {/* Card Footer Bar: Watched Date & Read Full Review Action */}
-        <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-4 mt-auto">
+        <div className="pt-3 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-2.5 sm:gap-4 mt-auto">
           <div className="flex items-center gap-2 text-xs font-inter text-zinc-400">
             <Calendar className="w-3.5 h-3.5 text-zinc-500" />
             <span>Watched {review.watchedDate}</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 ml-auto sm:ml-0">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onOpenReview(review);
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.05] group-hover:bg-[#ff5500] text-zinc-200 group-hover:text-black border border-white/[0.08] group-hover:border-[#ff5500] text-xs font-semibold font-inter transition-all duration-300 cursor-pointer shadow-sm active:scale-95"
+              className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl bg-white/[0.05] group-hover:bg-[#ff5500] text-zinc-200 group-hover:text-black border border-white/[0.08] group-hover:border-[#ff5500] text-xs font-semibold font-inter transition-all duration-300 cursor-pointer shadow-sm active:scale-95"
             >
               <span>Read review</span>
               <ArrowRight className="w-3.5 h-3.5 text-[#ff5500] group-hover:text-black group-hover:translate-x-1 transition-all" />

@@ -50,21 +50,21 @@ export const ReviewPosterCard: React.FC<ReviewPosterCardProps> = ({
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 via-40% to-transparent pointer-events-none transition-opacity duration-300 group-hover:opacity-40" />
 
       {/* Floating Top Left: Star Rating Badge */}
-      <div className="absolute top-2.5 left-2.5 z-30 flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/15 text-[11px] font-inter font-bold text-[#ff7a29] shadow-lg">
-        <Star className="w-3 h-3 fill-[#ff5500] text-[#ff5500]" />
+      <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-30 flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/15 text-[10px] sm:text-[11px] font-inter font-bold text-[#ff7a29] shadow-lg">
+        <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-[#ff5500] text-[#ff5500]" />
         <span>{formatRating(review.rating)}</span>
       </div>
 
       {/* Floating Top Right: Year */}
       {review.year && (
-        <div className="absolute top-2.5 right-2.5 z-30 px-2 py-0.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/15 text-[10px] font-mono text-zinc-300 font-semibold shadow-lg">
+        <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-30 px-1.5 sm:px-2 py-0.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/15 text-[9px] sm:text-[10px] font-mono text-zinc-300 font-semibold shadow-lg">
           {review.year}
         </div>
       )}
 
       {/* Full Poster Hover Review Overlay (Direct text on blurred poster without box) */}
       {cleanExcerpt && (
-        <div className="absolute inset-0 z-25 flex items-center justify-center p-4 sm:p-5 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-black/35 backdrop-blur-[1px]">
+        <div className="absolute inset-0 z-25 flex items-center justify-center p-3 sm:p-5 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-black/35 backdrop-blur-[1px]">
           <p className="font-poppins text-xs sm:text-[12.5px] font-medium text-white/95 leading-relaxed italic line-clamp-6 drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)] select-none">
             "{cleanExcerpt}"
           </p>
@@ -72,12 +72,12 @@ export const ReviewPosterCard: React.FC<ReviewPosterCardProps> = ({
       )}
 
       {/* Embedded Bottom Metadata (Title, Director, Genre) */}
-      <div className="absolute bottom-0 inset-x-0 z-20 p-3 sm:p-4 space-y-1 transition-all duration-300 group-hover:opacity-20 group-hover:translate-y-1">
-        <h3 className="font-poppins font-bold text-sm sm:text-base text-white group-hover:text-[#ff7a29] transition-colors line-clamp-1 leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+      <div className="absolute bottom-0 inset-x-0 z-20 p-2.5 sm:p-4 space-y-0.5 sm:space-y-1 transition-all duration-300 group-hover:opacity-20 group-hover:translate-y-1">
+        <h3 className="font-poppins font-bold text-xs sm:text-base text-white group-hover:text-[#ff7a29] transition-colors line-clamp-1 leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
           {review.title}
         </h3>
 
-        <p className="text-[11px] text-zinc-300 font-inter line-clamp-1 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+        <p className="text-[10px] sm:text-[11px] text-zinc-300 font-inter line-clamp-1 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
           {review.mediaType === "tv" ? "Created by" : review.director?.includes(",") ? "Dirs." : "Dir."} {review.director}
         </p>
 
@@ -86,7 +86,7 @@ export const ReviewPosterCard: React.FC<ReviewPosterCardProps> = ({
             {review.genres.slice(0, 2).map((genre) => (
               <span
                 key={genre}
-                className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/10 text-zinc-300 font-medium"
+                className="text-[8.5px] sm:text-[9px] font-mono px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/10 text-zinc-300 font-medium"
               >
                 {genre}
               </span>

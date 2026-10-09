@@ -207,11 +207,11 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = (props) => {
             <span>Film Archive & Journal</span>
           </div>
           
-          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[2rem] xl:text-[2.35rem] 2xl:text-[2.65rem] font-bold tracking-tight text-white font-poppins leading-tight sm:whitespace-nowrap drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)]">
+          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-[2rem] xl:text-[2.35rem] 2xl:text-[2.65rem] font-bold tracking-tight text-white font-poppins leading-snug break-words drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)]">
             I watch movies. Sometimes I have a lot to say about them.
           </h1>
           
-          <p className="text-sm sm:text-base text-zinc-300 font-normal leading-relaxed max-w-2xl pt-1 drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
+          <p className="text-xs sm:text-sm md:text-base text-zinc-300 font-normal leading-relaxed max-w-2xl pt-1 break-words drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
             Most of it is probably unnecessary. I’m writing it down anyway.
           </p>
         </div>
@@ -233,10 +233,10 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = (props) => {
                   </h2>
                 </div>
 
-                {/* Original Style Search & Sort Controls */}
-                <div className="flex items-center gap-2.5 flex-grow sm:max-w-2xl justify-end flex-wrap sm:flex-nowrap w-full md:w-auto">
-                  {/* Original Search Input */}
-                  <div className="relative w-full sm:flex-1 sm:min-w-[220px]">
+                {/* Responsive Search & Sort Controls */}
+                <div className="flex items-center gap-2 sm:gap-2.5 flex-grow sm:max-w-2xl justify-end flex-wrap sm:flex-nowrap w-full md:w-auto">
+                  {/* Search Input */}
+                  <div className="relative w-full sm:flex-1 sm:min-w-[200px]">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
                     <input
                       type="text"
@@ -258,21 +258,21 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = (props) => {
                   </div>
 
                   {/* Secondary Controls Row */}
-                  <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto">
+                  <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-2.5 w-full sm:w-auto">
                     {/* Sort Dropdown */}
-                    <div className="relative flex-1 sm:flex-initial">
-                      <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0b0e14] border border-white/[0.08] text-xs font-inter text-zinc-300 hover:border-white/20 transition-colors w-full">
+                    <div className="relative flex-1 sm:flex-initial min-w-0">
+                      <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl bg-[#0b0e14] border border-white/[0.08] text-xs font-inter text-zinc-300 hover:border-white/20 transition-colors w-full min-w-0">
                         <ArrowUpDown className="w-3.5 h-3.5 text-[#ff5500] shrink-0" />
                         <select
                           value={sortBy}
                           onChange={(e) => setSortBy(e.target.value as any)}
-                          className="bg-transparent text-xs text-zinc-300 focus:text-white outline-none cursor-pointer pr-1 font-medium w-full"
+                          className="bg-transparent text-xs text-zinc-300 focus:text-white outline-none cursor-pointer pr-1 font-medium w-full truncate"
                         >
                           <option value="latest" className="bg-[#0b0e14] text-white">Latest Logged</option>
-                          <option value="highest_rated" className="bg-[#0b0e14] text-white">Highest Rated (5★ → 1★)</option>
-                          <option value="lowest_rated" className="bg-[#0b0e14] text-white">Lowest Rated (1★ → 5★)</option>
-                          <option value="year_newest" className="bg-[#0b0e14] text-white">Year (Newest First)</option>
-                          <option value="year_oldest" className="bg-[#0b0e14] text-white">Year (Oldest First)</option>
+                          <option value="highest_rated" className="bg-[#0b0e14] text-white">Highest Rated</option>
+                          <option value="lowest_rated" className="bg-[#0b0e14] text-white">Lowest Rated</option>
+                          <option value="year_newest" className="bg-[#0b0e14] text-white">Year (Newest)</option>
+                          <option value="year_oldest" className="bg-[#0b0e14] text-white">Year (Oldest)</option>
                           <option value="title_az" className="bg-[#0b0e14] text-white">Title (A – Z)</option>
                         </select>
                       </div>
@@ -283,7 +283,7 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = (props) => {
                       <button
                         type="button"
                         onClick={() => handleToggleViewMode("magazine")}
-                        className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                        className={`p-1.5 sm:p-2 rounded-lg transition-all cursor-pointer ${
                           viewMode === "magazine"
                             ? "bg-white/[0.14] text-white shadow-sm"
                             : "text-zinc-500 hover:text-zinc-300"
@@ -295,7 +295,7 @@ export const RetroTalksPage: React.FC<RetroTalksPageProps> = (props) => {
                       <button
                         type="button"
                         onClick={() => handleToggleViewMode("grid")}
-                        className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                        className={`p-1.5 sm:p-2 rounded-lg transition-all cursor-pointer ${
                           viewMode === "grid"
                             ? "bg-white/[0.14] text-white shadow-sm"
                             : "text-zinc-500 hover:text-zinc-300"

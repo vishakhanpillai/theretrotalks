@@ -40,6 +40,7 @@ export const CinemaReviewStudioModal: React.FC<CinemaReviewStudioModalProps> = (
   const [isPlayingTrailer, setIsPlayingTrailer] = useState<boolean>(false);
 
   // Review Form States
+  const [mobileTab, setMobileTab] = useState<"editor" | "details">("editor");
   const [myRating, setMyRating] = useState<number>(4.5);
   const [myReview, setMyReview] = useState<string>("");
   const [watchedDate, setWatchedDate] = useState<string>(new Date().toISOString().slice(0, 10));
@@ -345,7 +346,7 @@ export const CinemaReviewStudioModal: React.FC<CinemaReviewStudioModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 md:p-6 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
       {/* Click outside backdrop */}
       <div className="fixed inset-0" onClick={onClose} />
 
@@ -366,7 +367,7 @@ export const CinemaReviewStudioModal: React.FC<CinemaReviewStudioModalProps> = (
       />
 
       {/* Main Studio Modal Window */}
-      <div className="relative w-full max-w-6xl bg-[#090b0e] border border-white/[0.14] rounded-2xl sm:rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_60px_rgba(255,85,0,0.18)] overflow-hidden z-10 flex flex-col h-[94vh] max-h-[960px] animate-in zoom-in-95 duration-150">
+      <div className="relative w-full max-w-6xl bg-[#090b0e] border sm:border border-white/[0.14] rounded-none sm:rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_60px_rgba(255,85,0,0.18)] overflow-hidden z-10 flex flex-col h-[100dvh] sm:h-[94vh] max-h-none sm:max-h-[960px] animate-in zoom-in-95 duration-150">
         
         {/* Top Studio Bar */}
         <header className="px-4 sm:px-6 py-3 sm:py-3.5 border-b border-white/[0.08] bg-[#0c0e14] flex items-center justify-between flex-shrink-0">
@@ -426,11 +427,41 @@ export const CinemaReviewStudioModal: React.FC<CinemaReviewStudioModalProps> = (
           </div>
         </header>
 
+        {/* Mobile Tab Switcher */}
+        <div className="flex lg:hidden items-center justify-center p-2 border-b border-white/[0.08] bg-[#0c0e14]">
+          <div className="grid grid-cols-2 bg-[#08090d] p-1 rounded-xl border border-white/[0.08] w-full max-w-sm gap-1">
+            <button
+              type="button"
+              onClick={() => setMobileTab("editor")}
+              className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-poppins font-medium transition-all cursor-pointer ${
+                mobileTab === "editor"
+                  ? "bg-[#ff5500] text-black font-bold shadow-sm"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>Review Essay</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab("details")}
+              className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-poppins font-medium transition-all cursor-pointer ${
+                mobileTab === "details"
+                  ? "bg-[#ff5500] text-black font-bold shadow-sm"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              <Film className="w-3.5 h-3.5" />
+              <span>Film Info & Rating</span>
+            </button>
+          </div>
+        </div>
+
         {/* Studio Body: Split Columns */}
-        <div className="flex-grow overflow-hidden grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-white/[0.08]">
+        <div className="flex-grow overflow-y-auto lg:overflow-hidden flex flex-col lg:grid lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-white/[0.08]">
           
           {/* LEFT COLUMN: Cinema Visuals & Metadata Reference (4 of 12 cols) */}
-          <div className="lg:col-span-4 xl:col-span-4 overflow-y-auto p-4 sm:p-5 space-y-4 bg-[#08090d]/80">
+          <div className={`${mobileTab === "details" ? "block" : "hidden"} lg:block lg:col-span-4 xl:col-span-4 lg:overflow-y-auto p-4 sm:p-5 space-y-4 bg-[#08090d]/80 shrink-0`}>
             
             {/* Backdrop Banner with Trailer Overlay and Upload */}
             <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-[#101318] border border-white/[0.08] shadow-md group">
@@ -783,10 +814,10 @@ export const CinemaReviewStudioModal: React.FC<CinemaReviewStudioModalProps> = (
           </div>
 
           {/* RIGHT COLUMN: The Big Typing Studio Canvas (8 of 12 cols) */}
-          <div className="lg:col-span-8 xl:col-span-8 flex flex-col h-full bg-[#0a0c10] overflow-hidden">
+          <div className={`${mobileTab === "editor" ? "flex" : "hidden"} lg:flex lg:col-span-8 xl:col-span-8 flex-col lg:h-full bg-[#0a0c10] lg:overflow-hidden`}>
             
             {/* Writer Header */}
-            <div className="px-5 py-3 border-b border-white/[0.06] bg-[#0c0e14] flex items-center justify-between flex-shrink-0">
+            <div className="px-4 sm:px-5 py-3 border-b border-white/[0.06] bg-[#0c0e14] flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-2">
                 <Edit3 className="w-4 h-4 text-[#ff5500]" />
                 <span className="text-xs font-bold font-poppins text-white uppercase tracking-wider">
@@ -813,7 +844,7 @@ export const CinemaReviewStudioModal: React.FC<CinemaReviewStudioModalProps> = (
             )}
 
             {/* Big Review Editor Canvas */}
-            <div className="flex-grow p-4 sm:p-6 overflow-y-auto flex flex-col">
+            <div className="flex-grow p-4 sm:p-6 lg:overflow-y-auto flex flex-col">
               <ReviewEditor
                 value={myReview}
                 onChange={(val) => {
@@ -823,19 +854,19 @@ export const CinemaReviewStudioModal: React.FC<CinemaReviewStudioModalProps> = (
                 label=""
                 placeholder="Compose your cinema critique here... Write reflections on narrative pacing, director's visual style, performances, soundtrack, cinematography, or personal resonance."
                 minRows={18}
-                textareaClassName="min-h-[380px] lg:min-h-[460px] text-base leading-relaxed bg-[#08090d] border-white/[0.1] focus:border-[#ff5500] font-inter"
+                textareaClassName="min-h-[340px] lg:min-h-[460px] text-base leading-relaxed bg-[#08090d] border-white/[0.1] focus:border-[#ff5500] font-inter"
                 autoFocus
               />
             </div>
 
             {/* Studio Bottom Action Bar */}
-            <div className="px-4 sm:px-6 py-3.5 border-t border-white/[0.08] bg-[#0c0e14] flex items-center justify-between flex-shrink-0">
+            <div className="sticky bottom-0 z-20 px-4 sm:px-6 py-3 sm:py-3.5 border-t border-white/[0.08] bg-[#0c0e14] flex items-center justify-between flex-shrink-0 gap-2">
               <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   type="button"
                   onClick={onClose}
                   disabled={isSaving}
-                  className="px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-inter font-medium transition-colors cursor-pointer"
+                  className="px-3 sm:px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-inter font-medium transition-colors cursor-pointer"
                 >
                   Close
                 </button>
@@ -845,10 +876,11 @@ export const CinemaReviewStudioModal: React.FC<CinemaReviewStudioModalProps> = (
                   <button
                     type="button"
                     onClick={handleDiscardDraft}
-                    className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-inter transition-colors cursor-pointer"
+                    className="px-2.5 sm:px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-inter transition-colors cursor-pointer"
                     title="Discard current draft"
                   >
-                    Discard Draft
+                    <span className="hidden sm:inline">Discard Draft</span>
+                    <span className="sm:hidden">Discard</span>
                   </button>
                 )}
 
@@ -862,12 +894,12 @@ export const CinemaReviewStudioModal: React.FC<CinemaReviewStudioModalProps> = (
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSaving || savedSuccess}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] disabled:opacity-50 disabled:cursor-not-allowed text-black font-poppins font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-[0_0_25px_rgba(255,85,0,0.45)] hover:shadow-[0_0_35px_rgba(255,85,0,0.6)] active:scale-95"
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-[#ff5500] hover:bg-[#ff6a1f] disabled:opacity-50 disabled:cursor-not-allowed text-black font-poppins font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-[0_0_25px_rgba(255,85,0,0.45)] hover:shadow-[0_0_35px_rgba(255,85,0,0.6)] active:scale-95 shrink-0"
               >
                 {isSaving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-black" />
-                    <span>Publishing to Diary...</span>
+                    <span>Publishing...</span>
                   </>
                 ) : savedSuccess ? (
                   <>
@@ -877,7 +909,8 @@ export const CinemaReviewStudioModal: React.FC<CinemaReviewStudioModalProps> = (
                 ) : (
                   <>
                     <Film className="w-4 h-4 stroke-[2.5]" />
-                    <span>Publish Cinema Review</span>
+                    <span className="hidden sm:inline">Publish Cinema Review</span>
+                    <span className="sm:hidden">Publish Review</span>
                   </>
                 )}
               </button>

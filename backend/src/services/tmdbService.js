@@ -475,6 +475,41 @@ const getMovieBackdrops = async (movieId, mediaType = "movie") => {
   };
 };
 
+const getWatchProviders = async (tmdbId, mediaType = "movie") => {
+  const type = mediaType === "tv" ? "tv" : "movie";
+  const url = `${TMDB_BASE_URL}/${type}/${tmdbId}/watch/providers`;
+  const response = await fetchTMDB(url);
+
+  if (!response.ok) {
+    const error = new Error("Failed to fetch watch providers from TMDB");
+    error.status = response.status;
+    throw error;
+  }
+
+  const data = await response.json();
+  const rawResults = data.results || {};
+
+  const results = {};
+  for (const [region, info] of Object.entries(rawResults)) {
+    const enhanceProvider = (p) => ({
+      ...p,
+      logoUrl: p.logo_path ? `https://image.tmdb.org/t/p/w92${p.logo_path}` : null,
+    });
+
+    results[region] = {
+      link: info.link,
+      flatrate: (info.flatrate || []).map(enhanceProvider),
+      rent: (info.rent || []).map(enhanceProvider),
+      buy: (info.buy || []).map(enhanceProvider),
+    };
+  }
+
+  return {
+    movieId: Number(tmdbId),
+    results,
+  };
+};
+
 module.exports = {
   fetchTMDB,
   formatImageUrl,
@@ -485,4 +520,5 @@ module.exports = {
   getMovieDetails,
   getMoviePosters,
   getMovieBackdrops,
+  getWatchProviders,
 };

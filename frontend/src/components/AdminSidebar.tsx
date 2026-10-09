@@ -100,12 +100,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-[#08090d] border-r border-white/[0.08] flex flex-col justify-between transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 max-w-[85vw] bg-[#08090d] border-r border-white/[0.08] flex flex-col justify-between transition-transform duration-300 ease-in-out ${
           isActuallyOpen ? "translate-x-0 shadow-2xl lg:shadow-none" : "-translate-x-full"
         }`}
       >
         {/* Top Section */}
-        <div className="flex flex-col flex-grow overflow-y-auto no-scrollbar p-5 space-y-5">
+        <div className="flex flex-col flex-grow overflow-y-auto no-scrollbar p-4 sm:p-5 space-y-4 sm:space-y-5">
           
           {/* Brand Header with Toggle Button */}
           <div className="flex items-center justify-between">

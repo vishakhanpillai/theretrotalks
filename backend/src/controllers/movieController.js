@@ -96,10 +96,53 @@ const getBackdrops = async (req, res) => {
   }
 };
 
+const soundtrackService = require("../services/soundtrackService");
+
+const getWatchProviders = async (req, res) => {
+  const movieId = req.params.id;
+  const mediaType = req.query.mediaType || "movie";
+
+  try {
+    const result = await tmdbService.getWatchProviders(movieId, mediaType);
+    res.json(result);
+  } catch (error) {
+    console.error("TMDB Watch Providers Error:", error);
+    if (error.status) {
+      return res.status(error.status).json({
+        error: "Failed to fetch watch providers from TMDB",
+      });
+    }
+    res.status(500).json({
+      error: "Failed to fetch watch providers",
+    });
+  }
+};
+
+const getSoundtrack = async (req, res) => {
+  const { title, composer, director } = req.query;
+
+  if (!title) {
+    return res.status(400).json({ error: "Movie title is required" });
+  }
+
+  try {
+    const track = await soundtrackService.findSoundtrack(title, composer || director || "");
+    if (!track) {
+      return res.status(404).json({ error: "No soundtrack preview found" });
+    }
+    res.json(track);
+  } catch (error) {
+    console.error("Soundtrack search error:", error);
+    res.status(500).json({ error: "Failed to search soundtrack" });
+  }
+};
+
 module.exports = {
   search,
   getUpcomingMonth,
   getDetails,
   getPosters,
   getBackdrops,
+  getWatchProviders,
+  getSoundtrack,
 };
